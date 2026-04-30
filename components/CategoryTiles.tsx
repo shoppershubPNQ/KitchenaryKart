@@ -1,0 +1,17 @@
+'use client';
+import Link from 'next/link';
+import {useEffect,useRef} from 'react';
+import {imgSrc,letter} from '@/lib/format';
+import {CATEGORY_ORDER} from '@/lib/categories';
+import type {CategoryTreeNode} from '@/lib/products';
+interface Sub{category:string;subName:string;count:number;thumb:string|null;}
+interface Props{tree:Record<string,CategoryTreeNode[]>;}
+const VISIBLE_TILES=7;const GAP_PX=20;const SLIDE_STEP=3;const INTERVAL_MS=2500;
+function tilePitch(el:HTMLElement):number{const first=el.firstElementChild as HTMLElement|null;if(!first)return 0;return first.getBoundingClientRect().width+GAP_PX;}
+export function CategoryTiles({tree}:Props){
+const subs:Sub[]=[];const orderedCats=[...CATEGORY_ORDER.filter((c)=>tree[c]),...Object.keys(tree).filter((c)=>!CATEGORY_ORDER.includes(c))];
+for(const cat of orderedCats){for(const s of tree[cat]??[]){if(s.subName.trim().toLowerCase()==='sample')continue;subs.push({category:cat,subName:s.subName,count:s.count,thumb:s.thumb});}}
+const scrollRef=useRef<HTMLDivElement>(null);const paused=useRef(false);
+useEffect(()=>{const id=setInterval(()=>{if(paused.current)return;const el=scrollRef.current;if(!el)return;const max=el.scrollWidth-el.clientWidth;if(el.scrollLeft+2>=max){el.scrollTo({left:0,behavior:'smooth'});}else{el.scrollBy({left:tilePitch(el)*SLIDE_STEP,behavior:'smooth'});}},INTERVAL_MS);return()=>clearInterval(id);},[]);
+const scroll=(dir:-1|1)=>{const el=scrollRef.current;if(!el)return;el.scrollBy({left:tilePitch(el)*SLIDE_STEP*dir,behavior:'smooth'});};
+return(<div className="pt-10 pb-0"><div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] relative"><button type="button" onClick={()=>scroll(-1)} aria-label="Previous" className="absolute left-[1.5cm] top-[70px] -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white shadow-md grid place-items-center text-ink text-2xl hover:bg-brand hover:text-white transition">‹</button><button type="button" onClick={()=>scroll(1)} aria-label="Next" className="absolute right-[1.5cm] top-[70px] -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white shadow-md grid place-items-center text-ink text-2xl hover:bg-brand hover:text-white transition">›</button><div ref={scrollRef} onMouseEnter={()=>(paused.current=true)} onMouseLeave={()=>(paused.current=false)} className="flex gap-3 md:gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth" style={{scrollSnapType:'x mandatory'}}>{subs.map((s)=>(<Link key={`${s.category}/${s.subName}`} href={`/shop?cat=${encodeURIComponent(s.category)}&sub=${encodeURIComponent(s.subName)}`} className="kk-cat-tile shrink-0 flex flex-col items-center gap-2.5 text-center hover:-translate-y-0.5 transition" style={{scrollSnapAlign:'start',flex:`0 0 calc((100% - ${(VISIBLE_TILES-1)*GAP_PX}px) / ${VISIBLE_TILES})`}}><div className="w-full rounded-lg overflow-hidden grid place-items-center transition" style={{aspectRatio:'8 / 7',background:s.thumb?'transparent':'linear-gradient(180deg, #F5E6CF 0%, #E6C8A8 100%)'}}>{s.thumb?(<img src={imgSrc(s.thumb)} alt={s.subName} className="max-w-full max-h-full md:max-w-[85%] md:max-h-[85%] object-contain"/>):(<span className="text-5xl font-head font-black text-brand opacity-55">{letter(s.subName)}</span>)}</div><div className="font-head font-semibold text-[12.5px] text-ink leading-tight px-1 line-clamp-2 min-h-[2.4em]">{s.subName}</div></Link>))}</div></div></div>);}

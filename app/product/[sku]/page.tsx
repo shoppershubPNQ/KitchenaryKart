@@ -1,0 +1,134 @@
+import { Fragment } from 'react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getProductBySku, getSimilarProducts } from '@/lib/products';
+import { ProductGallery } from '@/components/ProductGallery';
+import { AddToInquiryButton } from '@/components/AddToInquiryButton';
+import { SimilarProducts } from '@/components/SimilarProducts';
+import { pseudoRating, Stars } from '@/lib/rating';
+import { inr, savingsPercent } from '@/lib/format';
+import { CATEGORY_SHORT } from '@/lib/categories';
+
+interface Params {
+  params: { sku: string };
+}
+
+// ISR: cache the rendered HTML for 5 min server-side. Admin mutations bust it
+// via /api/revalidate?tag=products, so users still see fresh data after edits.
+export const revalidate = 300;
+
+export async function generateMetadata({ params }: Params) {
+  const p = await getProductBySku(decodeURIComponent(params.sku));
+  if (!p) return { title: 'Not found — KitchenaryKart' };
+  return {
+    title: `${p.name} — KitchenaryKart`,
+    description: `${p.name} — commercial-grade ${p.subcategory || p.category || 'kitchen equipment'}. GST-invoiced, 12-month warranty.`,
+  };
+}
+
+export default async function ProductPage({ params }: Params) {
+  const p = await getProductBySku(decodeURIComponent(params.sku));
+  if (!p) notFound();
+
+  // Similar products — capped at 24 (was 40) to halve the payload. The
+  // SimilarProducts UI shows 5 by default and "View all" expands the rest,
+  // so 24 is still plenty of headroom.
+  const similar = p.category
+    ? await getSimilarProducts(p.category, p.sku, 24)
+    : [];
+
+  const save = savingsPercent(p.price, p.mrp);
+  const rating = pseudoRating(p.sku);
+  const specs: Array<[string, string | null]> = [
+    ['SKU', p.sku],
+    ['Category', p.subcategory || p.category || null],
+    ['Dimensions', p.dimensions],
+    ['Power', p.power],
+    ['Capacity', p.capacity],
+    ['Weight', p.weight],
+    ['HSN code', p.hsnCode],
+    ['GST', `${p.taxPercent}%`],
+  ];
+
+  return (
+    <>
+      <nav className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-4 text-xs text-muted flex items-center gap-2 flex-wrap">
+        <Link href="/" className="hover:text-brand">Home</Link>
+        <span className="opacity-60">/</span>
+        <Link href="/shop" className="hover:text-brand">Shop</Link>
+        {p.category && (
+          <>
+            <span className="opacity-60">/</span>
+            <Link href={`/shop?cat=${encodeURIComponent(p.category)}`} className="hover:text-brand">
+              {CATEGORY_SHORT[p.category] ?? p.category}
+            </Link>
+          </>
+        )}
+        <span className="opacity-60">/</span>
+        <span className="text-ink font-medium">{p.name}</span>
+      </nav>
+
+      <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-14 grid md:grid-cols-[1.1fr_1fr] grid-cols-1 gap-12">
+        <ProductGallery
+          name={p.name}
+          images={p.images}
+          imageUrl={p.imageUrl}
+          sku={p.sku}
+          price={p.price}
+          mrp={p.mrp}
+          category={p.category}
+        />
+
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[2px] text-brand mb-3">
+            Kitchenary Kart
+          </div>
+          <h1 className="text-[clamp(1.5rem,2.4vw,2rem)] mb-3.5">{p.name}</h1>
+          <div className="flex items-center gap-2 mb-5 pb-5 border-b border-line">
+            <Stars value={rating.stars} size="lg" />
+            <span className="text-[14px] text-ink font-medium">
+              {rating.stars.toFixed(1)} ({rating.count})
+            </span>
+            <span className="ml-2 text-muted text-xs">
+              · Verified commercial-kitchen grade
+            </span>
+          </div>
+          <div className="flex items-baseline gap-3.5 mb-1.5">
+            <span className="font-head text-[2rem] font-bold text-ink">{inr(p.price)}</span>
+            {p.mrp && p.mrp > p.price && (
+              <span className="text-base text-muted line-through">{inr(p.mrp)}</span>
+            )}
+            {save > 0 && (
+              <span className="px-2.5 py-1 rounded text-xs font-bold bg-success text-white tracking-wider">
+                SAVE {save}%
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted mt-2 mb-6">
+            Price is inclusive of GST. Ex-works price available for bulk orders.
+          </p>
+
+          <div className="bg-bg-soft rounded-lg p-5 mb-6">
+            <h3 className="text-[13px] font-bold tracking-wider uppercase text-brand mb-3.5">
+              Specifications
+            </h3>
+            <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-[13.5px]">
+              {specs.filter(([, v]) => v).map(([k, v]) => (
+                <Fragment key={k}>
+                  <dt className="text-muted font-bold">{k}</dt>
+                  <dd className="m-0 text-ink font-medium">{v}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-6">
+            <AddToInquiryButton product={p} />
+          </div>
+        </div>
+      </div>
+
+      <SimilarProducts products={similar} />
+    </>
+  );
+}

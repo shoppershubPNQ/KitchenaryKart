@@ -1,0 +1,24 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    // Admin serves product images at /images/{sku}/... via the website static server today,
+    // but once this Next app runs on :3001 it needs to know where to load them from.
+    // In dev we proxy through /images/* to disk via rewrites (see below).
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost', port: '3000', pathname: '/images/**' },
+      { protocol: 'http', hostname: 'localhost', port: '3001', pathname: '/images/**' },
+    ],
+  },
+  async rewrites() {
+    // Forward /api/public/* to the admin app so the public-facing inquiry/orders API
+    // is still centralised in admin. Products can also be fetched directly from the DB
+    // in server components, but the inquiry POST still goes via admin.
+    const adminBase = process.env.ADMIN_API_BASE || 'http://localhost:3000';
+    return [
+      { source: '/admin-api/:path*', destination: `${adminBase}/api/:path*` },
+    ];
+  },
+};
+
+module.exports = nextConfig;

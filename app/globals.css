@@ -1,0 +1,38 @@
+@tailwind base;@tailwind components;@tailwind utilities;
+@layer base{:root{--header-h:72px;--nav-h:46px;}html,body{height:100%;margin:0;padding:0;}body{@apply font-body text-ink bg-white;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}h1,h2,h3,h4{@apply font-head font-bold;line-height:1.2;}}
+@layer components{
+.btn{@apply inline-flex items-center justify-center gap-2 px-6 py-3 font-head font-bold text-sm uppercase tracking-wider rounded-md transition border-2 border-transparent cursor-pointer;}
+.btn-primary{@apply bg-brand text-white border-brand hover:bg-brand-dark hover:border-brand-dark hover:text-white;}
+.btn-outline{@apply bg-transparent text-ink border-ink hover:bg-ink hover:text-white;}
+.btn-small{@apply flex-1 px-3.5 py-2.5 text-xs font-head font-bold uppercase tracking-wider rounded-md text-center transition;}
+.btn-small-primary{@apply bg-brand text-white hover:bg-brand-dark;}
+.btn-small-outline{@apply bg-transparent text-ink border border-line hover:border-brand hover:text-brand;}
+.hero-btn{@apply inline-flex items-center gap-2 px-7 py-3.5 bg-brand text-white font-head font-bold text-sm uppercase tracking-wider rounded-full transition hover:bg-brand-dark hover:-translate-y-0.5;}
+.hero-btn-secondary{@apply bg-transparent border-2 border-ink text-ink hover:bg-ink hover:text-white;}
+.product-card{@apply bg-white border border-line rounded-lg overflow-hidden relative flex flex-col transition hover:shadow-md hover:-translate-y-0.5;}
+.product-badge{@apply absolute top-2.5 left-0 bg-brand text-white font-head text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-r z-[2];}
+.product-badge-discount{@apply bg-success;}
+.product-img{@apply aspect-square bg-cream grid place-items-center overflow-hidden relative;}
+.product-img-letter{@apply text-5xl font-head font-black text-brand opacity-40;}
+.product-img img{@apply w-full h-full object-contain transition-transform;}
+.product-card:hover .product-img img{@apply scale-[1.03];}
+.filter-item{@apply flex items-center justify-between w-full px-2.5 py-1.5 text-sm text-ink-soft rounded transition text-left mb-0.5 hover:bg-bg-soft hover:text-ink;}
+.filter-item.is-active{@apply bg-brand text-white font-semibold;}
+.filter-item.is-active .filter-count{@apply text-white/85;}
+.filter-count{@apply text-muted text-xs;}
+.form-input{@apply w-full px-3.5 py-2.5 border border-line rounded-md text-sm text-ink bg-white outline-none transition focus:border-brand focus:ring-1 focus:ring-brand;}
+.form-label{@apply text-xs font-semibold tracking-wider uppercase text-muted;}
+.nav-item{@apply relative inline-flex items-center px-3 font-head text-[11px] font-bold tracking-wider uppercase text-ink whitespace-nowrap cursor-pointer transition-colors border-b-[3px] border-transparent -mb-px;}
+@media (min-width:1280px){.nav-item{@apply text-[12px] px-4;}}
+.nav-item:hover{@apply text-brand;}
+.nav-item.is-open,.nav-item.active{@apply border-b-brand text-ink;}
+.mega-sub{@apply flex items-center justify-between px-1 py-2.5 text-[14px] font-medium tracking-wide text-ink uppercase transition-all border-b border-transparent hover:text-brand hover:pl-1.5;}
+.mega-sub .chev{@apply opacity-0 text-brand text-base transition-all;}
+.mega-sub:hover .chev{@apply opacity-100 translate-x-[3px];}
+.pill{@apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;}}
+@layer utilities{.no-scrollbar{scrollbar-width:none;}.no-scrollbar::-webkit-scrollbar{display:none;}.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}}
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#EFE3D0;padding:12px 22px;border-radius:6px;font-size:13.5px;z-index:300;opacity:0;transition:opacity .2s;box-shadow:0 8px 24px rgba(0,0,0,.15);pointer-events:none;}
+@media (max-width:767px){.kk-cat-tile{flex:0 0 calc((100% - 24px) / 3) !important;}}
+@media (max-width:360px){.kk-card-actions{flex-direction:column;}.kk-card-actions>.btn-small{flex:0 0 auto;width:100%;}}
+.kk-wa-float{bottom:calc(5rem + env(safe-area-inset-bottom));right:max(0.75rem,env(safe-area-inset-right));}
+@media (min-width:768px){.kk-wa-float{bottom:1.5rem;right:1.5rem;}}

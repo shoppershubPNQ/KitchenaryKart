@@ -1,0 +1,362 @@
+/**
+ * Server-only data access for the public site.
+ * Queries the same Neon DB as the admin app directly via Prisma so pages can
+ * be fully server-rendered for SEO.
+ */
+import 'server-only';
+import { cache as reactCache } from 'react';
+import { unstable_cache } from 'next/cache';
+import { prisma } from './db';
+import { getCollections } from './collections';
+
+export interface PublicProduct {
+  id: number;
+  sku: string;
+  name: string;
+  category: string | null;
+  subcategory: string | null;
+  leafCategory: string | null;
+  dimensions: string | null;
+  power: string | null;
+  capacity: string | null;
+  weight: string | null;
+  hsnCode: string | null;
+  price: number;
+  mrp: number | null;
+  taxPercent: number;
+  imageUrl: string | null;
+  images: string[];
+  isBestseller: boolean;
+  isNewArrival: boolean;
+}
+
+function toPublic(p: any): PublicProduct {
+  return {
+    id: p.id,
+    sku: p.sku,
+    name: p.name,
+    category: p.category,
+    subcategory: p.subcategory,
+    leafCategory: p.leafCategory,
+    dimensions: p.dimensions,
+    power: p.power,
+    capacity: p.capacity,
+    weight: p.weight,
+    hsnCode: p.hsnCode,
+    price: Number(p.price),
+    mrp: p.mrp ? Number(p.mrp) : null,
+    taxPercent: Number(p.taxPercent),
+    imageUrl: p.imageUrl,
+    images: Array.isArray(p.images) ? (p.images as string[]) : [],
+    isBestseller: Boolean(p.isBestseller),
+    isNewArrival: Boolean(p.isNewArrival),
+  };
+}
+
+const commonSelect = {
+  id: true,
+  sku: true,
+  name: true,
+  category: true,
+  subcategory: true,
+  leafCategory: true,
+  dimensions: true,
+  power: true,
+  capacity: true,
+  weight: true,
+  hsnCode: true,
+  price: true,
+  mrp: true,
+  taxPercent: true,
+  imageUrl: true,
+  images: true,
+  isBestseller: true,
+  isNewArrival: true,
+} as const;
+
+export async function getAllActiveProducts(): Promise<PublicProduct[]> {
+  const rows = await prisma.product.findMany({
+    where: { status: 'active' },
+    orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    select: commonSelect,
+  });
+  return rows.map(toPublic);
+}
+
+/**
+ * Data bundle the home page needs. Targeted queries instead of pulling the
+ * full catalog — each is capped at 8–12 rows so the response payload stays
+ * small.
+ *
+ * Resolution order for Best Seller / New Arrival:
+ *   1. Admin-curated **product SKUs** from the Collection table (preferred).
+ *   2. Legacy: subcategory names from Collection.subcategories.
+ *   3. `isBestseller` / `isNewArrival` flags set on individual products.
+ *   4. Built-in heuristics (price ≥ 2500, recent, etc.) — last-resort
+ *      fallback so the home page never ships empty.
+ */
+export async function getHomePageData(): Promise<{
+  bestsellers: PublicProduct[];
+  newArrivals: PublicProduct[];
+  watchShop: PublicProduct[];
+}> {
+  const collections = await getCollections();
+  const bestSkus = collections['bestsellers']?.productSkus ?? [];
+  const newSkus = collections['new-arrivals']?.productSkus ?? [];
+  const bestSubs = collections['bestsellers']?.subcategories ?? [];
+  const newSubs = collections['new-arrivals']?.subcategories ?? [];
+  const bestActive = collections['bestsellers']?.isActive !== false;
+  const newActive = collections['new-arrivals']?.isActive !== false;
+
+  // Find products by explicit SKU list — used by the new per-product curation.
+  const findByCuratedSkus = (skus: string[]) =>
+    prisma.product.findMany({
+      where: { status: 'active', sku: { in: skus } },
+      take: 24, // generous cap — admin-controlled list
+      select: commonSelect,
+    });
+
+  // Legacy subcategory-based fetch.
+  const findCurated = (subs: string[]) =>
+    prisma.product.findMany({
+      where: { status: 'active', subcategory: { in: subs } },
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 10,
+      select: commonSelect,
+    });
+
+  const [
+    curatedBestBySku,
+    curatedBestBySub,
+    flaggedBest,
+    fallbackBest,
+    curatedNewBySku,
+    curatedNewBySub,
+    flaggedNew,
+    fallbackNew,
+    photoPool,
+  ] = await Promise.all([
+    bestActive && bestSkus.length > 0 ? findByCuratedSkus(bestSkus) : Promise.resolve([]),
+    bestActive && bestSkus.length === 0 && bestSubs.length > 0 ? findCurated(bestSubs) : Promise.resolve([]),
+    prisma.product.findMany({
+      where: { status: 'active', isBestseller: true },
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 10,
+      select: commonSelect,
+    }),
+    prisma.product.findMany({
+      where: {
+        status: 'active',
+        price: { gte: 2500 },
+        mrp: { not: null },
+      },
+      orderBy: [{ price: 'desc' }],
+      take: 10,
+      select: commonSelect,
+    }),
+    newActive && newSkus.length > 0 ? findByCuratedSkus(newSkus) : Promise.resolve([]),
+    newActive && newSkus.length === 0 && newSubs.length > 0 ? findCurated(newSubs) : Promise.resolve([]),
+    prisma.product.findMany({
+      where: { status: 'active', isNewArrival: true },
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 10,
+      select: commonSelect,
+    }),
+    prisma.product.findMany({
+      where: { status: 'active' },
+      orderBy: [{ createdAt: 'desc' }],
+      take: 10,
+      select: commonSelect,
+    }),
+    prisma.product.findMany({
+      where: { status: 'active', imageUrl: { not: null } },
+      orderBy: [{ updatedAt: 'desc' }],
+      take: 40,
+      select: commonSelect,
+    }),
+  ]);
+
+  // Preserve admin's manual SKU order when curated by SKU.
+  function orderBySkuList(rows: any[], order: string[]) {
+    const m = new Map(rows.map((r) => [r.sku, r]));
+    const out: any[] = [];
+    for (const sku of order) { const r = m.get(sku); if (r) out.push(r); }
+    return out;
+  }
+  const bestRows = curatedBestBySku.length
+    ? orderBySkuList(curatedBestBySku, bestSkus)
+    : curatedBestBySub.length
+    ? curatedBestBySub
+    : flaggedBest.length
+    ? flaggedBest
+    : fallbackBest;
+  const newRows = curatedNewBySku.length
+    ? orderBySkuList(curatedNewBySku, newSkus)
+    : curatedNewBySub.length
+    ? curatedNewBySub
+    : flaggedNew.length
+    ? flaggedNew
+    : fallbackNew;
+
+  const bestsellers = bestRows.map(toPublic);
+  const newArrivals = newRows.map(toPublic);
+
+  // Watch & Shop — one photo-rich product per category, up to 4.
+  const seenCats = new Set<string>();
+  const watchShop: PublicProduct[] = [];
+  for (const p of photoPool) {
+    const cat = p.category ?? '';
+    if (cat && !seenCats.has(cat)) {
+      seenCats.add(cat);
+      watchShop.push(toPublic(p));
+      if (watchShop.length >= 4) break;
+    }
+  }
+  // Pad if we didn't find 4 distinct categories.
+  for (const p of photoPool) {
+    if (watchShop.length >= 4) break;
+    if (!watchShop.find((x) => x.sku === p.sku)) watchShop.push(toPublic(p));
+  }
+
+  return { bestsellers, newArrivals, watchShop };
+}
+
+// Uncached core DB fetch.
+async function _getProductBySku(sku: string): Promise<PublicProduct | null> {
+  const p = await prisma.product.findUnique({
+    where: { sku },
+    select: commonSelect,
+  });
+  return p ? toPublic(p) : null;
+}
+
+// Cross-request cache: same SKU on the same Next.js server reuses the result
+// for 5 min. Admin mutations call /api/revalidate?tag=products to bust it.
+const _getProductBySkuCached = unstable_cache(
+  _getProductBySku,
+  ['kk:product-by-sku'],
+  { revalidate: 300, tags: ['products'] },
+);
+
+// React.cache() dedupes within a single render — so generateMetadata and the
+// page body share one DB hit instead of two when both call getProductBySku.
+export const getProductBySku = reactCache(_getProductBySkuCached);
+
+/**
+ * Other active products in the same main category, excluding the current
+ * SKU. Used by the product detail page's Similar Products section.
+ */
+async function _getSimilarProducts(
+  category: string,
+  excludeSku: string,
+  limit = 24,
+): Promise<PublicProduct[]> {
+  const rows = await prisma.product.findMany({
+    where: {
+      status: 'active',
+      category,
+      sku: { not: excludeSku },
+    },
+    orderBy: [{ subcategory: 'asc' }, { name: 'asc' }],
+    take: limit,
+    select: commonSelect,
+  });
+  return rows.map(toPublic);
+}
+
+const _getSimilarProductsCached = unstable_cache(
+  _getSimilarProducts,
+  ['kk:similar-products'],
+  { revalidate: 300, tags: ['products'] },
+);
+
+export const getSimilarProducts = reactCache(_getSimilarProductsCached);
+
+// Uncached core — exported under a different name so callers can pick.
+async function _getCategoryCounts(): Promise<Record<string, number>> {
+  const rows = await prisma.product.groupBy({
+    by: ['category'],
+    where: { status: 'active', category: { not: null } },
+    _count: { _all: true },
+  });
+  const out: Record<string, number> = {};
+  for (const r of rows) if (r.category) out[r.category] = r._count._all;
+  return out;
+}
+
+/**
+ * Category counts keyed by category name. Runs in the root layout on every
+ * page — wrapped in unstable_cache with a 10-min TTL since categories barely
+ * change. On-demand revalidation can be added via `revalidateTag('category-counts')`
+ * from an admin mutation later.
+ */
+export const getCategoryCounts = unstable_cache(
+  _getCategoryCounts,
+  ['kk:category-counts'],
+  { revalidate: 600, tags: ['category-counts'] },
+);
+
+/**
+ * Lean nav-tree used by the mega menu: category → list of { subName, count, thumb }.
+ * Avoids pulling full product rows; just aggregates + picks one image per subcategory.
+ */
+export interface CategoryTreeNode {
+  subName: string;
+  count: number;
+  thumb: string | null;
+}
+
+async function _getCategoryTree(): Promise<Record<string, CategoryTreeNode[]>> {
+  const [groups, thumbs, customThumbs] = await Promise.all([
+    prisma.product.groupBy({
+      by: ['category', 'subcategory'],
+      where: { status: 'active', category: { not: null } },
+      _count: { _all: true },
+    }),
+    prisma.$queryRaw<Array<{ category: string; subcategory: string; image_url: string | null }>>`
+      SELECT DISTINCT ON (category, subcategory) category, subcategory, image_url
+      FROM products
+      WHERE status = 'active' AND image_url IS NOT NULL AND category IS NOT NULL
+      ORDER BY category, subcategory, id
+    `,
+    // Admin-managed subcategory thumbnails (web/public/subcategories/*) live
+    // in the `categories` table where `name` matches the subcategory string
+    // exactly. When set they override the auto-derived product image.
+    prisma.category.findMany({
+      where: { imageUrl: { not: null }, isActive: true },
+      select: { name: true, imageUrl: true },
+    }),
+  ]);
+
+  const thumbMap = new Map<string, string | null>();
+  for (const t of thumbs) thumbMap.set(`${t.category}|${t.subcategory}`, t.image_url);
+  const overrideThumbBySub = new Map<string, string>();
+  for (const c of customThumbs) {
+    if (c.imageUrl) overrideThumbBySub.set(c.name, c.imageUrl);
+  }
+
+  const tree: Record<string, CategoryTreeNode[]> = {};
+  for (const g of groups) {
+    const cat = g.category as string;
+    const sub = g.subcategory ?? '—';
+    (tree[cat] ||= []).push({
+      subName: sub,
+      count: g._count._all,
+      // Curated subcategory image first; fall back to the first product image.
+      thumb:
+        overrideThumbBySub.get(sub) ?? thumbMap.get(`${cat}|${sub}`) ?? null,
+    });
+  }
+  for (const cat of Object.keys(tree)) tree[cat].sort((a, b) => a.subName.localeCompare(b.subName));
+  return tree;
+}
+
+/**
+ * Mega-menu / slide-nav tree. Same caching treatment as `getCategoryCounts`.
+ * Revalidate with `revalidateTag('category-tree')` on product create/update.
+ */
+export const getCategoryTree = unstable_cache(
+  _getCategoryTree,
+  ['kk:category-tree'],
+  { revalidate: 600, tags: ['category-tree'] },
+);
