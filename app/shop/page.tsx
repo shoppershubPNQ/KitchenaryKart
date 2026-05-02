@@ -24,7 +24,7 @@ export default async function ShopPage({
   const [products, counts, collections] = await Promise.all([
     getAllActiveProducts(),
     getCategoryCounts(),
-    collectionSlug ? getCollections() : Promise.resolve({}),
+        getCollections(),
   ]);
 
   // When the URL carries `?collection=bestsellers` (or `new-arrivals`),
