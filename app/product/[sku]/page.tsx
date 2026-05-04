@@ -84,12 +84,12 @@ export default async function ProductPage({ params }: Params) {
             Kitchenary Kart
           </div>
           <h1 className="text-[clamp(1.5rem,2.4vw,2rem)] mb-3.5">{p.name}</h1>
-          <div className="flex items-center gap-2 mb-5 pb-5 border-b border-line">
+                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-5 pb-5 border-b border-line">
             <Stars value={rating.stars} size="lg" />
-            <span className="text-[14px] text-ink font-medium">
+            <span className="text-[14px] text-ink font-medium whitespace-nowrap">
               {rating.stars.toFixed(1)} ({rating.count})
             </span>
-            <span className="ml-2 text-muted text-xs">
+            <span className="text-muted text-xs">
               · Verified commercial-kitchen grade
             </span>
           </div>
