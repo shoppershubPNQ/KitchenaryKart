@@ -8,8 +8,6 @@ interface Props {
   name: string;
   images: string[];
   imageUrl: string | null;
-  /** Product identity — used by the wishlist/share icons floating on the
-   *  top-right of the main image. */
   sku: string;
   price: number;
   mrp?: number | null;
@@ -30,16 +28,12 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
         await (navigator as any).share(data);
         return;
       }
-    } catch {
-      /* user-cancelled share is not an error */
-    }
+    } catch { /* user-cancelled share is not an error */ }
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard may be blocked — quiet fail */
-    }
+    } catch { /* clipboard may be blocked — quiet fail */ }
   }
 
   if (imgs.length === 0) {
@@ -52,14 +46,16 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
   }
 
   return (
-    <div className="grid grid-cols-[80px_1fr] gap-3">
-      <div className="flex flex-col gap-2 max-h-[560px] overflow-y-auto pr-1">
+    <div className="flex flex-col-reverse gap-3 md:grid md:grid-cols-[80px_1fr]">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-col md:max-h-[560px] md:overflow-y-auto md:overflow-x-visible md:pb-0 md:pr-1">
         {imgs.map((u) => (
           <button
             key={u}
             type="button"
             onClick={() => setActive(u)}
-            className={`w-[72px] h-[72px] p-1 bg-white border-2 rounded-md cursor-pointer transition overflow-hidden shrink-0 ${active === u ? 'border-brand' : 'border-line hover:border-gold'}`}
+            className={`w-16 h-16 md:w-[72px] md:h-[72px] p-1 bg-white border-2 rounded-md cursor-pointer transition overflow-hidden shrink-0 ${
+              active === u ? 'border-brand' : 'border-line hover:border-gold'
+            }`}
           >
             <img src={imgSrc(u)} alt="" className="w-full h-full object-contain" />
           </button>
@@ -73,7 +69,6 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
   );
 }
 
-/** Floating wishlist + share icon column, top-right of the main image. */
 function Overlay({
   saved,
   onSave,
@@ -97,14 +92,7 @@ function Overlay({
           saved ? 'text-brand' : 'text-ink hover:text-brand'
         }`}
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="18"
-          height="18"
-          fill={saved ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          strokeWidth="2"
-        >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
         </svg>
       </button>
