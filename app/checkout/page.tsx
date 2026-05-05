@@ -3,16 +3,14 @@
 /**
  * Checkout / Review-order page.
  *
- * Two-column layout inspired by the Razorpay/Wonderchef checkout sheet:
- *   • Left brand-red rail with KK logo, order summary card, savings chip,
- *     decorative bag artwork and a "Secured by KitchenaryKart" footer.
- *   • Right white panel with the customer's phone, deliver-to address (with
- *     inline edit), delivery options, marketing-consent checkbox and the
- *     final Continue button.
+ * On "Pay Now" we:
+ *   1. POST /admin-api/public/checkout       → creates Order + Razorpay order on backend
+ *   2. Open Razorpay Checkout popup with razorpayOrderId
+ *   3. On success: PUT /admin-api/public/payments/razorpay → verifies signature
+ *   4. Show success card, clear cart
  *
- * On Continue we POST to the admin storefront inquiry endpoint so a record
- * lands in the admin /dashboard/inquiries page. The cart is cleared and the
- * user sees a small success card.
+ * Uses the Next.js rewrite proxy (/admin-api/...) configured in next.config.js
+ * so calls go server-to-server (no CORS).
  */
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -30,7 +28,13 @@ interface Address {
   postalCode: string;
 }
 
-const ADMIN_API = process.env.NEXT_PUBLIC_ADMIN_API_BASE || 'http://localhost:3000';
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
+
+const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
 const ADDR_KEY = 'kk_checkout_address';
 
 function loadAddress(fallback: Partial<Address> = {}): Address {
@@ -53,6 +57,19 @@ function saveAddress(a: Address) {
   }
 }
 
+/** Inject Razorpay's Checkout script once. Resolves true if loaded. */
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total, count } = useCart();
@@ -63,10 +80,8 @@ export default function CheckoutPage() {
   const [marketing, setMarketing] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<{ id?: number } | null>(null);
+  const [done, setDone] = useState<{ id?: number; orderNumber?: string } | null>(null);
 
-  // Pre-fill saved address with customer name / phone the first time the
-  // page loads or right after sign-in.
   useEffect(() => {
     if (!customer) return;
     setAddress((prev) => ({
@@ -76,21 +91,13 @@ export default function CheckoutPage() {
     }));
   }, [customer]);
 
-  // If the visitor isn't logged in, prompt them to sign in. The auth modal's
-  // onSuccess closes itself — we don't navigate, the page just hydrates with
-  // the new customer. If they cancel the modal, send them home.
   useEffect(() => {
     if (authLoading) return;
     if (!loggedIn) {
-      openAuth({
-        onSuccess: () => {
-          /* page re-renders via useAuth */
-        },
-      });
+      openAuth({ onSuccess: () => {} });
     }
   }, [authLoading, loggedIn]);
 
-  // Empty-cart guard. Don't render the form for a cart of zero — bounce home.
   useEffect(() => {
     if (items.length === 0 && !done) {
       const t = setTimeout(() => router.replace('/'), 50);
@@ -101,8 +108,7 @@ export default function CheckoutPage() {
   const subtotal = useMemo(
     () =>
       items.reduce(
-        (a, i) =>
-          a + (i.mrp && i.mrp > i.price ? i.mrp : i.price) * (i.qty || 1),
+        (a, i) => a + (i.mrp && i.mrp > i.price ? i.mrp : i.price) * (i.qty || 1),
         0,
       ),
     [items],
@@ -126,42 +132,89 @@ export default function CheckoutPage() {
       setError('Please complete your delivery address.');
       return;
     }
+    if (!RAZORPAY_KEY) {
+      setError('Payment is not configured. Please contact support.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const message =
-        `Order from KitchenaryKart storefront.\n\n` +
-        `Deliver to:\n${address.name} · ${address.phone}\n${fullAddress(address)}\n\n` +
-        `Subtotal (MRP): ${inr(subtotal)}\n` +
-        `Discount: ${inr(savings)}\n` +
-        `You Pay: ${inr(youPay)}\n` +
-        (marketing ? '\nCustomer opted in to offers and order updates.' : '');
+      const scriptOk = await loadRazorpayScript();
+      if (!scriptOk) throw new Error('Could not load Razorpay. Check your internet connection.');
 
-      const res = await fetch(`${ADMIN_API.replace(/\/$/, '')}/api/public/inquiries`, {
+      // 1. Create Order + Razorpay order on the backend.
+      const res = await fetch('/admin-api/public/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerName: address.name || customer.name,
-          customerEmail: customer.email,
+          customerEmail: customer.email || '',
           customerPhone: address.phone || customer.phone || '',
-          message,
-          items: items.map((i) => ({ sku: i.sku, quantity: i.qty || 1 })),
+          shippingAddress: `${address.name} · ${address.phone}\n${fullAddress(address)}`,
+          items: items.map((i) => ({
+            sku: i.sku,
+            name: i.name,
+            price: i.price,
+            quantity: i.qty || 1,
+          })),
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || 'Could not place order');
+      if (!res.ok) throw new Error(data?.error || 'Could not create order');
 
       saveAddress(address);
-      clearCart();
-      setDone({ id: data.inquiryId });
+
+      // 2. Open Razorpay Checkout popup.
+      const rzp = new window.Razorpay({
+        key: RAZORPAY_KEY,
+        amount: data.amount,
+        currency: data.currency || 'INR',
+        order_id: data.razorpayOrderId,
+        name: 'KitchenaryKart',
+        description: `Order ${data.orderNumber}`,
+        image: '/logo.png',
+        prefill: {
+          name: data.customerName || '',
+          email: data.customerEmail || '',
+          contact: data.customerPhone || '',
+        },
+        theme: { color: '#A01818' },
+        handler: async (response: any) => {
+          // 3. Payment success — verify signature on backend.
+          try {
+            const v = await fetch('/admin-api/public/payments/razorpay', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: data.orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
+            const vd = await v.json().catch(() => ({}));
+            if (!v.ok) throw new Error(vd?.error || 'Payment verification failed');
+            clearCart();
+            setDone({ id: data.orderId, orderNumber: data.orderNumber });
+          } catch (e: any) {
+            setError(e?.message || 'Payment verification failed. Contact support with order number ' + data.orderNumber);
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+            setError('Payment cancelled. You can try again.');
+          },
+        },
+      });
+      rzp.open();
     } catch (e: any) {
       setError(e?.message || 'Could not place order');
-    } finally {
       setSubmitting(false);
     }
   }
 
-  // Success state — the cart is empty here so the empty-cart guard would
-  // immediately bounce, hence the `!done` check there.
   if (done) {
     return (
       <div className="min-h-[70vh] grid place-items-center px-[6mm] md:px-[1.5cm] py-12 bg-bg-soft">
@@ -169,14 +222,13 @@ export default function CheckoutPage() {
           <div className="w-14 h-14 rounded-full bg-success text-white grid place-items-center text-3xl mx-auto mb-5">
             ✓
           </div>
-          <h1 className="font-head text-2xl text-ink mb-2">Order placed</h1>
+          <h1 className="font-head text-2xl text-ink mb-2">Payment received</h1>
           <p className="text-muted text-sm mb-6">
-            Thank you! Our sales team will contact you shortly to confirm your order
-            and share payment options.
-            {done.id && (
+            Thank you! Your order has been confirmed and is being processed.
+            {done.orderNumber && (
               <>
-                {' '}Reference{' '}
-                <span className="font-mono text-ink">#{done.id}</span>.
+                {' '}Order number{' '}
+                <span className="font-mono text-ink">{done.orderNumber}</span>.
               </>
             )}
           </p>
@@ -193,7 +245,6 @@ export default function CheckoutPage() {
   return (
     <div className="bg-bg-soft min-h-[80vh] py-6 px-[6mm] md:px-[1.5cm]">
       <div className="max-w-[1080px] mx-auto bg-white rounded-xl border border-line shadow-sm overflow-hidden grid md:grid-cols-[360px_1fr] grid-cols-1">
-        {/* ─── Left rail: brand-red ─────────────────────────────────── */}
         <aside className="bg-brand text-white p-6 flex flex-col gap-4 relative overflow-hidden">
           <div className="flex items-center gap-3">
             <div className="bg-white rounded-md p-2 inline-block">
@@ -201,7 +252,6 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Order summary — first line item shown, rest collapsed */}
           <section className="bg-[#fff7f7] text-ink rounded-lg p-3.5 z-10">
             <h3 className="text-[12px] font-bold tracking-widest uppercase text-ink/70 mb-2">
               Order summary
@@ -253,7 +303,6 @@ export default function CheckoutPage() {
             </ul>
           </section>
 
-          {/* Savings badge */}
           {savings > 0 && (
             <section className="bg-white text-ink rounded-lg p-3.5 flex items-center gap-3 z-10">
               <span className="w-8 h-8 rounded-full bg-emerald-500 text-white grid place-items-center text-sm">
@@ -268,7 +317,6 @@ export default function CheckoutPage() {
             </section>
           )}
 
-          {/* Decorative bag artwork (CSS only, scales with rail height) */}
           <svg
             viewBox="0 0 200 160"
             className="absolute bottom-12 left-1/2 -translate-x-1/2 w-72 h-auto opacity-30 pointer-events-none"
@@ -287,7 +335,6 @@ export default function CheckoutPage() {
           </div>
         </aside>
 
-        {/* ─── Right side: Review Order form ───────────────────────── */}
         <main className="p-6 sm:p-8 relative">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-head text-lg font-bold text-ink">Review Order</h2>
@@ -301,7 +348,6 @@ export default function CheckoutPage() {
           </div>
 
           <div className="space-y-4">
-            {/* Phone / login state */}
             <section className="border border-line rounded-lg p-4 flex items-center gap-3">
               <span className="w-9 h-9 rounded-full grid place-items-center text-brand bg-brand/10 shrink-0">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -312,7 +358,6 @@ export default function CheckoutPage() {
               <span className="text-[12px] text-success font-semibold">logged in</span>
             </section>
 
-            {/* Delivery address */}
             <section className="border border-line rounded-lg p-4">
               <div className="flex items-center justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2 text-ink">
@@ -396,7 +441,6 @@ export default function CheckoutPage() {
               )}
             </section>
 
-            {/* Delivery options */}
             <section className="border border-line rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3 text-ink">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" className="text-brand">
@@ -444,12 +488,12 @@ export default function CheckoutPage() {
               className="w-full py-4 rounded-md bg-ink text-white font-head font-bold tracking-wider uppercase text-sm hover:bg-black disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
               {submitting
-                ? 'Placing order…'
-                : `Place Order · ${inr(youPay)}${count ? `  (${count} ${count === 1 ? 'item' : 'items'})` : ''}`}
+                ? 'Opening payment…'
+                : `Pay Now · ${inr(youPay)}${count ? `  (${count} ${count === 1 ? 'item' : 'items'})` : ''}`}
             </button>
 
             <p className="text-center text-[11px] text-muted">
-              ✓ Money-back promise · KitchenaryKart Trust
+              ✓ Secure payment via Razorpay · KitchenaryKart Trust
             </p>
           </div>
         </main>
