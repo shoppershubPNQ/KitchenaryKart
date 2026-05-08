@@ -26,6 +26,7 @@ export function AuthModal() {
   const [otp, setOtp] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [deliveredTo, setDeliveredTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const pending = useRef<PendingAction | null>(null);
@@ -67,6 +68,7 @@ export function AuthModal() {
     setOtp('');
     setName('');
     setEmail('');
+    setDeliveredTo(null);
     setError(null);
     setBusy(false);
   }
@@ -98,8 +100,12 @@ export function AuthModal() {
         setError(data?.error || 'Something went wrong.');
         return;
       }
-      if (data.exists) setStep('otp');
-      else setStep('register');
+      if (data.exists) {
+        setDeliveredTo(typeof data.deliveredTo === 'string' ? data.deliveredTo : null);
+        setStep('otp');
+      } else {
+        setStep('register');
+      }
     } finally {
       setBusy(false);
     }
@@ -259,7 +265,10 @@ export function AuthModal() {
             <div>
               <h2 className="font-head text-xl text-ink mb-1">Enter OTP</h2>
               <div className="text-sm text-muted mb-5">
-                Sent to +91 {phone}.{' '}
+                {deliveredTo
+                  ? <>Sent to <strong className="text-ink">{deliveredTo}</strong>. Check your inbox (and spam folder).</>
+                  : <>Sent to +91 {phone}.</>}
+                {' '}
                 <button type="button" onClick={changeNumber} className="text-brand font-semibold hover:underline">
                   Change
                 </button>
@@ -286,7 +295,7 @@ export function AuthModal() {
               </button>
               <div className="mt-4 flex items-center justify-between text-xs">
                 <span className="text-muted">
-                  Dev mode — OTP is always <strong className="text-ink">123456</strong>
+                  Didn&rsquo;t receive it?
                 </span>
                 <button
                   type="button"
