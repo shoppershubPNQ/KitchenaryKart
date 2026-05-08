@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { emitAuthChanged } from '@/lib/useAuth';
 
-type Step = 'phone' | 'otp' | 'register';
+type Step = 'phone' | 'otp' | 'register' | 'register-verify';
 
 interface PendingAction {
   redirectTo?: string;
@@ -152,10 +152,62 @@ export function AuthModal() {
       });
       const data = await res.json();
       if (!res.ok) {
+        setError(data?.error || 'Could not start registration.');
+        return;
+      }
+      // Switch to email-verification step. Account is NOT created until
+      // the user enters the OTP we just emailed.
+      setOtp('');
+      setDeliveredTo(typeof data.deliveredTo === 'string' ? data.deliveredTo : null);
+      setStep('register-verify');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitRegisterVerify() {
+    setError(null);
+    if (otp.length !== 6) {
+      setError('Please enter the 6-digit code from your email.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch('/api/auth/register-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: normalizeTen(phone),
+          name: name.trim(),
+          email: email.trim(),
+          otp,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
         setError(data?.error || 'Could not create account.');
         return;
       }
       await finishAuth();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendRegisterOtp() {
+    setError(null);
+    setBusy(true);
+    try {
+      await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: normalizeTen(phone),
+          name: name.trim(),
+          email: email.trim(),
+        }),
+      });
+      setOtp('');
     } finally {
       setBusy(false);
     }
@@ -364,6 +416,52 @@ export function AuthModal() {
                 {' '}and{' '}
                 <a className="text-brand font-semibold hover:underline" href="/privacy">Privacy Policy</a>.
               </p>
+            </div>
+          )}
+
+          {step === 'register-verify' && (
+            <div>
+              <h2 className="font-head text-xl text-ink mb-1">Verify your email</h2>
+              <div className="text-sm text-muted mb-5">
+                {deliveredTo
+                  ? <>We sent a 6-digit code to <strong className="text-ink">{deliveredTo}</strong>. Check your inbox (and spam folder).</>
+                  : <>We sent a 6-digit code to your email. Check your inbox (and spam folder).</>}
+                {' '}
+                <button type="button" onClick={() => setStep('register')} className="text-brand font-semibold hover:underline">
+                  Edit details
+                </button>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                maxLength={6}
+                placeholder="6-digit code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onKeyDown={(e) => e.key === 'Enter' && submitRegisterVerify()}
+                className="w-full px-3 py-3 border border-line rounded-md text-center text-[18px] tracking-[8px] font-bold outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+              {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
+              <button
+                type="button"
+                onClick={submitRegisterVerify}
+                disabled={busy || otp.length !== 6}
+                className="mt-5 w-full py-3 rounded font-head text-sm font-bold tracking-wider uppercase bg-brand text-white disabled:bg-line disabled:text-muted disabled:cursor-not-allowed hover:bg-brand-dark transition"
+              >
+                {busy ? 'Verifying…' : 'Verify & Create Account'}
+              </button>
+              <div className="mt-4 flex items-center justify-between text-xs">
+                <span className="text-muted">Didn&rsquo;t receive it?</span>
+                <button
+                  type="button"
+                  onClick={resendRegisterOtp}
+                  disabled={busy}
+                  className="text-brand font-semibold hover:underline disabled:opacity-50"
+                >
+                  Resend code
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -45,21 +45,31 @@ interface SendOtpEmailArgs {
   to: string;
   code: string;
   customerName?: string | null;
+  /** Tweaks subject line + intro copy. Default 'login'. */
+  purpose?: 'login' | 'register';
 }
 
 /**
- * Send the OTP email. Returns true on success, false if Resend rejected
- * the send or env vars were missing. Never throws — caller decides how to
- * handle delivery failure (typically: log it, return generic "OTP sent"
- * to the user so we don't leak whether the email exists).
+ * Build the branded HTML/text email for an OTP. Same template for login
+ * and registration verification — only the subject and intro line differ.
  */
-export async function sendOtpEmail({ to, code, customerName }: SendOtpEmailArgs): Promise<boolean> {
-  const resend = getClient();
-  if (!resend) return false;
+function buildOtpEmail(code: string, customerName: string | null | undefined, purpose: 'login' | 'register') {
+  const firstName = customerName ? customerName.split(' ')[0] : null;
+  const greeting = purpose === 'register'
+    ? (firstName ? `Welcome to KitchenaryKart, ${firstName}!` : 'Welcome to KitchenaryKart!')
+    : (firstName ? `Hi ${firstName},` : 'Hi,');
 
-  const greeting = customerName ? `Hi ${customerName.split(' ')[0]},` : 'Hi,';
+  const intro = purpose === 'register'
+    ? "Use the code below to verify your email and finish creating your account. It expires in 5 minutes."
+    : "Use the code below to sign in to your KitchenaryKart account. It expires in 5 minutes.";
 
-  const subject = `Your KitchenaryKart login code is ${code}`;
+  const subject = purpose === 'register'
+    ? `Verify your email — code ${code}`
+    : `Your KitchenaryKart login code is ${code}`;
+
+  const ignoreNote = purpose === 'register'
+    ? "If you didn't sign up for KitchenaryKart, you can safely ignore this email."
+    : "If you didn't request this code, you can safely ignore this email — someone may have entered your phone number by mistake.";
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -80,9 +90,9 @@ export async function sendOtpEmail({ to, code, customerName }: SendOtpEmailArgs)
           <tr>
             <td style="padding:8px 32px 24px 32px;color:#1a1a1a;font-size:15px;line-height:1.55;">
               <p style="margin:0 0 12px 0;">${greeting}</p>
-              <p style="margin:0 0 24px 0;">Use the code below to sign in to your KitchenaryKart account. It expires in 5 minutes.</p>
+              <p style="margin:0 0 24px 0;">${intro}</p>
               <div style="background:#1a1a1a;color:#efe3d0;font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;padding:18px 0;border-radius:6px;font-family:'Courier New',monospace;">${code}</div>
-              <p style="margin:24px 0 0 0;color:#777;font-size:13px;line-height:1.5;">If you didn't request this code, you can safely ignore this email — someone may have entered your phone number by mistake.</p>
+              <p style="margin:24px 0 0 0;color:#777;font-size:13px;line-height:1.5;">${ignoreNote}</p>
             </td>
           </tr>
           <tr>
@@ -100,13 +110,28 @@ export async function sendOtpEmail({ to, code, customerName }: SendOtpEmailArgs)
 
   const text = `${greeting}
 
-Use the code below to sign in to your KitchenaryKart account. It expires in 5 minutes.
+${intro}
 
   ${code}
 
-If you didn't request this code, you can safely ignore this email.
+${ignoreNote}
 
 — KitchenaryKart`;
+
+  return { subject, html, text };
+}
+
+/**
+ * Send an OTP email. Returns true on success, false if Resend rejected the
+ * send or env vars were missing. Never throws — caller decides how to handle
+ * delivery failure (typically: log it, return generic "OTP sent" to the user
+ * so we don't leak whether the email exists).
+ */
+export async function sendOtpEmail({ to, code, customerName, purpose = 'login' }: SendOtpEmailArgs): Promise<boolean> {
+  const resend = getClient();
+  if (!resend) return false;
+
+  const { subject, html, text } = buildOtpEmail(code, customerName, purpose);
 
   try {
     const result = await resend.emails.send({
@@ -120,7 +145,7 @@ If you didn't request this code, you can safely ignore this email.
       console.error('[kk:email] Resend error:', result.error);
       return false;
     }
-    console.log(`[kk:email] OTP sent to ${maskEmail(to)} (id=${result.data?.id})`);
+    console.log(`[kk:email] ${purpose} OTP sent to ${maskEmail(to)} (id=${result.data?.id})`);
     return true;
   } catch (err) {
     console.error('[kk:email] sendOtpEmail threw:', err);

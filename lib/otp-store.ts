@@ -61,14 +61,48 @@ export async function issueOtp(phone: string): Promise<string> {
   return code;
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<boolean> {
-  if (isBypassEnabled() && code === DEV_BYPASS_CODE) return true;
-
+/**
+ * Discard any pending OTP for this phone. Called when an email-send failure
+ * means the OTP we just issued is unreachable — we must not leave it in
+ * Redis because the dev bypass would still accept '123456' and let an
+ * attacker complete registration with an unverified address.
+ */
+export async function discardOtp(phone: string): Promise<void> {
   const normalized = normalizePhone(phone);
   const client = getRedis();
+  if (client) {
+    await client.del(KEY_PREFIX + normalized);
+  } else {
+    memoryStore.delete(normalized);
+  }
+}
+
+export async function verifyOtp(phone: string, code: string): Promise<boolean> {
+  const normalized = normalizePhone(phone);
+  const client = getRedis();
+  const key = KEY_PREFIX + normalized;
+
+  // Dev bypass: code "123456" is accepted, BUT only if a prior issueOtp call
+  // actually stored an OTP for this phone. This prevents attackers from
+  // creating accounts (or logging in) without an issued+delivered OTP — e.g.
+  // registration where the verification email failed, or random phones.
+  if (isBypassEnabled() && code === DEV_BYPASS_CODE) {
+    if (client) {
+      const stored = await client.get<string>(key);
+      if (!stored) return false;
+      await client.del(key);
+      return true;
+    }
+    const entry = memoryStore.get(normalized);
+    if (!entry || entry.expiresAt < Date.now()) {
+      memoryStore.delete(normalized);
+      return false;
+    }
+    memoryStore.delete(normalized);
+    return true;
+  }
 
   if (client) {
-    const key = KEY_PREFIX + normalized;
     const stored = await client.get<string>(key);
     if (!stored || stored !== code) return false;
     await client.del(key);

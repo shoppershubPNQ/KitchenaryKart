@@ -2,13 +2,18 @@
  * POST /api/auth/register
  *
  * Body: { phone, name, email }
- * Creates a new Customer and sets the session cookie. Rejects duplicate
- * phone or email.
+ *
+ * Step 1 of registration. Validates input, checks for duplicates, and sends
+ * a verification OTP to the entered email. The customer record is NOT
+ * created here — that happens in /api/auth/register-confirm after the user
+ * proves email ownership by entering the OTP.
+ *
+ * Response: { verifyEmail: true, deliveredTo: 'sh****@gmail.com' }
  */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { normalizePhone } from '@/lib/otp-store';
-import { CUSTOMER_COOKIE, cookieOptions, signToken } from '@/lib/auth';
+import { discardOtp, issueOtp, normalizePhone } from '@/lib/otp-store';
+import { maskEmail, sendOtpEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -23,8 +28,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
   }
 
-  // Duplicate check — email is unique in the schema, phone is not but we
-  // enforce it here to avoid two accounts per number.
+  // Duplicate check — email is unique in the schema, phone is enforced here
+  // to avoid two accounts per number.
   const dup = await prisma.customer.findFirst({
     where: {
       OR: [{ email }, { phone: { in: [phone, '+' + phone] } }],
@@ -38,20 +43,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'That phone number is already registered.' }, { status: 409 });
   }
 
-  const customer = await prisma.customer.create({
-    data: {
-      name,
-      email,
-      phone: '+' + phone,
-      customerType: 'retail',
-      isActive: true,
-      signupSource: 'web',
-    },
-    select: { id: true, name: true, email: true, phone: true },
+  // Issue an OTP keyed on phone (Redis), then deliver it to the entered
+  // email. The /register-confirm endpoint will validate phone+otp before
+  // creating the customer.
+  const code = await issueOtp(phone);
+
+  const sent = await sendOtpEmail({
+    to: email,
+    code,
+    customerName: name,
+    purpose: 'register',
   });
 
-  const token = signToken(customer.id);
-  const res = NextResponse.json({ customer });
-  res.cookies.set(CUSTOMER_COOKIE, token, cookieOptions());
-  return res;
+  if (!sent) {
+    // Email delivery failed — clean up the pending OTP so the dev bypass
+    // can't be used to bypass email verification with an invalid address.
+    await discardOtp(phone);
+    return NextResponse.json(
+      { error: "Couldn't send verification email — please check the address and try again." },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json({ verifyEmail: true, deliveredTo: maskEmail(email) });
 }
