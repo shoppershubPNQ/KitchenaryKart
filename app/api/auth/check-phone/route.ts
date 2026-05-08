@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const exists = !!customer;
   let otpSent = false;
   if (exists) {
-    issueOtp(phone);
+    await issueOtp(phone);
     otpSent = true;
   }
 

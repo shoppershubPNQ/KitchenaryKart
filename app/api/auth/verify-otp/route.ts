@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const phone = normalizePhone((body?.phone ?? '').toString());
   const otp = (body?.otp ?? '').toString();
 
-  if (!verifyOtp(phone, otp)) {
+  if (!(await verifyOtp(phone, otp))) {
     return NextResponse.json({ error: 'Invalid or expired code' }, { status: 401 });
   }
 
