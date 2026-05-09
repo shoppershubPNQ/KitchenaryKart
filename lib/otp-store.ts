@@ -104,7 +104,10 @@ export async function verifyOtp(phone: string, code: string): Promise<boolean> {
 
   if (client) {
     const stored = await client.get<string>(key);
-    if (!stored || stored !== code) return false;
+    // Coerce to string: Upstash's SDK auto-parses values that look like JSON
+    // numbers, so a stored "847291" comes back as the number 847291. Without
+    // String(), `stored !== code` is always true for purely numeric OTPs.
+    if (stored == null || String(stored) !== code) return false;
     await client.del(key);
     return true;
   }
