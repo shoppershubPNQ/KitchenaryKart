@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProductBySku, getSimilarProducts } from '@/lib/products';
@@ -6,7 +7,7 @@ import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
 import { SimilarProducts } from '@/components/SimilarProducts';
 import { pseudoRating, Stars } from '@/lib/rating';
-import { inr, savingsPercent } from '@/lib/format';
+import { imgSrc, inr, savingsPercent } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
 
 interface Params {
@@ -17,12 +18,35 @@ interface Params {
 // via /api/revalidate?tag=products, so users still see fresh data after edits.
 export const revalidate = 300;
 
-export async function generateMetadata({ params }: Params) {
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const p = await getProductBySku(decodeURIComponent(params.sku));
-  if (!p) return { title: 'Not found — KitchenaryKart' };
+  if (!p) return { title: 'Not found' };
+
+  const productCategory = p.subcategory || p.category || 'kitchen equipment';
+  const title = `${p.name} — KitchenaryKart`;
+  const description = `${p.name} — commercial-grade ${productCategory}. GST-invoiced, 12-month warranty. Pan-India delivery.`;
+  const canonicalPath = `/product/${encodeURIComponent(p.sku)}`;
+  const ogImage = p.imageUrl ? imgSrc(p.imageUrl) : '/logo.png';
+
   return {
-    title: `${p.name} — KitchenaryKart`,
-    description: `${p.name} — commercial-grade ${p.subcategory || p.category || 'kitchen equipment'}. GST-invoiced, 12-month warranty.`,
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      type: 'website',
+      url: canonicalPath,
+      title,
+      description,
+      siteName: 'KitchenaryKart',
+      locale: 'en_IN',
+      images: [{ url: ogImage, alt: p.name }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
   };
 }
 

@@ -27,10 +27,66 @@ const roboto = Roboto({
   display: 'swap',
 });
 
+const SITE_NAME = 'KitchenaryKart';
+const SITE_URL = 'https://kitchenarykart.com';
+const SITE_DESCRIPTION =
+  'Curated catalog of commercial kitchen, bar, buffet and housekeeping equipment — cookware, fryers, bain marie, blenders, and more. Pan-India delivery and global export.';
+
 export const metadata: Metadata = {
-  title: 'KitchenaryKart — Commercial Kitchen Equipment for Restaurants, Hotels & Cloud Kitchens',
-  description:
-    'Curated catalog of commercial kitchen, bar, buffet and housekeeping equipment — cookware, fryers, bain marie, blenders, and more. Pan-India delivery and global export.',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} — Commercial Kitchen Equipment for Restaurants, Hotels & Cloud Kitchens`,
+    template: `%s — ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    'commercial kitchen equipment',
+    'restaurant equipment India',
+    'hotel kitchen supplies',
+    'cloud kitchen setup',
+    'bain marie',
+    'commercial fryer',
+    'commercial blender',
+    'kitchen cookware India',
+    'B2B kitchen equipment',
+  ],
+  authors: [{ name: SITE_NAME }],
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Commercial Kitchen Equipment for Restaurants, Hotels & Cloud Kitchens`,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: '/logo.png',
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} logo`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE_NAME} — Commercial Kitchen Equipment`,
+    description: SITE_DESCRIPTION,
+    images: ['/logo.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon:
       "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='12' fill='%23A01818'/><text x='12' y='17' text-anchor='middle' font-family='Montserrat' font-size='14' font-weight='700' fill='white'>K</text></svg>",
