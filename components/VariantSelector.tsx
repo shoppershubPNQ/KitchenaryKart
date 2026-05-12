@@ -10,11 +10,28 @@
  * Selecting a variant navigates to its SKU URL via the Next.js router
  * (history-replace style — no full page load). Price + stock indicators
  * upstream re-render from the new SKU's data.
+ *
+ * Stock indicator follows the Amazon pattern: we never reveal exact stock
+ * to customers (`10000 in stock` looks unprofessional). We only call out
+ * scarcity when there are 5 or fewer units left.
  */
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { inr } from '@/lib/format';
 import type { PublicVariant } from '@/lib/products';
+
+const LOW_STOCK_THRESHOLD = 5;
+
+function stockLabel(stock: number): { text: string; className: string } {
+  if (stock <= 0) return { text: 'Out of stock', className: 'text-red-600' };
+  if (stock <= LOW_STOCK_THRESHOLD) {
+    return {
+      text: stock === 1 ? 'Only 1 left in stock' : `Only ${stock} left in stock`,
+      className: 'text-orange-600 font-semibold',
+    };
+  }
+  return { text: 'In stock', className: 'text-success' };
+}
 
 interface Props {
   variants: PublicVariant[];
@@ -104,17 +121,18 @@ export function VariantSelector({ variants, currentSku }: Props) {
           </div>
         </div>
       ))}
-      {current && (
-        <div className="text-xs text-muted">
-          Variant SKU: <span className="font-mono text-ink">{current.sku}</span>
-          {' · '}
-          <span className={current.stock > 0 ? 'text-success' : 'text-red-600'}>
-            {current.stock > 0 ? `${current.stock} in stock` : 'Out of stock'}
-          </span>
-          {' · '}
-          <span className="text-ink font-semibold">{inr(current.price)}</span>
-        </div>
-      )}
+      {current && (() => {
+        const s = stockLabel(current.stock);
+        return (
+          <div className="text-xs text-muted">
+            Variant SKU: <span className="font-mono text-ink">{current.sku}</span>
+            {' · '}
+            <span className={s.className}>{s.text}</span>
+            {' · '}
+            <span className="text-ink font-semibold">{inr(current.price)}</span>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -61,7 +61,6 @@ export default async function ProductPage({ params }: Params) {
   // Find the currently selected variant (if URL matches a variant SKU)
   const selectedVariant = p.variants.find((v) => v.sku === requestedSku);
   const displayPrice = selectedVariant?.price ?? p.price;
-  const displayStock = selectedVariant?.stock ?? null;
 
   // MRP shown on the page should match the variant's price (so the "SAVE %"
   // stays consistent across variants). We scale the parent's MRP by the
