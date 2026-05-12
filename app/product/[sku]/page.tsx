@@ -6,6 +6,7 @@ import { getProductBySku, getSimilarProducts } from '@/lib/products';
 import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
 import { SimilarProducts } from '@/components/SimilarProducts';
+import { VariantSelector } from '@/components/VariantSelector';
 import { pseudoRating, Stars } from '@/lib/rating';
 import { imgSrc, inr, savingsPercent } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title,
     description,
+    keywords: p.metaKeywords ?? undefined,
     alternates: { canonical: canonicalPath },
     openGraph: {
       type: 'website',
@@ -51,8 +53,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function ProductPage({ params }: Params) {
-  const p = await getProductBySku(decodeURIComponent(params.sku));
+  const requestedSku = decodeURIComponent(params.sku);
+  const p = await getProductBySku(requestedSku);
   if (!p) notFound();
+
+  // Find the currently selected variant (if URL matches a variant SKU)
+  const selectedVariant = p.variants.find((v) => v.sku === requestedSku);
+  const displayPrice = selectedVariant?.price ?? p.price;
+  const displayStock = selectedVariant?.stock ?? null;
 
   // Similar products — capped at 24 (was 40) to halve the payload. The
   // SimilarProducts UI shows 5 by default and "View all" expands the rest,
@@ -61,7 +69,7 @@ export default async function ProductPage({ params }: Params) {
     ? await getSimilarProducts(p.category, p.sku, 24)
     : [];
 
-  const save = savingsPercent(p.price, p.mrp);
+  const save = savingsPercent(displayPrice, p.mrp);
   const rating = pseudoRating(p.sku);
   const specs: Array<[string, string | null]> = [
     ['SKU', p.sku],
@@ -118,8 +126,8 @@ export default async function ProductPage({ params }: Params) {
             </span>
           </div>
           <div className="flex items-baseline gap-3.5 mb-1.5">
-            <span className="font-head text-[2rem] font-bold text-ink">{inr(p.price)}</span>
-            {p.mrp && p.mrp > p.price && (
+            <span className="font-head text-[2rem] font-bold text-ink">{inr(displayPrice)}</span>
+            {p.mrp && p.mrp > displayPrice && (
               <span className="text-base text-muted line-through">{inr(p.mrp)}</span>
             )}
             {save > 0 && (
@@ -131,6 +139,10 @@ export default async function ProductPage({ params }: Params) {
           <p className="text-xs text-muted mt-2 mb-6">
             Price is inclusive of GST. Ex-works price available for bulk orders.
           </p>
+
+          {p.variants.length > 1 && (
+            <VariantSelector variants={p.variants} currentSku={requestedSku} />
+          )}
 
           <div className="bg-bg-soft rounded-lg p-5 mb-6">
             <h3 className="text-[13px] font-bold tracking-wider uppercase text-brand mb-3.5">

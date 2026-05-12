@@ -20,6 +20,7 @@ export interface PublicProduct {
   power: string | null;
   capacity: string | null;
   weight: string | null;
+  color: string | null;
   hsnCode: string | null;
   price: number;
   mrp: number | null;
@@ -28,6 +29,39 @@ export interface PublicProduct {
   images: string[];
   isBestseller: boolean;
   isNewArrival: boolean;
+  metaKeywords: string | null;
+}
+
+/**
+ * One variant of a product. A variant has its own SKU (in `skuSuffix`, an
+ * abuse of the column name from the original schema where it really did hold
+ * just a suffix), its own price (parent.price + priceModifier) and its own
+ * stock. `axisValues` is the parsed form of variantValue — either a single
+ * string ("Big") or an object ({Size: "Big", Color: "Red"}) for 2-axis.
+ */
+export interface PublicVariant {
+  sku: string;
+  variantType: string; // "Size" | "Color" | "Capacity" | "Power" | "Multi" | "Variant"
+  axisValues: Record<string, string> | string; // string for 1-axis, object for multi-axis
+  price: number;
+  stock: number;
+}
+
+export interface PublicProductWithVariants extends PublicProduct {
+  variants: PublicVariant[];
+}
+
+function parseAxisValues(variantType: string, raw: string | null): Record<string, string> | string {
+  if (!raw) return '';
+  if (variantType === 'Multi') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      // fall through
+    }
+  }
+  return raw;
 }
 
 function toPublic(p: any): PublicProduct {
@@ -42,6 +76,7 @@ function toPublic(p: any): PublicProduct {
     power: p.power,
     capacity: p.capacity,
     weight: p.weight,
+    color: p.color ?? null,
     hsnCode: p.hsnCode,
     price: Number(p.price),
     mrp: p.mrp ? Number(p.mrp) : null,
@@ -50,6 +85,7 @@ function toPublic(p: any): PublicProduct {
     images: Array.isArray(p.images) ? (p.images as string[]) : [],
     isBestseller: Boolean(p.isBestseller),
     isNewArrival: Boolean(p.isNewArrival),
+    metaKeywords: p.metaKeywords ?? null,
   };
 }
 
@@ -64,6 +100,7 @@ const commonSelect = {
   power: true,
   capacity: true,
   weight: true,
+  color: true,
   hsnCode: true,
   price: true,
   mrp: true,
@@ -72,6 +109,7 @@ const commonSelect = {
   images: true,
   isBestseller: true,
   isNewArrival: true,
+  metaKeywords: true,
 } as const;
 
 export async function getAllActiveProducts(): Promise<PublicProduct[]> {
@@ -221,20 +259,50 @@ export async function getHomePageData(): Promise<{
   return { bestsellers, newArrivals, watchShop };
 }
 
-// Uncached core DB fetch.
-async function _getProductBySku(sku: string): Promise<PublicProduct | null> {
-  const p = await prisma.product.findUnique({
+// Uncached core DB fetch — supports BOTH parent SKUs and variant SKUs.
+// Variant SKUs are stored on ProductVariant.skuSuffix (we re-purposed it to
+// hold the full child SKU instead of just a suffix).
+async function _getProductBySku(sku: string): Promise<PublicProductWithVariants | null> {
+  // Try parent SKU first
+  let p = await prisma.product.findUnique({
     where: { sku },
-    select: commonSelect,
+    select: { ...commonSelect, variants: true },
   });
-  return p ? toPublic(p) : null;
+
+  // Fallback: maybe this is a variant SKU pointing at a parent
+  if (!p) {
+    const variant = await prisma.productVariant.findFirst({
+      where: { skuSuffix: sku },
+      select: { productId: true },
+    });
+    if (variant) {
+      p = await prisma.product.findUnique({
+        where: { id: variant.productId },
+        select: { ...commonSelect, variants: true },
+      });
+    }
+  }
+  if (!p) return null;
+
+  const parentPrice = Number(p.price);
+  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; stock: number }> | undefined)?.map((v) => ({
+    sku: v.skuSuffix ?? '',
+    variantType: v.variantType ?? 'Variant',
+    axisValues: parseAxisValues(v.variantType ?? '', v.variantValue),
+    price: parentPrice + Number(v.priceModifier ?? 0),
+    stock: v.stock,
+  })) ?? [];
+
+  // strip variants from the toPublic input to avoid leaking raw rows
+  const { variants: _drop, ...rest } = p as any;
+  return { ...toPublic(rest), variants };
 }
 
 // Cross-request cache: same SKU on the same Next.js server reuses the result
 // for 5 min. Admin mutations call /api/revalidate?tag=products to bust it.
 const _getProductBySkuCached = unstable_cache(
   _getProductBySku,
-  ['kk:product-by-sku'],
+  ['kk:product-by-sku-v2'],
   { revalidate: 300, tags: ['products'] },
 );
 
