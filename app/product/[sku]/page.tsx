@@ -24,7 +24,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!p) return { title: 'Not found' };
 
   const productCategory = p.subcategory || p.category || 'kitchen equipment';
-  const title = `${p.name} — KitchenaryKart`;
+  // Just the product name — the root layout's title.template appends " — KitchenaryKart".
+  const title = p.name;
   const description = `${p.name} — commercial-grade ${productCategory}. GST-invoiced, 12-month warranty. Pan-India delivery.`;
   const canonicalPath = `/product/${encodeURIComponent(p.sku)}`;
   const ogImage = p.imageUrl ? imgSrc(p.imageUrl) : '/logo.png';
