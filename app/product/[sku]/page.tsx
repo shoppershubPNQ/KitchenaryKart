@@ -63,6 +63,12 @@ export default async function ProductPage({ params }: Params) {
   const displayPrice = selectedVariant?.price ?? p.price;
   const displayStock = selectedVariant?.stock ?? null;
 
+  // MRP shown on the page should match the variant's price (so the "SAVE %"
+  // stays consistent across variants). We scale the parent's MRP by the
+  // variant's price ratio; for the parent itself this is a no-op.
+  const mrpRatio = p.mrp && p.price > 0 ? Number(p.mrp) / p.price : 0;
+  const displayMrp = mrpRatio > 1 ? Math.round(displayPrice * mrpRatio) : p.mrp;
+
   // Similar products — capped at 24 (was 40) to halve the payload. The
   // SimilarProducts UI shows 5 by default and "View all" expands the rest,
   // so 24 is still plenty of headroom.
@@ -70,7 +76,7 @@ export default async function ProductPage({ params }: Params) {
     ? await getSimilarProducts(p.category, p.sku, 24)
     : [];
 
-  const save = savingsPercent(displayPrice, p.mrp);
+  const save = savingsPercent(displayPrice, displayMrp);
   const rating = pseudoRating(p.sku);
   const specs: Array<[string, string | null]> = [
     ['SKU', p.sku],
@@ -128,8 +134,8 @@ export default async function ProductPage({ params }: Params) {
           </div>
           <div className="flex items-baseline gap-3.5 mb-1.5">
             <span className="font-head text-[2rem] font-bold text-ink">{inr(displayPrice)}</span>
-            {p.mrp && p.mrp > displayPrice && (
-              <span className="text-base text-muted line-through">{inr(p.mrp)}</span>
+            {displayMrp && displayMrp > displayPrice && (
+              <span className="text-base text-muted line-through">{inr(displayMrp)}</span>
             )}
             {save > 0 && (
               <span className="px-2.5 py-1 rounded text-xs font-bold bg-success text-white tracking-wider">
