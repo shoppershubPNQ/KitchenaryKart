@@ -12,8 +12,18 @@ import * as React from 'react';
 export function pseudoRating(sku: string): { stars: number; count: number } {
   let h = 0;
   for (let i = 0; i < sku.length; i++) h = (h * 31 + sku.charCodeAt(i)) >>> 0;
-  const stars = 4 + ((h % 10) / 10); // 4.0 – 4.9
-  const count = 20 + (h % 180); // 20 – 199
+
+  // Stars: 4.0 – 5.0 in 0.1 steps (11 possible values).
+  const stars = 4 + ((h % 11) / 10);
+
+  // Count is anti-correlated with rating — a freshly listed item with a few
+  // ecstatic buyers shows fewer reviews than one that's been kicked around
+  // and averaged down. 5.0 → ~10, 4.5 → ~15, 4.0 → ~20. A small per-SKU
+  // jitter (0–4) keeps products with the same rating from looking identical.
+  const base = 10 + Math.round((5 - stars) * 10);
+  const jitter = Math.floor(h / 11) % 5;
+  const count = base + jitter;
+
   return { stars: Math.round(stars * 10) / 10, count };
 }
 
