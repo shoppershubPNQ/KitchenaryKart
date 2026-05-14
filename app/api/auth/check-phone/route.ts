@@ -20,6 +20,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { issueOtp, normalizePhone } from '@/lib/otp-store';
 import { sendOtpEmail, maskEmail } from '@/lib/email';
+import { checkLimit, otpRequestByPhone, tooManyRequests } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -28,6 +29,9 @@ export async function POST(req: Request) {
   if (phone.length < 10) {
     return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
   }
+
+  const rl = await checkLimit(otpRequestByPhone, phone);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
 
   const customer = await prisma.customer.findFirst({
     where: { phone: { in: [phone, '+' + phone, raw] } },

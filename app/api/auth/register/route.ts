@@ -14,6 +14,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { discardOtp, issueOtp, normalizePhone } from '@/lib/otp-store';
 import { maskEmail, sendOtpEmail } from '@/lib/email';
+import {
+  checkLimit,
+  getClientIp,
+  registerByEmail,
+  registerByIp,
+  tooManyRequests,
+} from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -27,6 +34,11 @@ export async function POST(req: Request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
   }
+
+  const ipRl = await checkLimit(registerByIp, getClientIp(req));
+  if (!ipRl.ok) return tooManyRequests(ipRl.retryAfterSec);
+  const emailRl = await checkLimit(registerByEmail, email);
+  if (!emailRl.ok) return tooManyRequests(emailRl.retryAfterSec);
 
   // Duplicate check — email is unique in the schema, phone is enforced here
   // to avoid two accounts per number.

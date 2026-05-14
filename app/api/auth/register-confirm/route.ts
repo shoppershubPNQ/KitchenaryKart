@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { normalizePhone, verifyOtp } from '@/lib/otp-store';
 import { CUSTOMER_COOKIE, cookieOptions, signToken } from '@/lib/auth';
+import { checkLimit, otpVerifyByPhone, tooManyRequests } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
   if (!/^\d{6}$/.test(otp)) {
     return NextResponse.json({ error: 'Enter the 6-digit code from your email.' }, { status: 400 });
   }
+
+  const rl = await checkLimit(otpVerifyByPhone, phone);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
 
   // Verify OTP first — also deletes it on success (single-use).
   const ok = await verifyOtp(phone, otp);

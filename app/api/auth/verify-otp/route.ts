@@ -8,11 +8,15 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { normalizePhone, verifyOtp } from '@/lib/otp-store';
 import { CUSTOMER_COOKIE, cookieOptions, signToken } from '@/lib/auth';
+import { checkLimit, otpVerifyByPhone, tooManyRequests } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const phone = normalizePhone((body?.phone ?? '').toString());
   const otp = (body?.otp ?? '').toString();
+
+  const rl = await checkLimit(otpVerifyByPhone, phone);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
 
   if (!(await verifyOtp(phone, otp))) {
     return NextResponse.json({ error: 'Invalid or expired code' }, { status: 401 });
