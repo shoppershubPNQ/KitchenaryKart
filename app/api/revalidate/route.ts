@@ -17,6 +17,7 @@ const ALLOWED_TAGS = new Set([
   'category-counts',
   'collections',
   'policies',
+  'reels',
   'social',
 ]);
 

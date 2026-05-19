@@ -7,15 +7,17 @@ import { PromoCarousel } from '@/components/PromoCarousel';
 import { WatchAndShop } from '@/components/WatchAndShop';
 import { getCategoryTree, getHomePageData } from '@/lib/products';
 import { getActiveBanners } from '@/lib/banners';
+import { getActiveReels } from '@/lib/reels';
 
 export const revalidate = 300; // regenerate home at most every 5 min
 
 export default async function HomePage() {
-  const [home, tree, banners, promoSlides] = await Promise.all([
+  const [home, tree, banners, promoSlides, reels] = await Promise.all([
     getHomePageData(),
     getCategoryTree(),
     getActiveBanners('hero'),
     getActiveBanners('secondary'),
+    getActiveReels(),
   ]);
   const { bestsellers, newArrivals, watchShop } = home;
 
@@ -31,7 +33,7 @@ export default async function HomePage() {
 
       <PromoCarousel slides={promoSlides} />
 
-      <WatchAndShop products={watchShop} />
+      <WatchAndShop reels={reels} products={watchShop} />
     </>
   );
 }
