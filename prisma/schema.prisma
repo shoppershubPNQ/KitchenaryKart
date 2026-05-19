@@ -418,3 +418,22 @@ model Policy {
   @@index([isActive])
   @@map("policies")
 }
+
+model Reel {
+  id            Int      @id @default(autoincrement())
+  videoUrl      String   @map("video_url")
+  thumbnailUrl  String?  @map("thumbnail_url")
+  caption       String?
+  instagramUrl  String?  @map("instagram_url")
+  productSku    String?  @map("product_sku")
+  viewCount     Int      @default(0) @map("view_count")
+  position      Int      @default(0)
+  isActive      Boolean  @default(true) @map("is_active")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([position])
+  @@index([isActive])
+  @@map("reels")
+}
