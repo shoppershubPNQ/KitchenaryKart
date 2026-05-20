@@ -15,8 +15,15 @@
  *      zoom/pan to suggest motion.
  *
  * The page passes both — `reels` is preferred, `products` fills the rest.
+ *
+ * Performance: reel videos are heavy (5-60 MB each). The section sits
+ * well below the fold on the home page, so we render the poster image
+ * only until an IntersectionObserver tells us the section is in (or
+ * about to enter) the viewport. This trims ~hundreds of KB of MP4 from
+ * the initial home-page payload on mobile.
  */
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { imgSrc, inr, letter } from '@/lib/format';
 import type { PublicProduct } from '@/lib/products';
 import type { PublicReel } from '@/lib/reels';
@@ -69,8 +76,38 @@ export function WatchAndShop({ reels = [], products }: Props) {
   }
   if (slots.length === 0) return null;
 
+  // Lazy-load gate. Section starts in `videosArmed=false` so reel cards
+  // render the poster image only (no <video> element, no MP4 download).
+  // Once the section approaches the viewport, we flip to true and the
+  // <video> elements mount and start autoplaying. rootMargin of 200px
+  // gives the videos a head start so the first one is buffered by the
+  // time it's actually on screen.
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [videosArmed, setVideosArmed] = useState(false);
+  useEffect(() => {
+    if (videosArmed) return;
+    // Guard for SSR + older browsers — fall back to immediate render.
+    if (typeof IntersectionObserver === 'undefined') {
+      setVideosArmed(true);
+      return;
+    }
+    const node = sectionRef.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVideosArmed(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '200px 0px' },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [videosArmed]);
+
   return (
-    <section className="py-14">
+    <section ref={sectionRef} className="py-14">
       <style jsx>{`
         @keyframes kk-kenburns {
           0%   { transform: scale(1.04) translate(0%, 0%); }
@@ -94,7 +131,7 @@ export function WatchAndShop({ reels = [], products }: Props) {
         <div className="grid grid-cols-2 md:grid-cols-4 mx-auto md:max-w-[72%]" style={{ gap: '1.5cm' }}>
           {slots.map((slot, i) =>
             slot.kind === 'reel'
-              ? renderReelCard(slot.reel, i)
+              ? renderReelCard(slot.reel, i, videosArmed)
               : renderProductCard(slot.product, i),
           )}
         </div>
@@ -103,7 +140,7 @@ export function WatchAndShop({ reels = [], products }: Props) {
   );
 }
 
-function renderReelCard(reel: PublicReel, i: number) {
+function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
   const product = reel.product;
   const href = product
     ? `/product/${encodeURIComponent(product.sku)}`
@@ -119,16 +156,33 @@ function renderReelCard(reel: PublicReel, i: number) {
         href={href}
         className="relative block aspect-[9/16] overflow-hidden bg-black"
       >
-        <video
-          src={reel.videoUrl}
-          poster={reel.thumbnailUrl || undefined}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        {videosArmed ? (
+          <video
+            src={reel.videoUrl}
+            poster={reel.thumbnailUrl || undefined}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          // Poster-only render until the IntersectionObserver in the
+          // parent flips videosArmed. Keeps the home-page initial
+          // payload small on mobile (no MP4 download until the user
+          // scrolls near this section).
+          reel.thumbnailUrl ? (
+            <img
+              src={reel.thumbnailUrl}
+              alt={reel.caption || ''}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-ink/80 to-ink" />
+          )
+        )}
 
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none" />
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import type { PublicBanner } from '@/lib/banners';
 
@@ -132,9 +133,12 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
   const paused = useRef(false);
 
   useEffect(() => {
+    // 6s per slide — slow enough that users can read each banner and
+    // mobile devices aren't repainting/decoding next images aggressively.
+    // 2.5s was too aggressive (frequent re-paints + users couldn't read).
     const id = setInterval(() => {
       if (!paused.current) setIdx((i) => (i + 1) % count);
-    }, 2500);
+    }, 6000);
     return () => clearInterval(id);
   }, [count]);
 
@@ -154,7 +158,7 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
           {useDb
             ? banners!.map((b, i) => (
                 <div key={`b-${b.id}`} className="flex-shrink-0 w-full">
-                  <AdminBannerSlide banner={b} />
+                  <AdminBannerSlide banner={b} eager={i === 0} />
                 </div>
               ))
             : SLIDES.map((s, i) => (
@@ -167,32 +171,29 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
               }}
             >
               {s.variant === 'image' ? (
-                /* Image slide — render the provided asset exactly as-is,
-                   via a background-image so layout stays stable even if the
-                   file is missing (you'll see the fallback gradient instead
-                   of a broken-image icon). The whole banner is clickable. */
+                /* Image slide — `next/image` with explicit width/height so
+                   the browser reserves the right space (no CLS) and Vercel
+                   serves a webp/avif at the right size. `priority` is set
+                   only on the first slide because that's the LCP candidate
+                   on first paint; later slides lazy-load. */
                 <Link
                   href={s.href}
                   aria-label={s.alt}
                   className="block w-full"
                 >
-                  {/* On mobile let the natural 1908:553 aspect drive the
-                      height (no min-height = no horizontal cropping). The
-                      desktop minimum is reapplied at ≥ md so the hero
-                      stays prominent on big screens. */}
                   <div
-                    role="img"
-                    aria-label={s.alt}
-                    className="w-full md:min-h-[320px]"
-                    style={{
-                      aspectRatio: '1908 / 553',
-                      backgroundImage: `url(${s.imageSrc})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundColor: '#D7EEFB',
-                    }}
-                  />
+                    className="relative w-full md:min-h-[320px] bg-[#D7EEFB]"
+                    style={{ aspectRatio: '1908 / 553' }}
+                  >
+                    <Image
+                      src={s.imageSrc}
+                      alt={s.alt}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 1908px"
+                      priority={i === 0}
+                      className="object-cover"
+                    />
+                  </div>
                 </Link>
               ) : (
                 /* Solid cream background for default slides, shown via this inner wrapper */
@@ -248,13 +249,23 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
  * `object-cover`, so any upload size is center-cropped to fit. If the admin
  * set a link target (product / category / URL), the entire banner is one
  * big clickable area; otherwise it's purely decorative.
+ *
+ * `next/image` with `fill` + explicit `sizes` lets Vercel serve a
+ * responsive webp/avif at the right resolution for each viewport — the
+ * single biggest mobile perf win on the home page since the hero banner
+ * is the LCP element on first paint. `eager` is passed on the first slide
+ * (LCP); other slides lazy-load.
  */
-function AdminBannerSlide({ banner: b }: { banner: PublicBanner }) {
+function AdminBannerSlide({ banner: b, eager = false }: { banner: PublicBanner; eager?: boolean }) {
   const img = (
-    <img
+    <Image
       src={b.imageUrl}
       alt={b.alt || ''}
-      className="absolute inset-0 w-full h-full object-cover"
+      fill
+      sizes="(max-width: 768px) 100vw, 1908px"
+      priority={eager}
+      loading={eager ? 'eager' : 'lazy'}
+      className="object-cover"
       draggable={false}
     />
   );

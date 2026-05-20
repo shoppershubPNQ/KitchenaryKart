@@ -8,6 +8,11 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost', port: '3000', pathname: '/images/**' },
       { protocol: 'http', hostname: 'localhost', port: '3001', pathname: '/images/**' },
+      // Cloudinary — admin uploads banners, reels (poster jpgs), product
+      // images here. Allowing the whole upload path lets next/image optimise
+      // banners and reel posters with on-the-fly webp/avif + responsive
+      // srcset, which is the biggest mobile perf win on the home page.
+      { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/ddvay7jt0/**' },
     ],
   },
   async rewrites() {
