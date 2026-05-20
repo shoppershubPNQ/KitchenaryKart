@@ -50,6 +50,10 @@ export const registerByIp = makeLimiter('register-ip', 3, '1 h');
 // Registration — 1 per hour per email. Stops the same address being re-sent.
 export const registerByEmail = makeLimiter('register-email', 1, '1 h');
 
+// Guest order tracking — 20 per 10 min per IP. Generous for a real customer
+// who fat-fingers a few times, tight enough to stop enumeration attacks.
+export const trackLookupByIp = makeLimiter('track-lookup', 20, '10 m');
+
 export function getClientIp(req: Request): string {
   const fwd = req.headers.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();

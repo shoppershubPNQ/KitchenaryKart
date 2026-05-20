@@ -236,6 +236,20 @@ model Order {
   paymentReference String?       @map("payment_reference")
   razorpayOrderId  String?       @map("razorpay_order_id")
 
+  /// GST invoice serial (e.g. 1) + financial year ("2026-27"), allocated
+  /// by admin/lib/invoice-serial.ts when an invoice PDF is first
+  /// downloaded. Storefront only reads these.
+  invoiceSerial         Int?     @map("invoice_serial")
+  invoiceFinancialYear  String?  @map("invoice_financial_year") @db.VarChar(7)
+
+  /// Shipment tracking — written by admin once the parcel ships,
+  /// surfaced to the customer on /account/orders/[number] and /track.
+  carrierName     String?   @map("carrier_name")
+  trackingNumber  String?   @map("tracking_number")
+  trackingUrl     String?   @map("tracking_url")
+  shippedAt       DateTime? @map("shipped_at")
+  deliveredAt     DateTime? @map("delivered_at")
+
   notes            String?
   internalNotes    String?       @map("internal_notes")
 
@@ -248,6 +262,7 @@ model Order {
   @@index([orderStatus])
   @@index([paymentStatus])
   @@index([createdAt])
+  @@index([customerId])
   @@map("orders")
 }
 

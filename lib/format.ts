@@ -22,3 +22,13 @@ export function imgSrc(url: string | null | undefined): string {
   if (/^https?:/i.test(url)) return url;
   return url;
 }
+
+/** "20 May 2026" format from an ISO string. Used on order pages. */
+export function dateShortFromIso(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
