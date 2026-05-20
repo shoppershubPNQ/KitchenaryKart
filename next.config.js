@@ -1,6 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Strip console.log from production bundles (errors/warnings stay).
+  // Trims a small amount of JS and silences noisy dev-only logging
+  // that occasionally leaks into client components.
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production'
+      ? { exclude: ['error', 'warn'] }
+      : false,
+  },
+  // Enable experimental package-import optimization so Tree-shaking
+  // works better for icon / utility libraries (no-op for libraries we
+  // don't use, but cheap insurance for the future).
+  experimental: {
+    optimizePackageImports: ['@vercel/analytics', '@vercel/speed-insights'],
+  },
   images: {
     // Admin serves product images at /images/{sku}/... via the website static server today,
     // but once this Next app runs on :3001 it needs to know where to load them from.

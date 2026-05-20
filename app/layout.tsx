@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { Montserrat, Roboto } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -8,11 +9,29 @@ import { PromoBar } from '@/components/PromoBar';
 import { Footer } from '@/components/Footer';
 import { FooterTrustUpper } from '@/components/FooterTrustUpper';
 import { WhatsAppFloat } from '@/components/WhatsAppFloat';
-import { DrawerMount } from '@/components/DrawerMount';
-import { SlideNav } from '@/components/SlideNav';
-import { AuthModal } from '@/components/AuthModal';
-import { WishlistDrawer } from '@/components/WishlistDrawer';
 import { getCategoryTree, getCategoryCounts } from '@/lib/products';
+
+// Modals / drawers — only render after user interaction (click cart,
+// click wishlist, etc.). Loading them via next/dynamic keeps ~1100
+// lines of client JS out of the initial bundle on every page. Each
+// component listens for a window event to open, so they show up
+// immediately on first user interaction after hydration.
+const DrawerMount = dynamic(
+  () => import('@/components/DrawerMount').then((m) => m.DrawerMount),
+  { ssr: false },
+);
+const WishlistDrawer = dynamic(
+  () => import('@/components/WishlistDrawer').then((m) => m.WishlistDrawer),
+  { ssr: false },
+);
+const SlideNav = dynamic(
+  () => import('@/components/SlideNav').then((m) => m.SlideNav),
+  { ssr: false },
+);
+const AuthModal = dynamic(
+  () => import('@/components/AuthModal').then((m) => m.AuthModal),
+  { ssr: false },
+);
 
 const montserrat = Montserrat({
   subsets: ['latin'],
