@@ -4,6 +4,7 @@
  * to the client `PrimaryNav`.
  */
 import Link from 'next/link';
+import Image from 'next/image';
 import { HeaderSearch } from './HeaderSearch';
 import { PrimaryNav } from './PrimaryNav';
 import { MobileNavToggle } from './MobileNavToggle';
@@ -22,7 +23,7 @@ export function Header({ categoryTree, categoryCounts }: Props) {
         <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] h-[72px] flex items-center gap-4 md:gap-6">
           <MobileNavToggle />
           <Link href="/" className="inline-flex items-center shrink-0">
-            <img src="/logo.png" alt="KitchenaryKart" className="h-[52px] w-auto" />
+            <Image src="/logo.png" alt="KitchenaryKart" width={163} height={52} priority className="h-[52px] w-auto" />
           </Link>
           <div className="flex-1 min-w-0">
             <HeaderSearch />
