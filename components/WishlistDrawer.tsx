@@ -6,9 +6,10 @@
  * (adds to the inquiry cart and removes from wishlist) plus a remove button.
  */
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { imgSrc, inr, letter } from '@/lib/format';
-import { addToCart } from '@/lib/cart';
+import { addToCart, openDrawer } from '@/lib/cart';
 import {
   WL_OPEN_EVT,
   removeFromWishlist,
@@ -17,7 +18,14 @@ import {
 
 export function WishlistDrawer() {
   const [open, setOpen] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const { items } = useWishlist();
+
+  // Clear the "Are you sure?" prompt whenever the drawer is closed or
+  // emptied — otherwise it can persist into a future open with no items.
+  useEffect(() => {
+    if (!open || items.length === 0) setConfirmClear(false);
+  }, [open, items.length]);
 
   useEffect(() => {
     const openHandler = () => setOpen(true);
@@ -98,10 +106,16 @@ export function WishlistDrawer() {
                 <Link
                   href={`/product/${encodeURIComponent(i.sku)}`}
                   onClick={() => setOpen(false)}
-                  className="w-14 h-14 rounded bg-cream overflow-hidden grid place-items-center font-head font-bold text-brand"
+                  className="relative w-14 h-14 rounded bg-cream overflow-hidden grid place-items-center font-head font-bold text-brand"
                 >
                   {i.imageUrl ? (
-                    <img src={imgSrc(i.imageUrl)} alt="" className="w-full h-full object-contain" />
+                    <Image
+                      src={imgSrc(i.imageUrl)}
+                      alt=""
+                      fill
+                      sizes="56px"
+                      className="object-contain p-1"
+                    />
                   ) : (
                     letter(i.name)
                   )}
@@ -115,26 +129,31 @@ export function WishlistDrawer() {
                     {i.name}
                   </Link>
                   <div className="text-[11.5px] text-muted mt-0.5">{i.sku}</div>
-                  <div className="flex items-center gap-3 mt-1.5">
+                  <div className="flex items-baseline gap-2 mt-1.5">
                     <span className="font-bold text-[14px] text-ink">{inr(i.price)}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        addToCart({
-                          sku: i.sku,
-                          name: i.name,
-                          price: i.price,
-                          mrp: i.mrp,
-                          imageUrl: i.imageUrl,
-                          category: i.category,
-                        });
-                        removeFromWishlist(i.sku);
-                      }}
-                      className="text-[11.5px] font-head font-bold tracking-wider uppercase text-brand hover:underline"
-                    >
-                      Move to cart
-                    </button>
+                    {i.mrp && i.mrp > i.price && (
+                      <span className="text-[11px] text-muted line-through">{inr(i.mrp)}</span>
+                    )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addToCart({
+                        sku: i.sku,
+                        name: i.name,
+                        price: i.price,
+                        mrp: i.mrp,
+                        imageUrl: i.imageUrl,
+                        category: i.category,
+                      });
+                      removeFromWishlist(i.sku);
+                      setOpen(false);
+                      openDrawer();
+                    }}
+                    className="text-[11.5px] font-head font-bold tracking-wider uppercase text-brand hover:underline mt-1"
+                  >
+                    Move to cart →
+                  </button>
                 </div>
                 <button
                   onClick={() => removeFromWishlist(i.sku)}
@@ -150,26 +169,61 @@ export function WishlistDrawer() {
         </div>
 
         {items.length > 0 && (
-          <div className="px-6 py-5 border-t border-line bg-bg-soft flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Remove all items from your wishlist?')) {
-                  // Remove one by one so the event fires and the list updates.
-                  for (const i of items) removeFromWishlist(i.sku);
-                }
-              }}
-              className="text-[12px] font-head font-bold tracking-wider uppercase text-muted hover:text-red-600 transition"
-            >
-              Clear all
-            </button>
-            <Link
-              href="/shop"
-              onClick={() => setOpen(false)}
-              className="btn-small btn-small-primary inline-flex items-center justify-center"
-            >
-              Continue shopping
-            </Link>
+          <div className="border-t border-line bg-bg-soft">
+            {confirmClear ? (
+              // Inline confirmation strip — replaces the native confirm()
+              // dialog so users don't get pulled out of the drawer flow.
+              <div className="px-6 py-4 flex items-center justify-between gap-3">
+                <span className="text-xs text-ink font-medium">Clear all items?</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClear(false)}
+                    className="text-xs font-semibold text-muted hover:text-ink px-2 py-1"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Remove one by one so the event fires and the list updates.
+                      for (const i of items) removeFromWishlist(i.sku);
+                      setConfirmClear(false);
+                    }}
+                    className="text-xs font-bold uppercase tracking-wider text-white bg-red-600 hover:bg-red-700 rounded px-3 py-1.5"
+                  >
+                    Remove all
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="px-6 py-5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/wishlist"
+                    onClick={() => setOpen(false)}
+                    className="text-[12px] font-head font-bold tracking-wider uppercase text-brand hover:underline"
+                  >
+                    View full page
+                  </Link>
+                  <span className="text-muted text-[11px]">·</span>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClear(true)}
+                    className="text-[12px] font-head font-bold tracking-wider uppercase text-muted hover:text-red-600 transition"
+                  >
+                    Clear all
+                  </button>
+                </div>
+                <Link
+                  href="/shop"
+                  onClick={() => setOpen(false)}
+                  className="btn-small btn-small-primary inline-flex items-center justify-center"
+                >
+                  Continue shopping
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </aside>

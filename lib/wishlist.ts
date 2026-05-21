@@ -93,10 +93,18 @@ export function openWishlist() {
   window.dispatchEvent(new CustomEvent(WL_OPEN_EVT));
 }
 
+/**
+ * Read the wishlist from localStorage. Starts as [] so SSR + first
+ * client render match (no localStorage on the server), then the
+ * effect populates the real value. Components that need to wait for
+ * the real data can check the `ready` flag.
+ */
 export function useWishlist() {
   const [items, setItems] = useState<WishlistItem[]>([]);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     setItems(read());
+    setReady(true);
     const h = () => setItems(read());
     window.addEventListener(WL_EVT, h);
     window.addEventListener('storage', h);
@@ -106,7 +114,7 @@ export function useWishlist() {
     };
   }, []);
   const count = items.length;
-  return { items, count };
+  return { items, count, ready };
 }
 
 export function useIsInWishlist(sku: string): boolean {

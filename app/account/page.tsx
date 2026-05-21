@@ -36,6 +36,9 @@ export default async function AccountPage() {
             <Link href="/account/orders" className="px-3 py-2 rounded hover:bg-white text-ink">
               My Orders
             </Link>
+            <Link href="/wishlist" className="px-3 py-2 rounded hover:bg-white text-ink">
+              Wishlist
+            </Link>
             <Link href="/shop" className="px-3 py-2 rounded hover:bg-white text-ink">
               Continue shopping
             </Link>

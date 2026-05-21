@@ -18,6 +18,7 @@ const ALLOWED_TAGS = new Set([
   'collections',
   'policies',
   'reels',
+  'reviews',
   'social',
 ]);
 

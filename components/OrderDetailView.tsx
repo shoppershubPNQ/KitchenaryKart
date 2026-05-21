@@ -7,11 +7,17 @@
  * from lib/orders.ts so this component never reaches the DB itself.
  */
 import Image from 'next/image';
+import Link from 'next/link';
 import { imgSrc, inr, dateShortFromIso } from '@/lib/format';
 import { OrderStatusTimeline, StatusPill } from './OrderStatusTimeline';
 import type { PublicOrder } from '@/lib/orders';
 
 export function OrderDetailView({ order }: { order: PublicOrder }) {
+  // Customers can leave reviews once the order has been shipped or
+  // delivered. The PDP's #reviews anchor opens the existing review
+  // CTA so we don't have to duplicate the auth/eligibility UI here.
+  const canReview =
+    order.orderStatus === 'shipped' || order.orderStatus === 'delivered';
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -109,6 +115,14 @@ export function OrderDetailView({ order }: { order: PublicOrder }) {
                 <div className="text-xs text-muted mt-1">
                   Qty {it.quantity} × {inr(it.unitPrice)}
                 </div>
+                {canReview && it.productSku && (
+                  <Link
+                    href={`/product/${encodeURIComponent(it.productSku)}#reviews`}
+                    className="inline-block text-[11px] font-semibold text-brand hover:underline mt-1.5"
+                  >
+                    Write a review →
+                  </Link>
+                )}
               </div>
               <div className="text-sm font-semibold text-ink shrink-0">
                 {inr(it.lineTotal)}

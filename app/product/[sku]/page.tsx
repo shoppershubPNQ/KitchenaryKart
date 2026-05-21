@@ -10,6 +10,8 @@ import { VariantSelector } from '@/components/VariantSelector';
 import { pseudoRating, Stars } from '@/lib/rating';
 import { imgSrc, inr, savingsPercent } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
+import { getReviewSummary, listReviews } from '@/lib/reviews';
+import { ReviewsSection } from '@/components/ReviewsSection';
 
 interface Params {
   params: { sku: string };
@@ -71,12 +73,21 @@ export default async function ProductPage({ params }: Params) {
   // Similar products — capped at 24 (was 40) to halve the payload. The
   // SimilarProducts UI shows 5 by default and "View all" expands the rest,
   // so 24 is still plenty of headroom.
-  const similar = p.category
-    ? await getSimilarProducts(p.category, p.sku, 24)
-    : [];
+  const [similar, reviewSummary, reviews] = await Promise.all([
+    p.category ? getSimilarProducts(p.category, p.sku, 24) : Promise.resolve([]),
+    getReviewSummary(p.sku),
+    listReviews(p.sku),
+  ]);
 
   const save = savingsPercent(displayPrice, displayMrp);
-  const rating = pseudoRating(p.sku);
+  // Show real review averages when at least one approved review exists.
+  // Fall back to pseudoRating only when the product has no real reviews
+  // yet — keeps cold-start products from looking like they have zero
+  // social proof.
+  const pseudo = pseudoRating(p.sku);
+  const rating = reviewSummary.count > 0
+    ? { stars: reviewSummary.average, count: reviewSummary.count }
+    : pseudo;
   const specs: Array<[string, string | null]> = [
     ['SKU', p.sku],
     ['Category', p.subcategory || p.category || null],
@@ -169,6 +180,13 @@ export default async function ProductPage({ params }: Params) {
           </div>
         </div>
       </div>
+
+      <ReviewsSection
+        productSku={p.sku}
+        productName={p.name}
+        summary={reviewSummary}
+        reviews={reviews}
+      />
 
       <SimilarProducts products={similar} />
     </>

@@ -128,6 +128,7 @@ model Product {
   variants        ProductVariant[]
   orderItems      OrderItem[]
   movements       InventoryMovement[]
+  reviews         Review[]
 
   @@index([category])
   @@index([status])
@@ -202,6 +203,7 @@ model Customer {
   updatedAt       DateTime     @updatedAt @map("updated_at")
 
   orders          Order[]
+  reviews         Review[]
 
   @@index([customerType])
   @@index([signupSource])
@@ -451,4 +453,31 @@ model Reel {
   @@index([position])
   @@index([isActive])
   @@map("reels")
+}
+
+/// Customer product reviews. Storefront reads + writes; admin moderates.
+/// See admin/prisma/schema.prisma for the full design comment.
+model Review {
+  id            Int       @id @default(autoincrement())
+  productSku    String    @map("product_sku")
+  productId     Int?      @map("product_id")
+  product       Product?  @relation(fields: [productId], references: [id])
+
+  customerId    Int       @map("customer_id")
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  customerName  String    @map("customer_name")
+
+  rating        Int
+  title         String?
+  body          String
+  isApproved    Boolean   @default(true) @map("is_approved")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([productSku, customerId], name: "review_sku_customer_unique")
+  @@index([productSku, isApproved])
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("reviews")
 }
