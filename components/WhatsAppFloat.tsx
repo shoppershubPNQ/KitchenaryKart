@@ -83,22 +83,29 @@ interface PopupProps {
 function ChatPopup({ waLink, onClose }: PopupProps) {
   const [custom, setCustom] = useState('');
 
+  // Friendlier brand-voice opener — every pre-fill leads with the
+  // same warm hello so the first message the customer sends always
+  // reads like a real introduction, not a templated query.
   const quickActions = [
     {
       label: 'Ask about a product',
-      msg: "Hi KitchenaryKart, I'd like to ask about a product. Could you help?",
+      msg:
+        'Hi 👋\nI came across Kitchenary Kart and would like to ask about a product. Could you help?',
     },
     {
       label: 'Bulk / B2B pricing',
-      msg: 'Hi, I need bulk pricing for a HORECA / restaurant setup. Can you share a quote?',
+      msg:
+        'Hi 👋\nI came across Kitchenary Kart and would like a bulk / B2B quote for my restaurant or cloud kitchen.',
     },
     {
       label: 'Track my order',
-      msg: "Hi, I'd like to check the status of my order. Order number: ",
+      msg:
+        'Hi 👋\nI placed an order with Kitchenary Kart and would like to check the status.\nOrder number: ',
     },
     {
       label: 'Something else',
-      msg: "Hi KitchenaryKart team, I have a question — could you help?",
+      msg:
+        'Hi 👋\nI came across Kitchenary Kart and would like to know more.',
     },
   ];
 
