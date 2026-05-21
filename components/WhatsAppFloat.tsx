@@ -150,9 +150,9 @@ function ChatPopup({ waLink, onClose }: PopupProps) {
         }}
       >
         {/* Greeting bubble */}
-        <div className="bg-white rounded-lg rounded-tl-none px-3 py-2 max-w-[85%] shadow-sm">
-          <div className="text-[13px] text-ink leading-snug">
-            Hi! 👋 How can we help you today?
+        <div className="bg-white rounded-lg rounded-tl-none px-3 py-2 max-w-[90%] shadow-sm">
+          <div className="text-[13px] text-ink leading-snug whitespace-pre-line">
+            {'👋 Welcome to Kitchenary Kart!\nBuild Your Dream Kitchen With Us.\nWe are ready to assist you 🚀'}
           </div>
           <div className="text-[10px] text-muted mt-1">KitchenaryKart Team</div>
         </div>
