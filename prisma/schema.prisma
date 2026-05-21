@@ -463,8 +463,8 @@ model Review {
   productId     Int?      @map("product_id")
   product       Product?  @relation(fields: [productId], references: [id])
 
-  customerId    Int       @map("customer_id")
-  customer      Customer  @relation(fields: [customerId], references: [id])
+  customerId    Int?      @map("customer_id")
+  customer      Customer? @relation(fields: [customerId], references: [id])
   customerName  String    @map("customer_name")
 
   rating        Int
