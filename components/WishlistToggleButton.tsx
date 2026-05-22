@@ -4,25 +4,32 @@
  * Standalone heart toggle used on the product detail page. Clicking it adds
  * the product to the wishlist or removes it; the icon fills when saved and
  * the label reflects the current state.
+ *
+ * The heart svg re-mounts on every click (key={tick}) so the
+ * kk-heart-pop CSS keyframe always re-fires — without the re-key,
+ * the animation would only play once per page load.
  */
+import { useState } from 'react';
 import { toggleWishlist, useIsInWishlist } from '@/lib/wishlist';
 import type { PublicProduct } from '@/lib/products';
 
 export function WishlistToggleButton({ product: p }: { product: PublicProduct }) {
   const saved = useIsInWishlist(p.sku);
+  const [tick, setTick] = useState(0);
   return (
     <button
       type="button"
       aria-pressed={saved}
-      onClick={() =>
+      onClick={() => {
         toggleWishlist({
           sku: p.sku,
           name: p.name,
           price: p.price,
           imageUrl: p.imageUrl,
           category: p.category,
-        })
-      }
+        });
+        setTick((t) => t + 1);
+      }}
       className={`btn flex-none inline-flex items-center gap-2 border-2 transition ${
         saved
           ? 'bg-brand/10 text-brand border-brand hover:bg-brand hover:text-white'
@@ -31,6 +38,8 @@ export function WishlistToggleButton({ product: p }: { product: PublicProduct })
       title={saved ? 'Remove from wishlist' : 'Add to wishlist'}
     >
       <svg
+        key={tick}
+        className={tick > 0 ? 'kk-heart-pop' : ''}
         viewBox="0 0 24 24"
         width="18"
         height="18"

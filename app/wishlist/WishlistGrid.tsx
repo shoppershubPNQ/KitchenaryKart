@@ -11,7 +11,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { imgSrc, inr, letter } from '@/lib/format';
 import { addToCart, openDrawer } from '@/lib/cart';
-import { removeFromWishlist, useWishlist } from '@/lib/wishlist';
+import { moveAllToCart, removeFromWishlist, useWishlist } from '@/lib/wishlist';
 
 export function WishlistGrid() {
   const { items, count } = useWishlist();
@@ -58,9 +58,27 @@ export function WishlistGrid() {
     );
   }
 
+  const subtotal = items.reduce((s, i) => s + i.price, 0);
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-5">
-      {items.map((i) => {
+    <>
+      {/* Action bar — subtotal + move-all primary action */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 bg-bg-soft rounded-lg px-4 py-3">
+        <div className="text-sm">
+          <span className="font-semibold text-ink">{count} item{count === 1 ? '' : 's'}</span>
+          <span className="text-muted"> · {inr(subtotal)} total</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => moveAllToCart()}
+          className="px-5 py-2 rounded-md bg-brand text-white font-head text-xs font-bold tracking-wider uppercase hover:opacity-90 transition"
+        >
+          Move all to cart →
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-5">
+        {items.map((i) => {
         const save =
           i.mrp && i.mrp > i.price
             ? Math.round(((i.mrp - i.price) / i.mrp) * 100)
@@ -135,6 +153,7 @@ export function WishlistGrid() {
           </div>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }

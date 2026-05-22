@@ -12,6 +12,7 @@ import { imgSrc, inr, letter } from '@/lib/format';
 import { addToCart, openDrawer } from '@/lib/cart';
 import {
   WL_OPEN_EVT,
+  moveAllToCart,
   removeFromWishlist,
   useWishlist,
 } from '@/lib/wishlist';
@@ -63,14 +64,21 @@ export function WishlistDrawer() {
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex justify-between items-center px-6 py-5 border-b border-line">
-          <h2 className="font-head text-lg font-bold flex items-center gap-2">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" className="text-brand">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-            Your wishlist
-            {items.length > 0 && <span className="text-muted font-normal text-sm">({items.length})</span>}
-          </h2>
+        <div className="flex justify-between items-start px-6 py-5 border-b border-line">
+          <div>
+            <h2 className="font-head text-lg font-bold flex items-center gap-2">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" className="text-brand">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              Your wishlist
+              {items.length > 0 && <span className="text-muted font-normal text-sm">({items.length})</span>}
+            </h2>
+            {items.length > 0 && (
+              <div className="text-[12px] text-muted mt-0.5">
+                {items.length} item{items.length === 1 ? '' : 's'} · {inr(items.reduce((s, i) => s + i.price, 0))} total
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -197,31 +205,45 @@ export function WishlistDrawer() {
                 </div>
               </div>
             ) : (
-              <div className="px-6 py-5 flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <Link
-                    href="/wishlist"
-                    onClick={() => setOpen(false)}
-                    className="text-[12px] font-head font-bold tracking-wider uppercase text-brand hover:underline"
-                  >
-                    View full page
-                  </Link>
-                  <span className="text-muted text-[11px]">·</span>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmClear(true)}
-                    className="text-[12px] font-head font-bold tracking-wider uppercase text-muted hover:text-red-600 transition"
-                  >
-                    Clear all
-                  </button>
-                </div>
-                <Link
-                  href="/shop"
-                  onClick={() => setOpen(false)}
-                  className="btn-small btn-small-primary inline-flex items-center justify-center"
+              <div className="px-6 py-5 space-y-3">
+                {/* Primary action — moves every wishlist item to cart in
+                    one shot, clears wishlist, opens cart drawer. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    moveAllToCart();
+                    setOpen(false);
+                  }}
+                  className="w-full px-4 py-2.5 rounded-md bg-brand text-white font-head text-[13px] font-bold tracking-wider uppercase hover:opacity-90 transition"
                 >
-                  Continue shopping
-                </Link>
+                  Move all to cart →
+                </button>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/wishlist"
+                      onClick={() => setOpen(false)}
+                      className="text-[12px] font-head font-bold tracking-wider uppercase text-brand hover:underline"
+                    >
+                      View full page
+                    </Link>
+                    <span className="text-muted text-[11px]">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmClear(true)}
+                      className="text-[12px] font-head font-bold tracking-wider uppercase text-muted hover:text-red-600 transition"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                  <Link
+                    href="/shop"
+                    onClick={() => setOpen(false)}
+                    className="text-[12px] font-head font-bold tracking-wider uppercase text-muted hover:text-ink transition"
+                  >
+                    Continue shopping
+                  </Link>
+                </div>
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@
  * stays local.
  */
 import { useEffect, useState } from 'react';
+import { addToCart, openDrawer } from './cart';
 
 export const STORE_KEY = 'kk_wishlist';
 export const WL_EVT = 'kk:wishlist-changed';
@@ -66,7 +67,38 @@ export function addToWishlist(p: {
 }
 
 export function removeFromWishlist(sku: string) {
-  write(read().filter((i) => i.sku !== sku));
+  const before = read();
+  if (!before.find((i) => i.sku === sku)) return;
+  write(before.filter((i) => i.sku !== sku));
+  showToast('Removed from wishlist');
+}
+
+/**
+ * Move every saved item into the cart in one shot, then clear the
+ * wishlist and open the cart drawer. Used by the "Move all to cart"
+ * button on both the side drawer and the full /wishlist page.
+ *
+ * Returns the number of items moved (0 if the wishlist was empty).
+ */
+export function moveAllToCart(): number {
+  const items = read();
+  if (items.length === 0) return 0;
+  for (const i of items) {
+    addToCart({
+      sku: i.sku,
+      name: i.name,
+      price: i.price,
+      mrp: i.mrp,
+      imageUrl: i.imageUrl,
+      category: i.category,
+    });
+  }
+  // Skip the per-item "Removed from wishlist" toast burst — one
+  // summary toast is plenty and the cart drawer will pop open anyway.
+  write([]);
+  showToast(`${items.length} item${items.length === 1 ? '' : 's'} moved to cart`);
+  openDrawer();
+  return items.length;
 }
 
 export function toggleWishlist(p: {

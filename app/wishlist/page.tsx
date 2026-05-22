@@ -14,8 +14,8 @@ export default function WishlistPage() {
       <div className="mb-8">
         <h1 className="font-head text-3xl text-ink">Your wishlist</h1>
         <p className="text-muted text-sm mt-1">
-          Saved items live in your browser — bookmark this page or sign in to
-          your account to keep them across devices.
+          Saved on this device. Items stay here until you remove them or clear
+          your browser data.
         </p>
       </div>
       <WishlistGrid />
