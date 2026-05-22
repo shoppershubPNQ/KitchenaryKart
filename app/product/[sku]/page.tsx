@@ -12,6 +12,7 @@ import { imgSrc, inr, savingsPercent } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
 import { getReviewSummary, listReviews } from '@/lib/reviews';
 import { ReviewsSection } from '@/components/ReviewsSection';
+import { buildProductJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld';
 
 interface Params {
   params: { sku: string };
@@ -88,6 +89,32 @@ export default async function ProductPage({ params }: Params) {
   const rating = reviewSummary.count > 0
     ? { stars: reviewSummary.average, count: reviewSummary.count }
     : pseudo;
+
+  // Structured data — Product + BreadcrumbList. Google parses these
+  // and shows the price, stock, and (real) review stars as a rich
+  // snippet under the search result. We pass the verified review
+  // count/average (NOT the pseudo rating) into buildProductJsonLd so
+  // we never expose fake stars to Google.
+  const productLd = buildProductJsonLd({
+    sku: p.sku,
+    name: p.name,
+    description: p.description,
+    category: p.category,
+    subcategory: p.subcategory,
+    hsnCode: p.hsnCode,
+    price: displayPrice,
+    mrp: displayMrp,
+    imageUrl: p.imageUrl,
+    images: p.images,
+    stock: p.stock,
+    reviewCount: reviewSummary.count,
+    reviewAverage: reviewSummary.average,
+  });
+  const breadcrumbLd = buildBreadcrumbJsonLd({
+    category: p.category,
+    productName: p.name,
+    productSku: p.sku,
+  });
   const specs: Array<[string, string | null]> = [
     ['SKU', p.sku],
     ['Category', p.subcategory || p.category || null],
@@ -101,6 +128,19 @@ export default async function ProductPage({ params }: Params) {
 
   return (
     <>
+      {/* schema.org JSON-LD — Product + BreadcrumbList. dangerouslySetInnerHTML
+          is the standard React way to emit a script body without escaping. */}
+      {productLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }}
+        />
+      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+
       <nav className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-4 text-xs text-muted flex items-center gap-2 flex-wrap">
         <Link href="/" className="hover:text-brand">Home</Link>
         <span className="opacity-60">/</span>

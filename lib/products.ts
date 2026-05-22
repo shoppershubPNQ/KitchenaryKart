@@ -13,6 +13,9 @@ export interface PublicProduct {
   id: number;
   sku: string;
   name: string;
+  /** Free-text product description from the admin. May be null for
+   *  catalog rows that were imported without copy. */
+  description: string | null;
   category: string | null;
   subcategory: string | null;
   leafCategory: string | null;
@@ -25,6 +28,9 @@ export interface PublicProduct {
   price: number;
   mrp: number | null;
   taxPercent: number;
+  /** Quantity in stock. 0 → out of stock. Drives JSON-LD availability
+   *  and could power "Out of stock" UI in the future. */
+  stock: number;
   imageUrl: string | null;
   images: string[];
   isBestseller: boolean;
@@ -69,6 +75,7 @@ function toPublic(p: any): PublicProduct {
     id: p.id,
     sku: p.sku,
     name: p.name,
+    description: p.description ?? null,
     category: p.category,
     subcategory: p.subcategory,
     leafCategory: p.leafCategory,
@@ -81,6 +88,7 @@ function toPublic(p: any): PublicProduct {
     price: Number(p.price),
     mrp: p.mrp ? Number(p.mrp) : null,
     taxPercent: Number(p.taxPercent),
+    stock: typeof p.stock === 'number' ? p.stock : 0,
     imageUrl: p.imageUrl,
     images: Array.isArray(p.images) ? (p.images as string[]) : [],
     isBestseller: Boolean(p.isBestseller),
@@ -93,6 +101,7 @@ const commonSelect = {
   id: true,
   sku: true,
   name: true,
+  description: true,
   category: true,
   subcategory: true,
   leafCategory: true,
@@ -105,6 +114,7 @@ const commonSelect = {
   price: true,
   mrp: true,
   taxPercent: true,
+  stock: true,
   imageUrl: true,
   images: true,
   isBestseller: true,
