@@ -13,6 +13,7 @@ import { CATEGORY_SHORT } from '@/lib/categories';
 import { getReviewSummary, listReviews } from '@/lib/reviews';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { buildProductJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld';
+import { PdpViewTracker } from '@/components/PdpViewTracker';
 
 interface Params {
   params: { sku: string };
@@ -139,6 +140,14 @@ export default async function ProductPage({ params }: Params) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+
+      {/* Fires Meta Pixel ViewContent + GA4 view_item once on mount */}
+      <PdpViewTracker
+        sku={p.sku}
+        name={p.name}
+        price={displayPrice}
+        category={p.category}
       />
 
       <nav className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-4 text-xs text-muted flex items-center gap-2 flex-wrap">

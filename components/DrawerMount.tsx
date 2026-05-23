@@ -22,6 +22,7 @@ import {
   useCart,
 } from '@/lib/cart';
 import { inr, imgSrc, letter } from '@/lib/format';
+import { trackInitiateCheckout } from '@/lib/analytics';
 
 /** Per-line savings = (MRP − price) × qty, when the product has an MRP > price. */
 function lineSavings(mrp: number | null, price: number, qty: number) {
@@ -252,7 +253,19 @@ export function DrawerMount() {
 
             <Link
               href="/checkout"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                // Meta Pixel InitiateCheckout + GA4 begin_checkout
+                trackInitiateCheckout({
+                  items: items.map((i) => ({
+                    sku: i.sku,
+                    name: i.name,
+                    price: i.price,
+                    quantity: i.qty,
+                  })),
+                  total,
+                });
+                setOpen(false);
+              }}
               className="block w-full text-center py-3 rounded bg-brand text-white font-head font-bold tracking-widest uppercase text-[13px] hover:bg-brand-dark transition"
             >
               Proceed to Buy ({count} {count === 1 ? 'item' : 'items'})

@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { clearCart, useCart } from '@/lib/cart';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import { imgSrc, inr, letter } from '@/lib/format';
+import { trackPurchase } from '@/lib/analytics';
 
 interface Address {
   name: string;
@@ -193,6 +194,23 @@ export default function CheckoutPage() {
             });
             const vd = await v.json().catch(() => ({}));
             if (!v.ok) throw new Error(vd?.error || 'Payment verification failed');
+            // Fire Purchase conversion BEFORE clearing cart so we still
+            // have the line items + total to report. Wrapped in
+            // try/catch so a flaky pixel never blocks the success state.
+            try {
+              trackPurchase({
+                orderNumber: data.orderNumber,
+                total: items.reduce((s, i) => s + i.price * i.qty, 0),
+                items: items.map((i) => ({
+                  sku: i.sku,
+                  name: i.name,
+                  price: i.price,
+                  quantity: i.qty,
+                })),
+              });
+            } catch (err) {
+              console.error('[kk:analytics] trackPurchase failed', err);
+            }
             clearCart();
             setDone({ id: data.orderId, orderNumber: data.orderNumber });
           } catch (e: any) {

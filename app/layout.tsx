@@ -9,6 +9,7 @@ import { PromoBar } from '@/components/PromoBar';
 import { Footer } from '@/components/Footer';
 import { FooterTrustUpper } from '@/components/FooterTrustUpper';
 import { WhatsAppFloat } from '@/components/WhatsAppFloat';
+import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 import { getCategoryTree, getCategoryCounts } from '@/lib/products';
 
 // Modals / drawers — only render after user interaction (click cart,
@@ -132,6 +133,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AuthModal />
         <Analytics />
         <SpeedInsights />
+        <AnalyticsScripts />
       </body>
     </html>
   );

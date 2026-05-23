@@ -5,6 +5,7 @@
  * window event so any listening component can refresh.
  */
 import { useEffect, useState } from 'react';
+import { trackAddToCart } from './analytics';
 
 export const STORE_KEY = 'kk_inquiry_cart';
 export const CART_EVT = 'kk:cart-changed';
@@ -64,6 +65,13 @@ export function addToCart(p: {
   }
   write(items);
   showToast('Added to cart');
+  trackAddToCart({
+    sku: p.sku,
+    name: p.name,
+    price: p.price,
+    category: p.category,
+    quantity: 1,
+  });
 }
 
 export function removeFromCart(sku: string) {
