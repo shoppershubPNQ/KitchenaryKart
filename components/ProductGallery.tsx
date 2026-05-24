@@ -48,7 +48,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
   return (
     <div className="flex flex-col-reverse gap-3 md:grid md:grid-cols-[80px_1fr]">
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-col md:max-h-[560px] md:overflow-y-auto md:overflow-x-visible md:pb-0 md:pr-1">
-        {imgs.map((u) => (
+        {imgs.map((u, i) => (
           <button
             key={u}
             type="button"
@@ -57,13 +57,41 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
               active === u ? 'border-brand' : 'border-line hover:border-gold'
             }`}
           >
-            <img src={imgSrc(u)} alt="" className="w-full h-full object-contain" />
+            {/* First thumb eager (it's the visible-active one on first
+                paint), rest lazy. width/height tell the browser the
+                intrinsic box so it can skip layout pass. */}
+            <img
+              src={imgSrc(u)}
+              alt=""
+              width={72}
+              height={72}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              className="w-full h-full object-contain"
+            />
           </button>
         ))}
       </div>
       <div className="relative bg-white border border-line rounded-lg aspect-square grid place-items-center overflow-hidden">
         <Overlay saved={saved} onSave={() => toggleWishlist({ sku, name, price, mrp, imageUrl, category })} onShare={share} copied={copied} />
-        {active && <img src={imgSrc(active)} alt={name} className="w-full h-full object-contain" />}
+        {active && (
+          // Main image is the LCP element on PDP. fetchpriority="high"
+          // tells the browser to download this BEFORE any below-the-fold
+          // image (similar products, etc.). The matching <link rel="preload">
+          // emitted from the page lets the browser start the request before
+          // the body parser even gets here.
+          <img
+            src={imgSrc(active)}
+            alt={name}
+            width={600}
+            height={600}
+            // eslint-disable-next-line @next/next/no-img-element
+            // @ts-expect-error -- fetchpriority is valid HTML but TS DOM types lag
+            fetchpriority="high"
+            decoding="sync"
+            className="w-full h-full object-contain"
+          />
+        )}
       </div>
     </div>
   );

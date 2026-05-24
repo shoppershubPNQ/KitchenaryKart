@@ -81,11 +81,13 @@ export default async function ProductPage({ params }: Params) {
   const mrpRatio = p.mrp && p.price > 0 ? Number(p.mrp) / p.price : 0;
   const displayMrp = mrpRatio > 1 ? Math.round(displayPrice * mrpRatio) : p.mrp;
 
-  // Similar products — capped at 24 (was 40) to halve the payload. The
-  // SimilarProducts UI shows 5 by default and "View all" expands the rest,
-  // so 24 is still plenty of headroom.
+  // Similar products — capped at 12 (was 24) to keep the PDP payload
+  // small. The SimilarProducts UI shows 5 by default and "View all"
+  // expands the rest, so 12 is plenty for the carousel without
+  // shipping a long JSON list + 12 product images down on every PDP
+  // request. Bigger lists were noticeably slowing the page on mobile.
   const [similar, reviewSummary, reviews] = await Promise.all([
-    p.category ? getSimilarProducts(p.category, p.sku, 24) : Promise.resolve([]),
+    p.category ? getSimilarProducts(p.category, p.sku, 12) : Promise.resolve([]),
     getReviewSummary(p.sku),
     listReviews(p.sku),
   ]);
@@ -138,6 +140,22 @@ export default async function ProductPage({ params }: Params) {
 
   return (
     <>
+      {/* Preload the LCP image (the gallery main) so the browser starts
+          fetching it before the body parser hits the <img> tag. Has to
+          be the same URL string the <img> ends up using — Next.js hoists
+          this <link> into <head> automatically. */}
+      {galleryImageUrl && (
+        <link
+          rel="preload"
+          as="image"
+          href={imgSrc(galleryImageUrl)}
+          // fetchpriority hints the network layer to send it first
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore -- fetchpriority is valid but TS DOM types lag
+          fetchPriority="high"
+        />
+      )}
+
       {/* schema.org JSON-LD — Product + BreadcrumbList. dangerouslySetInnerHTML
           is the standard React way to emit a script body without escaping. */}
       {productLd && (
