@@ -51,6 +51,10 @@ export interface PublicVariant {
   axisValues: Record<string, string> | string; // string for 1-axis, object for multi-axis
   price: number;
   stock: number;
+  /** Optional per-variant image. When set, the PDP swaps the main
+   *  gallery image to this on variant select. Null means inherit
+   *  from the parent product. */
+  imageUrl: string | null;
 }
 
 export interface PublicProductWithVariants extends PublicProduct {
@@ -295,12 +299,13 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
   if (!p) return null;
 
   const parentPrice = Number(p.price);
-  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; stock: number }> | undefined)?.map((v) => ({
+  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; stock: number; imageUrl: string | null }> | undefined)?.map((v) => ({
     sku: v.skuSuffix ?? '',
     variantType: v.variantType ?? 'Variant',
     axisValues: parseAxisValues(v.variantType ?? '', v.variantValue),
     price: parentPrice + Number(v.priceModifier ?? 0),
     stock: v.stock,
+    imageUrl: v.imageUrl ?? null,
   })) ?? [];
 
   // strip variants from the toPublic input to avoid leaking raw rows
