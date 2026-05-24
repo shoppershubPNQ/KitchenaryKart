@@ -136,6 +136,88 @@ export async function getAllActiveProducts(): Promise<PublicProduct[]> {
 }
 
 /**
+ * Shop-grid + sitemap + search source.
+ *
+ * Returns a flattened list where every product variant appears as
+ * its own row (Amazon-style independent variation listings), while
+ * variant-less products show up as the parent. Each variant inherits
+ * the parent's category / subcategory / hsnCode / keywords but
+ * overrides sku / price / mrp / stock / imageUrl / name so it can be
+ * searched, indexed and displayed independently.
+ *
+ * Composed name: "<parent.name> — <variant.variantValue>" so search
+ * by either parent name OR the variant qualifier resolves the right
+ * card.
+ *
+ * Parents with at least one variant are HIDDEN from the result (the
+ * variants represent them). Without this, customers would see a
+ * "Chocolate Mealting Machine" tile next to "Chocolate Mealting
+ * Machine — 2 Compartment" and "Chocolate Mealting Machine — 3
+ * Compartment" — three tiles for one product line.
+ */
+export async function getAllShopProducts(): Promise<PublicProduct[]> {
+  const rows = await prisma.product.findMany({
+    where: { status: 'active' },
+    orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    select: { ...commonSelect, variants: true },
+  });
+
+  const out: PublicProduct[] = [];
+
+  for (const row of rows) {
+    const parent = toPublic(row);
+    const variants = (row as any).variants as
+      | Array<{
+          variantType: string | null;
+          variantValue: string | null;
+          skuSuffix: string | null;
+          priceModifier: unknown;
+          stock: number;
+          imageUrl: string | null;
+        }>
+      | undefined;
+
+    if (!variants || variants.length === 0) {
+      // No variants — parent is the searchable product.
+      out.push(parent);
+      continue;
+    }
+
+    // Scale MRP by the variant's price ratio so the SAVE % stays
+    // consistent across variants (mirrors the PDP's mrpRatio logic).
+    const parentPrice = parent.price;
+    const mrpRatio =
+      parent.mrp && parentPrice > 0 ? Number(parent.mrp) / parentPrice : 0;
+
+    for (const v of variants) {
+      if (!v.skuSuffix) continue; // skip malformed rows
+      const variantPrice = parentPrice + Number(v.priceModifier ?? 0);
+      const variantMrp =
+        mrpRatio > 1 ? Math.round(variantPrice * mrpRatio) : parent.mrp;
+      const qualifier = (v.variantValue || '').trim();
+      const composedName = qualifier
+        ? `${parent.name} — ${qualifier}` // em-dash
+        : parent.name;
+
+      out.push({
+        ...parent,
+        sku: v.skuSuffix,
+        name: composedName,
+        price: variantPrice,
+        mrp: variantMrp,
+        stock: v.stock,
+        imageUrl: v.imageUrl ?? parent.imageUrl,
+        // images stays as parent's gallery — variant.imageUrl is just
+        // the primary; the rest of the gallery (specs photos, etc.)
+        // are still shared across variants on the PDP.
+      });
+    }
+  }
+
+  return out;
+}
+
+/**
  * Data bundle the home page needs. Targeted queries instead of pulling the
  * full catalog — each is capped at 8–12 rows so the response payload stays
  * small.

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAllActiveProducts, getCategoryCounts } from '@/lib/products';
+import { getAllShopProducts, getCategoryCounts } from '@/lib/products';
 import { getCollections } from '@/lib/collections';
 import { ShopView } from '@/components/ShopView';
 
@@ -22,9 +22,12 @@ export default async function ShopPage({
 }) {
   const collectionSlug = searchParams?.collection;
   const [products, counts, collections] = await Promise.all([
-    getAllActiveProducts(),
+    // Shop list is variant-aware: variants of the same parent appear
+    // as separate cards (Amazon-style) so each is individually
+    // searchable + shoppable. See lib/products.getAllShopProducts.
+    getAllShopProducts(),
     getCategoryCounts(),
-        getCollections(),
+    getCollections(),
   ]);
 
   // When the URL carries `?collection=bestsellers` (or `new-arrivals`),

@@ -12,14 +12,16 @@
  * the site is verified there — it accelerates discovery of new SKUs.
  */
 import type { MetadataRoute } from 'next';
-import { getAllActiveProducts, getCategoryTree } from '@/lib/products';
+import { getAllShopProducts, getCategoryTree } from '@/lib/products';
 import { getActivePolicies } from '@/lib/policies';
 
 const BASE_URL = 'https://kitchenarykart.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Variant-aware list: each variant SKU gets its own sitemap entry
+  // so Google can crawl and rank them independently.
   const [products, categoryTree, policies] = await Promise.all([
-    getAllActiveProducts(),
+    getAllShopProducts(),
     getCategoryTree(),
     getActivePolicies(),
   ]);
