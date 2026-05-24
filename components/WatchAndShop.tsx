@@ -221,13 +221,16 @@ function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
         <Link href={href} className="flex items-center gap-2.5 p-3 hover:bg-bg-soft transition">
           <div className="w-9 h-9 rounded-full bg-bg-soft grid place-items-center overflow-hidden shrink-0">
             {product.imageUrl ? (
-              <Image
+              // Reverted from next/image 2026-05-23 — same /images/*
+              // optimisation issue that broke CategoryTiles / ProductCard
+              // in production. Plain <img> with explicit w/h avoids it.
+              <img
                 src={imgSrc(product.imageUrl)}
                 alt=""
                 width={36}
                 height={36}
-                className="w-full h-full object-contain"
                 loading="lazy"
+                className="w-full h-full object-contain"
               />
             ) : (
               <span className="text-sm font-head font-black text-brand opacity-60">
@@ -262,14 +265,13 @@ function renderProductCard(p: PublicProduct, i: number) {
         style={{ background: 'linear-gradient(180deg, #F5E6CF 0%, #E6C8A8 100%)' }}
       >
         {p.imageUrl ? (
-          <Image
+          // Reverted from next/image 2026-05-23 — same /images/* issue.
+          <img
             src={imgSrc(p.imageUrl)}
             alt={p.name}
-            fill
-            sizes="(max-width: 768px) 45vw, 200px"
+            loading="lazy"
             className="kk-reel-img absolute inset-0 w-full h-full object-cover"
             style={{ animationDelay: `${i * -2.25}s` }}
-            loading="lazy"
           />
         ) : (
           <span className="absolute inset-0 grid place-items-center text-7xl font-head font-black text-brand/40">
@@ -310,13 +312,14 @@ function renderProductCard(p: PublicProduct, i: number) {
       <Link href={href} className="flex items-center gap-2.5 p-3 hover:bg-bg-soft transition">
         <div className="w-9 h-9 rounded-full bg-bg-soft grid place-items-center overflow-hidden shrink-0">
           {p.imageUrl ? (
-            <Image
+            // Reverted from next/image 2026-05-23.
+            <img
               src={imgSrc(p.imageUrl)}
               alt=""
               width={36}
               height={36}
-              className="w-full h-full object-contain"
               loading="lazy"
+              className="w-full h-full object-contain"
             />
           ) : (
             <span className="text-sm font-head font-black text-brand opacity-60">

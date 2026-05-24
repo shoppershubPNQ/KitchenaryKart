@@ -6,7 +6,6 @@
  * Server component — receives the already-loaded public-safe data
  * from lib/orders.ts so this component never reaches the DB itself.
  */
-import Image from 'next/image';
 import Link from 'next/link';
 import { imgSrc, inr, dateShortFromIso } from '@/lib/format';
 import { OrderStatusTimeline, StatusPill } from './OrderStatusTimeline';
@@ -90,14 +89,16 @@ export function OrderDetailView({ order }: { order: PublicOrder }) {
         <ul className="divide-y divide-line">
           {order.items.map((it, idx) => (
             <li key={`${it.productSku}-${idx}`} className="flex gap-4 p-4">
-              <div className="relative w-16 h-16 rounded bg-bg-soft overflow-hidden shrink-0">
+              <div className="w-16 h-16 rounded bg-bg-soft overflow-hidden shrink-0 grid place-items-center">
                 {it.imageUrl ? (
-                  <Image
+                  // Reverted from next/image 2026-05-23 — same /images/* issue.
+                  <img
                     src={imgSrc(it.imageUrl)}
                     alt={it.productName}
-                    fill
-                    sizes="64px"
-                    className="object-contain p-1"
+                    width={64}
+                    height={64}
+                    loading="lazy"
+                    className="w-full h-full object-contain p-1"
                   />
                 ) : (
                   <div className="w-full h-full grid place-items-center text-xs text-muted">
