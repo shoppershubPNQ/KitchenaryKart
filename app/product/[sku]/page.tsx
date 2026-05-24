@@ -80,14 +80,27 @@ export default async function ProductPage({ params }: Params) {
   const selectedVariant = p.variants.find((v) => v.sku === requestedSku);
   const displayPrice = selectedVariant?.price ?? p.price;
 
-  // If the selected variant has its own image, swap it into the gallery
-  // as the primary. Falls back to the parent product's image when the
-  // variant doesn't have one — most variants share the same photo.
+  // Variant-aware gallery resolution:
+  //   1. If the variant has its own images[] populated, use that
+  //      ENTIRELY as the gallery (variant has dedicated photoshoot).
+  //   2. Otherwise, if the variant has just an imageUrl, prepend it
+  //      to the parent's gallery (variant shares the parent's other
+  //      angles but has a distinct primary).
+  //   3. Otherwise, fall back to the parent's gallery as-is.
+  const variantImages = selectedVariant?.images ?? [];
   const variantImage = selectedVariant?.imageUrl ?? null;
-  const galleryImageUrl = variantImage ?? p.imageUrl;
-  const galleryImages = variantImage
-    ? [variantImage, ...p.images.filter((u) => u !== variantImage)]
-    : p.images;
+  let galleryImageUrl: string | null;
+  let galleryImages: string[];
+  if (variantImages.length > 0) {
+    galleryImageUrl = variantImage ?? variantImages[0];
+    galleryImages = variantImages;
+  } else if (variantImage) {
+    galleryImageUrl = variantImage;
+    galleryImages = [variantImage, ...p.images.filter((u) => u !== variantImage)];
+  } else {
+    galleryImageUrl = p.imageUrl;
+    galleryImages = p.images;
+  }
 
   // MRP shown on the page should match the variant's price (so the "SAVE %"
   // stays consistent across variants). We scale the parent's MRP by the
