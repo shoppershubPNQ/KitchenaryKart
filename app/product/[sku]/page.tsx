@@ -14,6 +14,7 @@ import { getReviewSummary, listReviews } from '@/lib/reviews';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { buildProductJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld';
 import { PdpViewTracker } from '@/components/PdpViewTracker';
+import { ScrollToTopOnMount } from '@/components/ScrollToTopOnMount';
 
 interface Params {
   params: { sku: string };
@@ -216,6 +217,12 @@ export default async function ProductPage({ params }: Params) {
         price={displayPrice}
         category={p.category}
       />
+
+      {/* Force scroll-to-top on every PDP entry / inter-PDP navigation
+          so buyers never land at the footer when coming from a long
+          shop list. Pathname-aware: also resets when clicking a
+          Similar Product card from inside another PDP. */}
+      <ScrollToTopOnMount />
 
       <nav className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-4 text-xs text-muted flex items-center gap-2 flex-wrap">
         <Link href="/" className="hover:text-brand">Home</Link>
