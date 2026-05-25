@@ -15,6 +15,7 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { buildProductJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld';
 import { PdpViewTracker } from '@/components/PdpViewTracker';
 import { ScrollToTopOnMount } from '@/components/ScrollToTopOnMount';
+import { PdpTrustBadges } from '@/components/PdpTrustBadges';
 
 interface Params {
   params: { sku: string };
@@ -276,9 +277,15 @@ export default async function ProductPage({ params }: Params) {
               </span>
             )}
           </div>
-          <p className="text-xs text-muted mt-2 mb-6">
+          <p className="text-xs text-muted mt-2 mb-2">
             Price is inclusive of GST. Ex-works price available for bulk orders.
           </p>
+
+          {/* Trust badges — sit directly under the price so buyers see
+              GST/ITC, shipping, payment safety, returns, WhatsApp before
+              they even look at the variant selector. Highest-conversion
+              real estate on the PDP. */}
+          <PdpTrustBadges />
 
           {p.variants.length > 1 && (
             <VariantSelector variants={p.variants} currentSku={requestedSku} />
