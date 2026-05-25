@@ -297,14 +297,17 @@ export default async function ProductPage({ params }: Params) {
         </div>
       </div>
 
+      {/* Section order: Similar Products first (encourages cross-sell while
+          the buyer is still in browse mode), then Customer Reviews (read
+          before final decision). Matches Amazon / Flipkart PDP convention. */}
+      <SimilarProducts products={similar} />
+
       <ReviewsSection
         productSku={p.sku}
         productName={p.name}
         summary={reviewSummary}
         reviews={reviews}
       />
-
-      <SimilarProducts products={similar} />
     </>
   );
 }
