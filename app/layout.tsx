@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Montserrat, Roboto } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/react';
+import { AnalyticsWithBotFilter } from '@/components/AnalyticsWithBotFilter';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { Header } from '@/components/Header';
@@ -131,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <WishlistDrawer />
         <SlideNav tree={tree} />
         <AuthModal />
-        <Analytics />
+        <AnalyticsWithBotFilter />
         <SpeedInsights />
         <AnalyticsScripts />
       </body>
