@@ -42,8 +42,12 @@ export async function GET(req: NextRequest) {
       Math.max(1, parseInt(url.searchParams.get('limit') || '6', 10)),
     );
 
-    // Empty query → empty hits. Don't return the entire catalog by accident.
-    if (q.length < 2) {
+    // Min 3 chars. Was 2, raised to 3 because 2-char queries match too
+    // much ("le", "ba", "ic") — high DB cost, low autocomplete value.
+    // Also protects Neon's network-transfer quota: each query returns
+    // up to 6 rows × ~200 bytes = ~1.2 KB; 3-char minimum cuts the
+    // request frequency roughly in half vs 2-char.
+    if (q.length < 3) {
       return NextResponse.json({ q, hits: [] as SearchHit[] });
     }
 

@@ -12,8 +12,12 @@ interface SearchHit {
   category: string | null;
 }
 
-const DEBOUNCE_MS = 200;
-const MIN_CHARS = 2;
+// Higher debounce (was 200) so a fast typer doesn't fire a request
+// per keystroke — only after they stop typing for ~300ms. Combined
+// with MIN_CHARS=3 this roughly halves the DB query rate vs the
+// original config without hurting perceived snappiness.
+const DEBOUNCE_MS = 300;
+const MIN_CHARS = 3;
 
 /**
  * Live-autocomplete search input.

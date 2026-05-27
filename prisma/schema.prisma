@@ -257,6 +257,7 @@ model Order {
   trackingUrl     String?   @map("tracking_url")
   shippedAt       DateTime? @map("shipped_at")
   deliveredAt     DateTime? @map("delivered_at")
+  contactedAt     DateTime? @map("contacted_at")
 
   notes            String?
   internalNotes    String?       @map("internal_notes")
