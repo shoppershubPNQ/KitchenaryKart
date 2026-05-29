@@ -83,6 +83,18 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ id?: number; orderNumber?: string } | null>(null);
 
+  // Coupon state. `applied` holds the server-validated result; the
+  // binding discount is recomputed at checkout regardless, so this is
+  // just for live preview.
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    message: string;
+  } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!customer) return;
     setAddress((prev) => ({
@@ -114,8 +126,91 @@ export default function CheckoutPage() {
       ),
     [items],
   );
-  const youPay = total;
-  const savings = Math.max(subtotal - youPay, 0);
+  // `total` (from useCart) is the selling-price sum — the same value
+  // the backend recomputes as its `subtotal`. The coupon discount
+  // applies on top of that.
+  const couponDiscount = appliedCoupon?.discountAmount ?? 0;
+  const youPay = Math.max(0, total - couponDiscount);
+  const savings = Math.max(subtotal - total, 0);
+
+  // Re-validate a previously applied coupon when the cart total changes
+  // (e.g. customer edits qty in another tab). Clears it if it no longer
+  // qualifies. Skips when nothing's applied.
+  useEffect(() => {
+    if (!appliedCoupon) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/coupons/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: appliedCoupon.code,
+            subtotal: total,
+            phone: address.phone || customer?.phone || '',
+          }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.valid) {
+          setAppliedCoupon({
+            code: data.coupon.code,
+            discountAmount: data.discountAmount,
+            message: data.message,
+          });
+        } else {
+          setAppliedCoupon(null);
+          setCouponError(data.message || 'Coupon no longer applies.');
+        }
+      } catch {
+        /* leave as-is on transient error */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total]);
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponBusy(true);
+    setCouponError(null);
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          subtotal: total,
+          phone: address.phone || customer?.phone || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon({
+          code: data.coupon.code,
+          discountAmount: data.discountAmount,
+          message: data.message,
+        });
+        setCouponInput('');
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(data.message || 'This coupon is not valid.');
+      }
+    } catch {
+      setCouponError('Could not check the coupon. Please try again.');
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    setCouponInput('');
+  }
 
   function fullAddress(a: Address): string {
     return [a.line1, a.city, a.state, a.postalCode].filter(Boolean).join(', ');
@@ -151,6 +246,7 @@ export default function CheckoutPage() {
           customerEmail: customer.email || '',
           customerPhone: address.phone || customer.phone || '',
           shippingAddress: `${address.name} · ${address.phone}\n${fullAddress(address)}`,
+          couponCode: appliedCoupon?.code || null,
           items: items.map((i) => ({
             sku: i.sku,
             name: i.name,
@@ -482,6 +578,83 @@ export default function CheckoutPage() {
                 </span>
               </label>
             </section>
+
+            {/* Coupon */}
+            <section className="border border-line rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3 text-ink">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" className="text-brand">
+                  <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
+                  <path d="M4 6v12a2 2 0 0 0 2 2h14v-4" />
+                  <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                </svg>
+                <span className="font-semibold text-[14px]">Have a coupon?</span>
+              </div>
+
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded border border-success bg-success/5">
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-bold text-ink font-mono">
+                      {appliedCoupon.code}
+                    </span>
+                    <span className="block text-[12px] text-success">
+                      {appliedCoupon.message}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                    className="text-[12px] font-semibold text-red-600 hover:text-red-700 shrink-0"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError(null);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), applyCoupon())}
+                      placeholder="Enter code"
+                      className="flex-1 min-w-0 px-3 py-2 border border-line rounded-md text-sm font-mono uppercase focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={couponBusy || !couponInput.trim()}
+                      className="px-4 py-2 rounded-md bg-brand text-white text-sm font-semibold hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
+                    >
+                      {couponBusy ? '…' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-[12px] text-red-600 mt-2">{couponError}</p>
+                  )}
+                </>
+              )}
+            </section>
+
+            {/* Price breakdown */}
+            <div className="border-t border-line pt-3 space-y-1.5 text-[13.5px]">
+              <div className="flex justify-between text-ink-soft">
+                <span>Subtotal</span>
+                <span>{inr(total)}</span>
+              </div>
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-success font-medium">
+                  <span>Coupon ({appliedCoupon?.code})</span>
+                  <span>−{inr(couponDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-ink font-head font-bold text-base pt-1">
+                <span>Total</span>
+                <span>{inr(youPay)}</span>
+              </div>
+            </div>
 
             <label className="flex items-center gap-2 text-[13px] text-ink cursor-pointer">
               <input
