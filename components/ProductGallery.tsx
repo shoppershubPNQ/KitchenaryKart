@@ -72,13 +72,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
           </button>
         ))}
       </div>
-      {/* Main image container — square shape preserved, object-contain
-          preserves source aspect ratio (no cropping). max-w caps the
-          rendered size so portrait/tall product photos don't make the
-          gallery dominate the viewport; mx-auto centers it inside the
-          grid column when capped. Buyers see the WHOLE product, not a
-          stretched or oversized version. */}
-      <div className="relative bg-white border border-line rounded-lg aspect-square grid place-items-center overflow-hidden max-w-[520px] mx-auto w-full">
+      <div className="relative bg-white border border-line rounded-lg aspect-square grid place-items-center overflow-hidden">
         <Overlay saved={saved} onSave={() => toggleWishlist({ sku, name, price, mrp, imageUrl, category })} onShare={share} copied={copied} />
         {active && (
           // Main image is the LCP element on PDP. fetchpriority="high"
