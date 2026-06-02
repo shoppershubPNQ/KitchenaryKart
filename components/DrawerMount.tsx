@@ -23,6 +23,7 @@ import {
 } from '@/lib/cart';
 import { inr, imgSrc, letter } from '@/lib/format';
 import { trackInitiateCheckout } from '@/lib/analytics';
+import { CartShippingNudge } from './CartShippingNudge';
 
 /** Per-line savings = (MRP − price) × qty, when the product has an MRP > price. */
 function lineSavings(mrp: number | null, price: number, qty: number) {
@@ -85,6 +86,12 @@ export function DrawerMount() {
       >
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Free-shipping progress nudge — first thing the buyer sees
+              on opening the cart. Auto-hides on empty cart. AOV-lift
+              pattern (15-25% typical) — surfaces the free-shipping
+              benefit + the concrete ₹ amount needed to reach it. */}
+          <CartShippingNudge subtotal={total} itemCount={count} />
+
           {/* Cart items card */}
           <section className="bg-white rounded-lg p-4">
             <div className="flex justify-between items-center mb-3">

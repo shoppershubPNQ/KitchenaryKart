@@ -63,7 +63,7 @@ const BADGES: Badge[] = [
   },
   {
     label: 'Free Shipping',
-    sub: 'Orders above ₹5,000',
+    sub: 'Orders above ₹3,000',
     icon: (
       <svg viewBox="0 0 24 24" {...ICON_PROPS}>
         <rect x="1" y="3" width="15" height="13" />
