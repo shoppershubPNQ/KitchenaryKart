@@ -1,4 +1,98 @@
-export function TrustStrip(){
-return(<section className="bg-bg-soft border-y border-line mt-10 py-9"><div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] grid grid-cols-4 gap-3 md:gap-8"><Item label="10,000+ Happy Customers" sub="Trusted by restaurants & hotels" svg={<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}/><Item label="Pan-India Delivery" sub="Worldwide export available" svg={<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>}/><Item label="Best Price Guaranteed" sub="Honest bulk pricing" svg={<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}/><Item label="100% Secure Payments" sub="Encrypted & GST invoiced" svg={<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}/></div></section>);}
-function Item({label,sub,svg}:{label:string;sub:string;svg:React.ReactNode}){
-return(<div className="flex flex-col items-center gap-2 text-center md:flex-row md:items-center md:text-left md:gap-4"><div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white border border-line grid place-items-center text-brand shrink-0">{svg}</div><div className="min-w-0"><div className="font-head font-bold text-[12px] md:text-[15px] text-ink leading-tight">{label}</div><div className="hidden md:block text-xs text-muted mt-0.5">{sub}</div></div></div>);}
+/**
+ * Home-page trust strip shown below the hero. Four short, defensible
+ * brand claims — all wording chosen to be either VERIFIABLE or
+ * UNFALSIFIABLE (no specific numeric overclaim that could be
+ * challenged).
+ *
+ * Earlier copy ("10,000+ Happy Customers", "Worldwide export available")
+ * was removed because:
+ *   - "10,000+" is unverifiable and inconsistent with the brand-level
+ *     PromoBar that says "200+ HORECA clients". Two different numeric
+ *     claims on the same page = credibility hit.
+ *   - "Worldwide export available" was untrue at time of writing
+ *     (no live export workflow). Replaced with the active threshold.
+ *   - "Best Price Guaranteed" replaced with "Direct Brand Pricing"
+ *     which is defensible (no middleman) rather than absolute.
+ */
+export function TrustStrip() {
+  const items = [
+    {
+      label: 'Trusted by Indian Chefs',
+      sub: 'Restaurants, hotels & cloud kitchens',
+      svg: (
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Pan-India Delivery',
+      sub: 'Free shipping above ₹3,000',
+      svg: (
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="1" y="3" width="15" height="13" />
+          <path d="M16 8h4l3 3v5h-7V8z" />
+          <circle cx="5.5" cy="18.5" r="2.5" />
+          <circle cx="18.5" cy="18.5" r="2.5" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Direct Brand Pricing',
+      sub: 'No middleman markup',
+      svg: (
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+      ),
+    },
+    {
+      label: '100% Secure Payments',
+      sub: 'Encrypted & GST invoiced',
+      svg: (
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <section className="bg-bg-soft border-y border-line mt-10 py-9">
+      <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] grid grid-cols-4 gap-3 md:gap-8">
+        {items.map((i) => (
+          <Item key={i.label} label={i.label} sub={i.sub} svg={i.svg} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Item({
+  label,
+  sub,
+  svg,
+}: {
+  label: string;
+  sub: string;
+  svg: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 text-center md:flex-row md:items-center md:text-left md:gap-4">
+      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white border border-line grid place-items-center text-brand shrink-0">
+        {svg}
+      </div>
+      <div className="min-w-0">
+        <div className="font-head font-bold text-[12px] md:text-[15px] text-ink leading-tight">
+          {label}
+        </div>
+        <div className="hidden md:block text-xs text-muted mt-0.5">{sub}</div>
+      </div>
+    </div>
+  );
+}
