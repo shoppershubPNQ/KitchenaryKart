@@ -38,6 +38,26 @@ const nextConfig = {
       { source: '/admin-api/:path*', destination: `${adminBase}/api/:path*` },
     ];
   },
+  async redirects() {
+    // Legacy policy URLs (no /policy prefix) that Google indexed before
+    // the /policy/[slug] structure was introduced. Permanent (301) so
+    // search engines update their index and pass the link equity through
+    // to the live pages. Fixes 404s like:
+    //   kitchenarykart.com/pricing-policy → /policy/pricing-policy
+    const policySlugs = [
+      'privacy-policy',
+      'terms-and-conditions',
+      'refund-policy',
+      'pricing-policy',
+      'cancellation-policy',
+      'shipping-policy',
+    ];
+    return policySlugs.map((slug) => ({
+      source: `/${slug}`,
+      destination: `/policy/${slug}`,
+      permanent: true,
+    }));
+  },
 };
 
 module.exports = nextConfig;
