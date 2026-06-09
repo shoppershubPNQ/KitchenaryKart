@@ -151,6 +151,102 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     closing:
       'Setting up a café or bar? WhatsApp +91 98903 52455 for a complete beverage-station list.',
   },
+  {
+    slug: 'housekeeping',
+    category: 'HOUSEKEEPING & ROOM ESSENTIALS',
+    title: 'Hotel Housekeeping & Room Essentials',
+    h1: 'Hotel Housekeeping & Room Essentials',
+    metaDescription:
+      'Shop hotel housekeeping and room essentials — service trolleys, soap dispensers, queue managers, signage, kettles and more. GST invoice and pan-India delivery.',
+    intro: [
+      'Housekeeping and front-of-house essentials keep a hotel, office or facility running smoothly behind the scenes. From service and luggage trolleys to soap dispensers, queue managers, signage and in-room amenities, this range covers the everyday equipment that guests notice when it is missing.',
+      'Kitchenary Kart supplies durable housekeeping and room essentials to hotels, banquet halls, offices and facilities across India, with a GST invoice on every order and pan-India delivery.',
+    ],
+    considerations: {
+      heading: 'What to look for in housekeeping equipment',
+      items: [
+        'Trolleys — match the type (service, luggage, cleaning) and load capacity to your operation',
+        'Durability — high-traffic facilities need equipment that survives daily use',
+        'Hygiene — touch-free soap dispensers and hand dryers for guest-facing washrooms',
+        'Presentation — signage, queue managers and display boards that look professional',
+        'In-room amenities — kettles, trays, hangers and tissue holders that match your standard',
+      ],
+    },
+    closing:
+      'Outfitting a hotel or facility? WhatsApp +91 98903 52455 for bulk housekeeping pricing.',
+  },
+  {
+    slug: 'accessories',
+    category: 'ACCESSORIES',
+    title: 'Commercial Kitchen Accessories & Tools',
+    h1: 'Commercial Kitchen Accessories & Tools',
+    metaDescription:
+      'Shop commercial kitchen accessories and tools — knives, cutters, moulds, scoops, thermometers, woks, piping nozzles and more. GST invoice, pan-India delivery.',
+    intro: [
+      'The right small wares make a professional kitchen faster and more consistent. This range covers the tools chefs and bakers reach for every day — knives, cutters, moulds, scoops, lifters, thermometers, woks, cast-iron pans, piping nozzles, cream whippers and more.',
+      'Kitchenary Kart stocks commercial-grade kitchen accessories and tools for restaurants, bakeries, cafés and cloud kitchens nationwide, all GST-invoiced and priced direct.',
+    ],
+    considerations: {
+      heading: 'What to look for in kitchen accessories',
+      items: [
+        'Material — food-grade stainless, silicone and teflon-coated tools that last',
+        'Comfort — handles and grips built for long service shifts',
+        'Precision — accurate food thermometers and consistent moulds for repeatable results',
+        'Hygiene — easy-to-clean, dishwasher-safe wares keep your kitchen compliant',
+        'Range — knives, cutters, baking tools and prep accessories from one supplier',
+      ],
+    },
+    closing:
+      'Stocking a new kitchen? WhatsApp +91 98903 52455 for a complete accessories list with bulk pricing.',
+  },
+  {
+    slug: 'polyrattan-basket',
+    category: 'POLYRATTAN BASKET',
+    title: 'Polyrattan Baskets for Buffet & Bread Display',
+    h1: 'Polyrattan Baskets',
+    metaDescription:
+      'Shop polyrattan baskets for buffet, bread and display — durable woven baskets in lite and heavy ranges, with compartments and lids. GST invoice, pan-India delivery.',
+    intro: [
+      'Polyrattan baskets bring a warm, premium look to buffets, bread displays and in-room presentation — with the durability of synthetic rattan that handles daily commercial use far better than natural wicker. Available in lite and heavy ranges, including rectangle, compartment and lidded styles.',
+      'Kitchenary Kart supplies polyrattan baskets to hotels, bakeries, buffets and caterers across India, GST-invoiced and built to last through repeated service.',
+    ],
+    considerations: {
+      heading: 'What to look for in polyrattan baskets',
+      items: [
+        'Build — heavy-range baskets stand up to constant buffet handling',
+        'Size & shape — match GN-compatible sizes to your buffet counter or display',
+        'Compartments & lids — choose configurations that suit bread, fruit or display',
+        'Hygiene — synthetic rattan wipes clean and resists moisture better than wicker',
+        'Presentation — a consistent basket style lifts the look of any buffet line',
+      ],
+    },
+    closing:
+      'Need baskets for a buffet or bakery display? WhatsApp +91 98903 52455 for bulk pricing.',
+  },
+  {
+    slug: 'spare-parts',
+    category: 'SPARE PARTS',
+    title: 'Commercial Kitchen Equipment Spare Parts',
+    h1: 'Commercial Kitchen Equipment Spare Parts',
+    metaDescription:
+      'Shop genuine spare parts for commercial kitchen equipment — ovens, mixers, induction, blenders, juice dispensers, trolleys and more. GST invoice, pan-India delivery.',
+    intro: [
+      'Downtime costs money, so keeping the right spare parts on hand keeps your kitchen running. This range covers genuine replacement parts for a wide range of commercial equipment — ovens, planetary mixers, induction cooktops, blenders, juice and cereal dispensers, toasters, trolleys, meat mincers and many more.',
+      'Kitchenary Kart supplies spare parts pan-India with a GST invoice on every order. Not sure which part you need? Send us your equipment model and we will help you identify the right one.',
+    ],
+    considerations: {
+      heading: 'Finding the right spare part',
+      items: [
+        'Identify the model — match the part to your exact equipment model where possible',
+        'Genuine fit — parts designed for the original machine, not generic substitutes',
+        'Common wear items — keep fast-wearing parts in stock to avoid downtime',
+        'Wide coverage — spares for ovens, mixers, induction, dispensers, trolleys and more',
+        'Ask first — share a photo or model number and we will confirm the right part',
+      ],
+    },
+    closing:
+      'Need a spare part? WhatsApp +91 98903 52455 with your equipment model or a photo and we will identify it for you.',
+  },
 ];
 
 const BY_SLUG = new Map(CATEGORY_CONTENT.map((c) => [c.slug, c]));

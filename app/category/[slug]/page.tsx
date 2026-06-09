@@ -5,6 +5,7 @@ import {
   getCategoryContent,
   getAllCategoryContent,
 } from '@/lib/category-content';
+import { CATEGORY_SHORT } from '@/lib/categories';
 import { getCategoryFeatured } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
 import { buildCrumbsJsonLd } from '@/lib/json-ld';
@@ -114,6 +115,28 @@ export default async function CategoryLandingPage({ params }: Params) {
             ))}
           </ul>
           <p className="text-[15px] leading-relaxed text-muted">{content.closing}</p>
+        </section>
+
+        {/* Cross-links to the other category landing pages — keeps every
+            category page internally linked (no orphans) and spreads
+            crawl depth + link equity across the catalogue. */}
+        <section className="mt-12">
+          <h2 className="font-head text-[clamp(1.1rem,1.6vw,1.35rem)] font-bold text-ink mb-4">
+            Browse other categories
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {getAllCategoryContent()
+              .filter((c) => c.slug !== content.slug)
+              .map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/category/${c.slug}`}
+                  className="px-4 py-2 rounded-full border border-line text-[14px] font-medium text-ink hover:border-brand hover:text-brand transition"
+                >
+                  {CATEGORY_SHORT[c.category] ?? c.title}
+                </Link>
+              ))}
+          </div>
         </section>
       </div>
     </>
