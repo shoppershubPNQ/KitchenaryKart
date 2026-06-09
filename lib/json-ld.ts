@@ -157,6 +157,122 @@ export function buildBreadcrumbJsonLd(b: BreadcrumbJsonLdInput): Record<string, 
 }
 
 /**
+ * LocalBusiness JSON-LD for the Pune location page. Reinforces the NAP
+ * (must match Google Business Profile exactly) and feeds the local
+ * pack / Maps relevance. Used ONLY on the real registered location
+ * page — never on generic/other-city pages.
+ */
+export function buildLocalBusinessJsonLd(pageSlug: string): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'Store',
+    name: 'Kitchenary Kart',
+    image: `${SITE_URL}/logo.png`,
+    url: `${SITE_URL}/${pageSlug}`,
+    telephone: '+91 98903 52455',
+    email: 'support@kitchenarykart.com',
+    priceRange: '₹₹',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'A2/103, Parshwanagar, Opp. Swami Vivekanand Garden, Kondhwa Budruk',
+      addressLocality: 'Pune',
+      addressRegion: 'Maharashtra',
+      postalCode: '411048',
+      addressCountry: 'IN',
+    },
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '10:00',
+        closes: '19:00',
+      },
+    ],
+    areaServed: 'IN',
+  };
+}
+
+export interface ArticleJsonLdInput {
+  slug: string;
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+  author: string;
+}
+
+/**
+ * Build BlogPosting (Article) JSON-LD for a blog post. Drives the
+ * article rich result + establishes the page as editorial content,
+ * which helps it rank for informational long-tail queries.
+ */
+export function buildArticleJsonLd(a: ArticleJsonLdInput): Record<string, unknown> {
+  const url = `${SITE_URL}/blog/${a.slug}`;
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'BlogPosting',
+    headline: a.title,
+    description: a.description,
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    datePublished: a.datePublished,
+    dateModified: a.dateModified || a.datePublished,
+    author: { '@type': 'Organization', name: a.author, url: SITE_URL },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Kitchenary Kart',
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png` },
+    },
+  };
+}
+
+/**
+ * Build a generic BreadcrumbList from an ordered list of crumbs. The
+ * last crumb omits its URL per Google guidance (the user is already
+ * there). Used by blog + category pages.
+ */
+export function buildCrumbsJsonLd(
+  crumbs: Array<{ name: string; path?: string }>,
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.name,
+      ...(c.path ? { item: `${SITE_URL}${c.path}` } : {}),
+    })),
+  };
+}
+
+/**
+ * Build the FAQPage JSON-LD from a list of question/answer pairs.
+ *
+ * Google renders these as an expandable FAQ accordion directly in the
+ * search result, and AI search engines (SGO) lift the answers verbatim.
+ * Only emit when the SAME questions+answers are visible on the page —
+ * Google requires the on-page content to match the markup, so the PDP
+ * renders the identical list via <ProductFaq>.
+ *
+ * Returns null for an empty list so callers can skip the <script> tag.
+ */
+export function buildFaqJsonLd(
+  faqs: Array<{ q: string; a: string }>,
+): Record<string, unknown> | null {
+  if (!faqs || faqs.length === 0) return null;
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+}
+
+/**
  * Resolve a stored image URL (which may be `/images/...` or already
  * an absolute https URL) to an absolute one suitable for JSON-LD.
  */

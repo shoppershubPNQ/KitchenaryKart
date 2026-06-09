@@ -12,10 +12,12 @@ import { imgSrc, inr, savingsPercent } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
 import { getReviewSummary, listReviews } from '@/lib/reviews';
 import { ReviewsSection } from '@/components/ReviewsSection';
-import { buildProductJsonLd, buildBreadcrumbJsonLd } from '@/lib/json-ld';
+import { buildProductJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd } from '@/lib/json-ld';
 import { PdpViewTracker } from '@/components/PdpViewTracker';
 import { ScrollToTopOnMount } from '@/components/ScrollToTopOnMount';
 import { PdpTrustBadges } from '@/components/PdpTrustBadges';
+import { ProductFaqSection } from '@/components/ProductFaq';
+import { resolveProductFaqs } from '@/lib/product-faqs';
 
 interface Params {
   params: { sku: string };
@@ -178,6 +180,26 @@ export default async function ProductPage({ params }: Params) {
     ['GST', `${p.taxPercent}%`],
   ];
 
+  // FAQ — custom admin-authored FAQs when present, else a generated set
+  // from this product's real attributes. Rendered visibly via
+  // <ProductFaqSection> AND mirrored into FAQPage JSON-LD (the markup
+  // must match the on-page text, so both come from the same list).
+  const faqs = resolveProductFaqs(
+    {
+      name: displayName,
+      category: p.category,
+      subcategory: p.subcategory,
+      dimensions: p.dimensions,
+      power: p.power,
+      capacity: p.capacity,
+      hsnCode: p.hsnCode,
+      taxPercent: p.taxPercent,
+      stock: selectedVariant?.stock ?? p.stock,
+    },
+    p.faqs,
+  );
+  const faqLd = buildFaqJsonLd(faqs);
+
   return (
     <>
       {/* Preload the LCP image (the gallery main) so the browser starts
@@ -208,6 +230,12 @@ export default async function ProductPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
 
       {/* Fires Meta Pixel ViewContent + GA4 view_item once on mount.
           Pass the variant SKU + composed display name so the conversion
@@ -311,6 +339,21 @@ export default async function ProductPage({ params }: Params) {
         </div>
       </div>
 
+      {/* Product description — admin free-text copy. Rendered as a
+          full-width prose block under the main grid so it reads on
+          mobile and gives the page indexable body content (most PDPs
+          previously had none). Skipped entirely when empty. */}
+      {p.description && p.description.trim() && (
+        <section className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-14">
+          <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-4">
+            Product Description
+          </h2>
+          <div className="max-w-[70ch] text-[15px] leading-relaxed text-ink/85 whitespace-pre-line">
+            {p.description.trim()}
+          </div>
+        </section>
+      )}
+
       {/* Section order: Similar Products first (encourages cross-sell while
           the buyer is still in browse mode), then Customer Reviews (read
           before final decision). Matches Amazon / Flipkart PDP convention. */}
@@ -322,6 +365,10 @@ export default async function ProductPage({ params }: Params) {
         summary={reviewSummary}
         reviews={reviews}
       />
+
+      {/* FAQ — visible accordion whose content matches the FAQPage
+          JSON-LD emitted above. Helps long-tail SEO + AI search (SGO). */}
+      <ProductFaqSection faqs={faqs} />
     </>
   );
 }

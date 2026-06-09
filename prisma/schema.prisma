@@ -119,6 +119,7 @@ model Product {
 
   imageUrl        String?       @map("image_url")
   images          Json?
+  faqs            Json?
 
   metaTitle       String?       @map("meta_title")
   metaDescription String?       @map("meta_description")

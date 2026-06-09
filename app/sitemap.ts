@@ -14,6 +14,9 @@
 import type { MetadataRoute } from 'next';
 import { getAllShopProducts, getCategoryTree } from '@/lib/products';
 import { getActivePolicies } from '@/lib/policies';
+import { getAllPosts } from '@/lib/blog';
+import { getAllCategoryContent } from '@/lib/category-content';
+import { getAllLandingPages } from '@/lib/landing-pages';
 
 const BASE_URL = 'https://kitchenarykart.com';
 
@@ -31,9 +34,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/`, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
     { url: `${BASE_URL}/shop`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
   ];
+
+  // Dedicated category landing pages (server-rendered, individually
+  // indexable — unlike the ?cat= filtered shop views).
+  const categoryLandingPages: MetadataRoute.Sitemap = getAllCategoryContent().map((c) => ({
+    url: `${BASE_URL}/category/${c.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }));
+
+  // Supplier/intent landing pages + the Pune local page — high-intent
+  // role/role+location URLs.
+  const landingPages: MetadataRoute.Sitemap = getAllLandingPages().map((p) => ({
+    url: `${BASE_URL}/${p.slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly',
+    priority: p.isLocal ? 0.8 : 0.75,
+  }));
+
+  // Blog posts (buying guides) — authored in lib/blog.ts.
+  const blogPages: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: new Date((post.updated ?? post.date) + 'T00:00:00'),
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  }));
 
   const productPages: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${BASE_URL}/product/${encodeURIComponent(p.sku)}`,
@@ -58,5 +88,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.3,
   }));
 
-  return [...staticPages, ...productPages, ...categoryPages, ...policyPages];
+  return [
+    ...staticPages,
+    ...landingPages,
+    ...categoryLandingPages,
+    ...blogPages,
+    ...productPages,
+    ...categoryPages,
+    ...policyPages,
+  ];
 }

@@ -36,6 +36,39 @@ export interface PublicProduct {
   isBestseller: boolean;
   isNewArrival: boolean;
   metaKeywords: string | null;
+  /** Per-product FAQ pairs, stored as JSON in the DB. Normalised to a
+   *  {q,a} array (accepts {question,answer} too). Empty array when the
+   *  product has no custom FAQs — the PDP falls back to generated ones. */
+  faqs: ProductFaq[];
+}
+
+export interface ProductFaq {
+  q: string;
+  a: string;
+}
+
+/** Normalise the stored faqs JSON (which may use q/a or question/answer
+ *  keys, and may be a stringified array) into a clean {q,a}[] list. */
+function parseFaqs(raw: unknown): ProductFaq[] {
+  let val = raw;
+  if (typeof val === 'string') {
+    try {
+      val = JSON.parse(val);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(val)) return [];
+  const out: ProductFaq[] = [];
+  for (const item of val) {
+    if (!item || typeof item !== 'object') continue;
+    const q = (item as any).q ?? (item as any).question;
+    const a = (item as any).a ?? (item as any).answer;
+    if (typeof q === 'string' && typeof a === 'string' && q.trim() && a.trim()) {
+      out.push({ q: q.trim(), a: a.trim() });
+    }
+  }
+  return out;
 }
 
 /**
@@ -99,6 +132,7 @@ function toPublic(p: any): PublicProduct {
     isBestseller: Boolean(p.isBestseller),
     isNewArrival: Boolean(p.isNewArrival),
     metaKeywords: p.metaKeywords ?? null,
+    faqs: parseFaqs(p.faqs),
   };
 }
 
@@ -125,6 +159,7 @@ const commonSelect = {
   isBestseller: true,
   isNewArrival: true,
   metaKeywords: true,
+  faqs: true,
 } as const;
 
 export async function getAllActiveProducts(): Promise<PublicProduct[]> {
@@ -438,6 +473,27 @@ const _getSimilarProductsCached = unstable_cache(
 );
 
 export const getSimilarProducts = reactCache(_getSimilarProductsCached);
+
+/**
+ * Featured products for a category landing page (/category/[slug]).
+ * Prefers rows that have an image so the grid looks complete, ordered
+ * by stock-in first then name. Capped at `limit`.
+ */
+async function _getCategoryFeatured(category: string, limit = 12): Promise<PublicProduct[]> {
+  const rows = await prisma.product.findMany({
+    where: { status: 'active', category, imageUrl: { not: null } },
+    orderBy: [{ stock: 'desc' }, { name: 'asc' }],
+    take: limit,
+    select: commonSelect,
+  });
+  return rows.map(toPublic);
+}
+
+export const getCategoryFeatured = unstable_cache(
+  _getCategoryFeatured,
+  ['kk:category-featured'],
+  { revalidate: 600, tags: ['products'] },
+);
 
 // Uncached core — exported under a different name so callers can pick.
 async function _getCategoryCounts(): Promise<Record<string, number>> {
