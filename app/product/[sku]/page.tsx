@@ -16,7 +16,7 @@ import { buildProductJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd } from '@/lib
 import { PdpViewTracker } from '@/components/PdpViewTracker';
 import { ScrollToTopOnMount } from '@/components/ScrollToTopOnMount';
 import { PdpTrustBadges } from '@/components/PdpTrustBadges';
-import { PdpDetails } from '@/components/PdpDetails';
+import { ProductFaqSection } from '@/components/ProductFaq';
 import { resolveProductFaqs } from '@/lib/product-faqs';
 
 interface Params {
@@ -339,17 +339,21 @@ export default async function ProductPage({ params }: Params) {
         </div>
       </div>
 
-      {/* Structured B2B product details — Overview, Key Features,
-          Suitable For, Specs table, Detailed Description, Why Choose Us
-          and FAQ. Replaces the old wall-of-text description + standalone
-          FAQ with a scannable, conversion-oriented layout. The matching
-          FAQPage JSON-LD is still emitted in <head> above. */}
-      <PdpDetails
-        name={displayName}
-        description={p.description}
-        specs={specs}
-        faqs={faqs}
-      />
+      {/* Product description — admin free-text copy. Rendered as a
+          full-width prose block under the main grid so it reads on
+          mobile and gives the page indexable body content. Skipped
+          entirely when empty. Specifications live once in the right
+          column above — not repeated here. */}
+      {p.description && p.description.trim() && (
+        <section className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-14">
+          <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-4">
+            Product Description
+          </h2>
+          <div className="max-w-[70ch] text-[15px] leading-relaxed text-ink/85 whitespace-pre-line">
+            {p.description.trim()}
+          </div>
+        </section>
+      )}
 
       {/* Section order: Similar Products first (encourages cross-sell while
           the buyer is still in browse mode), then Customer Reviews (read
@@ -362,6 +366,10 @@ export default async function ProductPage({ params }: Params) {
         summary={reviewSummary}
         reviews={reviews}
       />
+
+      {/* FAQ — visible accordion whose content matches the FAQPage
+          JSON-LD emitted above. Helps long-tail SEO + AI search (SGO). */}
+      <ProductFaqSection faqs={faqs} />
     </>
   );
 }
