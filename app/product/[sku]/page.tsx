@@ -349,7 +349,7 @@ export default async function ProductPage({ params }: Params) {
           <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-4">
             Product Description
           </h2>
-          <div className="max-w-[70ch] text-[15px] leading-relaxed text-ink/85 whitespace-pre-line">
+          <div className="max-w-[1100px] text-[15.5px] leading-relaxed text-ink/85 whitespace-pre-line">
             {p.description.trim()}
           </div>
         </section>
