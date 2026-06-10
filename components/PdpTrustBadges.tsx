@@ -21,9 +21,9 @@
  *        Clickable CTA. Differentiates us from Amazon / Flipkart
  *        where you can't talk to a real human pre-purchase.
  *
- * Layout: stacked column on mobile (each badge full-width, very
- * readable), single 5-column row on desktop. Mirrors the visual style
- * of FooterTrustUpper for consistency.
+ * Layout: stacked on mobile, 2-up from sm and wider. (5-across was too
+ * tight in the narrow PDP right column and truncated the labels.)
+ * Mirrors the visual style of FooterTrustUpper for consistency.
  *
  * Warranty was intentionally omitted — different SKUs ship with
  * different warranty terms and a blanket "12-month warranty" claim
@@ -133,7 +133,7 @@ export function PdpTrustBadges() {
     <div
       role="list"
       aria-label="Buyer protection and benefits"
-      className="grid grid-cols-1 md:grid-cols-5 gap-2 my-5 p-3 bg-bg-soft border border-line rounded-lg"
+      className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-5 p-3 bg-bg-soft border border-line rounded-lg"
     >
       {BADGES.map((b) => {
         const wrapClass =
