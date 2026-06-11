@@ -45,7 +45,22 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     : p.name;
   const productCategory = p.subcategory || p.category || 'kitchen equipment';
   const title = displayName;
-  const description = `${displayName} — commercial-grade ${productCategory}. GST-invoiced, 12-month warranty. Pan-India delivery.`;
+  // Prefer the product's real description for the meta tag — unique per
+  // product (better for SEO than a repeated template), cleaned and
+  // clamped to ~160 chars at a word boundary. Fall back to a concise,
+  // accurate template only when the product has no description.
+  const fallbackDesc = `${displayName} — commercial-grade ${productCategory}. GST invoice for full Input Tax Credit. Free pan-India delivery above ₹3,000.`;
+  let description = fallbackDesc;
+  if (p.description && p.description.trim()) {
+    const clean = p.description.replace(/\s+/g, ' ').trim();
+    if (clean.length <= 160) {
+      description = clean;
+    } else {
+      const cut = clean.slice(0, 157);
+      const lastSpace = cut.lastIndexOf(' ');
+      description = (lastSpace > 100 ? cut.slice(0, lastSpace) : cut).trim() + '…';
+    }
+  }
   const canonicalPath = `/product/${encodeURIComponent(requestedSku)}`;
   // Prefer variant image in OG when on a variant URL, so social
   // shares show the right photo.
