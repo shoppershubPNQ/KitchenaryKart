@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { clearCart, useCart } from '@/lib/cart';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import { imgSrc, inr, letter } from '@/lib/format';
+import { shippingFor } from '@/lib/shipping';
 import { trackPurchase } from '@/lib/analytics';
 
 interface Address {
@@ -130,7 +131,12 @@ export default function CheckoutPage() {
   // the backend recomputes as its `subtotal`. The coupon discount
   // applies on top of that.
   const couponDiscount = appliedCoupon?.discountAmount ?? 0;
-  const youPay = Math.max(0, total - couponDiscount);
+  // Shipping is recomputed on the after-discount amount and must match the
+  // server's binding charge in /api/public/checkout (free at/above the
+  // threshold, flat fee below).
+  const amountAfterDiscount = Math.max(0, total - couponDiscount);
+  const shippingFee = shippingFor(amountAfterDiscount);
+  const youPay = amountAfterDiscount + shippingFee;
   const savings = Math.max(subtotal - total, 0);
 
   // Re-validate a previously applied coupon when the cart total changes
@@ -573,9 +579,15 @@ export default function CheckoutPage() {
                     <span className="block text-[12px] text-muted italic">5–7 business days</span>
                   </span>
                 </span>
-                <span className="text-[12px] font-bold tracking-wider text-success border border-success rounded px-2 py-0.5">
-                  FREE
-                </span>
+                {shippingFee === 0 ? (
+                  <span className="text-[12px] font-bold tracking-wider text-success border border-success rounded px-2 py-0.5">
+                    FREE
+                  </span>
+                ) : (
+                  <span className="text-[12px] font-bold tracking-wider text-ink border border-line rounded px-2 py-0.5">
+                    {inr(shippingFee)}
+                  </span>
+                )}
               </label>
             </section>
 
@@ -650,6 +662,10 @@ export default function CheckoutPage() {
                   <span>−{inr(couponDiscount)}</span>
                 </div>
               )}
+              <div className="flex justify-between text-ink-soft">
+                <span>Shipping</span>
+                <span>{shippingFee === 0 ? 'Free' : inr(shippingFee)}</span>
+              </div>
               <div className="flex justify-between text-ink font-head font-bold text-base pt-1">
                 <span>Total</span>
                 <span>{inr(youPay)}</span>

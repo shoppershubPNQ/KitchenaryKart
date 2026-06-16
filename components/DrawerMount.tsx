@@ -24,6 +24,7 @@ import {
 import { inr, imgSrc, letter } from '@/lib/format';
 import { trackInitiateCheckout } from '@/lib/analytics';
 import { CartShippingNudge } from './CartShippingNudge';
+import { shippingFor } from '@/lib/shipping';
 
 /** Per-line savings = (MRP − price) × qty, when the product has an MRP > price. */
 function lineSavings(mrp: number | null, price: number, qty: number) {
@@ -68,7 +69,10 @@ export function DrawerMount() {
     (acc, i) => acc + lineSavings(i.mrp, i.price, i.qty || 1),
     0,
   );
-  const youPay = total; // total from useCart() = sum of selling prices
+  // Shipping preview (no coupon in the drawer — recomputed after discount
+  // at checkout). Free at/above the threshold, flat fee below.
+  const shipping = shippingFor(total);
+  const youPay = total + shipping; // selling-price sum + shipping
   const pctOff = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
 
   return (
@@ -239,7 +243,11 @@ export function DrawerMount() {
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-ink">Shipping</dt>
-                    <dd className="text-success font-semibold">Free</dd>
+                    {shipping === 0 ? (
+                      <dd className="text-success font-semibold">Free</dd>
+                    ) : (
+                      <dd className="text-ink">{inr(shipping)}</dd>
+                    )}
                   </div>
                 </dl>
               </section>
