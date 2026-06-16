@@ -448,6 +448,209 @@ export const POSTS: BlogPost[] = [
       },
     ],
   },
+  {
+    slug: 'commercial-kitchen-equipment-guide',
+    title: 'Commercial Kitchen Equipment: The Complete Buyer\'s Guide',
+    description:
+      'How to plan, budget and buy commercial kitchen equipment in India — station by station, with in-depth guides for fryers, mixers, bain maries and cold equipment.',
+    date: '2026-06-16',
+    author: 'Kitchenary Kart',
+    readMins: 9,
+    tag: 'Buying Guide',
+    body: [
+      {
+        type: 'p',
+        text: 'Equipping a commercial kitchen is the biggest single capex decision most food businesses make. Buy in the wrong order, oversize the wrong station, or skip the GST invoice and you tie up cash you need elsewhere. This guide is the map: it walks the whole kitchen station by station and points you to the detailed buying guide for each major purchase.',
+      },
+      { type: 'h2', text: 'Plan by station, not by wishlist' },
+      {
+        type: 'p',
+        text: 'Every kitchen — restaurant, cloud kitchen, café, bakery or hotel — breaks down into the same stations: a hot line, cold storage, a prep/baking zone, and service (buffet, bar, packing). Budget in that order, because the hot line produces your revenue and everything else supports it.',
+      },
+      { type: 'h2', text: 'The hot line' },
+      {
+        type: 'p',
+        text: 'This is where most of your covers are produced. The core buys are a burner range, a [commercial deep fryer](/category/hot-equipment) and hot-holding. For fryers, our [commercial deep fryer buying guide](/blog/commercial-deep-fryer-buying-guide) covers tank sizing and electric-vs-gas; for holding cooked food at a safe temperature, the [bain marie buying guide](/blog/how-to-choose-commercial-bain-marie) explains compartments, wet vs dry and glass vs no-glass.',
+      },
+      { type: 'h2', text: 'Cold storage and display' },
+      {
+        type: 'p',
+        text: 'Delivery and food safety live here. Size your [cold equipment](/category/cold-equipment) for a full day\'s prep plus a buffer, and keep raw and cooked storage separate. Running a dessert menu? The [snowflake ice machine buying guide](/blog/snowflake-ice-machine-buying-guide) walks through output, control type and running costs.',
+      },
+      { type: 'h2', text: 'Prep and baking' },
+      {
+        type: 'p',
+        text: 'Mechanising repetitive prep is what lets a small team hit high volume. A [planetary mixer](/category/kitchen-baking) covers cream, batter and light dough; bread-led kitchens add a spiral mixer. See the [planetary mixer buying guide](/blog/how-to-choose-commercial-planetary-mixer) and our [planetary vs spiral mixer](/blog/planetary-mixer-vs-spiral-mixer) comparison to choose.',
+      },
+      { type: 'h2', text: 'Buffet, bar and service' },
+      {
+        type: 'p',
+        text: 'Front-of-house and service stations round out the kitchen — [buffet & tableware](/category/buffet-tableware), [bar & beverage](/category/bar-beverage) and the packing bench for delivery. Match these to your service style: a self-service buffet needs presentation-grade holding; a cloud kitchen needs a fast packing line.',
+      },
+      { type: 'h2', text: 'Budget smart: GST, direct pricing, one supplier' },
+      {
+        type: 'p',
+        text: 'Three levers keep a fit-out affordable: a GST invoice on every item (so a registered business reclaims Input Tax Credit), direct brand pricing (no middleman markup), and sourcing from one supplier (one invoice, one delivery, consolidated bulk pricing). As a [commercial kitchen equipment supplier](/commercial-kitchen-equipment-supplier) we cover all three.',
+      },
+      { type: 'h2', text: 'Checklists by kitchen format' },
+      {
+        type: 'p',
+        text: 'For a format-specific shopping list, use the [cloud kitchen equipment checklist](/blog/cloud-kitchen-equipment-checklist) or the [restaurant kitchen setup checklist](/blog/restaurant-kitchen-setup-checklist) — both walk the build station by station with budgeting order.',
+      },
+      {
+        type: 'cta',
+        href: '/shop',
+        label: 'Browse the full catalogue',
+      },
+      {
+        type: 'p',
+        text: 'Planning a new kitchen? Send your menu and floor plan to +91 98903 52455 and our team will build a complete, costed equipment list with bulk pricing.',
+      },
+    ],
+  },
+  {
+    slug: 'planetary-mixer-vs-spiral-mixer',
+    title: 'Planetary Mixer vs Spiral Mixer: Which Is Right for Your Bakery?',
+    description:
+      'Planetary vs spiral mixer — how each one mixes, which suits bread and pizza vs cakes and cream, and how to choose the right commercial mixer for your bakery.',
+    date: '2026-06-16',
+    author: 'Kitchenary Kart',
+    readMins: 6,
+    tag: 'Comparison',
+    body: [
+      {
+        type: 'p',
+        text: 'Planetary and spiral mixers both knead and mix, but they are built for different jobs. Pick the wrong one and you either struggle with bread dough or pay for capability you never use. Here is how they differ and which your bakery actually needs.',
+      },
+      { type: 'h2', text: 'How each one mixes' },
+      {
+        type: 'p',
+        text: 'A planetary mixer holds the bowl still and moves an attachment (whisk, beater or dough hook) around it in a planetary path — versatile for cream, batter, cake mix and light dough. A spiral mixer rotates the bowl while a fixed spiral hook kneads, developing gluten gently without overheating the dough — purpose-built for bread and pizza.',
+      },
+      { type: 'h2', text: 'Choose a planetary mixer if…' },
+      {
+        type: 'p',
+        text: 'Your work spans cream, frosting, batter, cake and the occasional dough — most cafés, dessert kitchens and general bakeries. It is the more flexible machine. Our [40L Electric Planetary Mixer](/product/KKKBE0003-B40) suits serious production; the [7L bench-top model](/product/KKKBE0005-B7) fits a growing café. Full sizing advice is in the [planetary mixer buying guide](/blog/how-to-choose-commercial-planetary-mixer).',
+      },
+      { type: 'h2', text: 'Choose a spiral mixer if…' },
+      {
+        type: 'p',
+        text: 'Bread or pizza dough is your core product. A spiral mixer kneads more efficiently and keeps dough cool, so gluten develops consistently — better rise and crumb. Our [20L Electric Spiral Mixer](/product/KKKBE0009-SSD20) is a foundational machine for a bakery or pizzeria scaling up bread production.',
+      },
+      { type: 'h2', text: 'Quick verdict' },
+      {
+        type: 'ul',
+        items: [
+          'Mostly cakes, cream, batter, light dough → planetary mixer',
+          'Mostly bread and pizza dough → spiral mixer',
+          'Serious bakery doing both → run both (planetary for finishing, spiral for dough)',
+        ],
+      },
+      {
+        type: 'cta',
+        href: '/category/kitchen-baking',
+        label: 'Browse Mixers & Bakery Equipment',
+      },
+      {
+        type: 'p',
+        text: 'Not sure which fits your menu and volume? WhatsApp +91 98903 52455 and we\'ll recommend the right machine.',
+      },
+    ],
+  },
+  {
+    slug: 'electric-vs-gas-commercial-deep-fryer',
+    title: 'Electric vs Gas Commercial Deep Fryer: Which Should You Buy?',
+    description:
+      'Electric vs gas commercial deep fryer — installation, running cost, heat recovery and which suits your restaurant or QSR. A practical comparison for Indian kitchens.',
+    date: '2026-06-16',
+    author: 'Kitchenary Kart',
+    readMins: 5,
+    tag: 'Comparison',
+    body: [
+      {
+        type: 'p',
+        text: 'Once you have sized a fryer to your menu, the next question is electric or gas. Both fry well; the right choice depends on your kitchen\'s utilities, volume and budget. Here is the honest comparison.',
+      },
+      { type: 'h2', text: 'Electric deep fryers' },
+      {
+        type: 'ul',
+        items: [
+          'Easy to install — runs on a standard electrical connection, no gas line needed',
+          'Precise, stable thermostat control — good for consistent results',
+          'Great for counter-top and small-to-mid kitchens',
+          'Higher per-unit energy cost than piped gas in high-volume use',
+        ],
+      },
+      { type: 'h2', text: 'Gas deep fryers' },
+      {
+        type: 'ul',
+        items: [
+          'Faster heat recovery after a basket goes in — better for back-to-back frying',
+          'Lower running cost where you have a piped or cylinder gas supply',
+          'Best for high-volume restaurants and QSRs',
+          'Needs a gas line and proper ventilation — a real install cost if you don\'t have one',
+        ],
+      },
+      { type: 'h2', text: 'The verdict' },
+      {
+        type: 'p',
+        text: 'If you run high volume and already have gas plumbed, a gas fryer usually wins on recovery and running cost. If you want simple installation, precise control and a cleaner counter-top setup, go electric — for example our [digital double deep fryer (14L + 14L)](/product/KKHE0097-FY14LD), which runs two tanks on a standard connection. For tank sizing and recovery time, see the full [commercial deep fryer buying guide](/blog/commercial-deep-fryer-buying-guide).',
+      },
+      {
+        type: 'cta',
+        href: '/category/hot-equipment',
+        label: 'Browse Commercial Deep Fryers',
+      },
+      {
+        type: 'p',
+        text: 'Want a recommendation for your menu volume? WhatsApp +91 98903 52455 and we\'ll match a fryer to your line.',
+      },
+    ],
+  },
+  {
+    slug: 'bain-marie-with-vs-without-glass',
+    title: 'Bain Marie With Glass vs Without Glass: How to Choose',
+    description:
+      'Bain marie with glass vs without glass — which suits front-of-house buffets and which suits back-of-house plating lines. A quick decision guide for restaurants.',
+    date: '2026-06-16',
+    author: 'Kitchenary Kart',
+    readMins: 4,
+    tag: 'Comparison',
+    body: [
+      {
+        type: 'p',
+        text: 'The glass sneeze-guard is the single biggest choice when buying a bain marie. It is not about looks — it is about where the unit sits and who sees the food. Here is how to decide.',
+      },
+      { type: 'h2', text: 'Bain marie WITH glass — front of house' },
+      {
+        type: 'p',
+        text: 'A glass top suits buffets, live counters and self-service setups where customers see the food. The sneeze-guard keeps the spread hygienic and presentable while holding it hot. Our [Electric Bain Marie with Glass (6 Compartments)](/product/KKHE0012-BMWG6) is built exactly for this — six GN pans on display under glass.',
+      },
+      { type: 'h2', text: 'Bain marie WITHOUT glass — back of house' },
+      {
+        type: 'p',
+        text: 'For a back-of-house plating line or cloud kitchen, skip the glass. Staff need fast, unobstructed access to every pan during service, and presentation does not matter where customers never see it. A no-glass unit is also simpler to clean.',
+      },
+      { type: 'h2', text: 'The verdict' },
+      {
+        type: 'ul',
+        items: [
+          'Customers see the food (buffet, live counter, self-service) → with glass',
+          'Plating line or cloud kitchen, speed over display → without glass',
+          'Need both? Many kitchens run a glass unit out front and a plain one in the back',
+        ],
+      },
+      {
+        type: 'p',
+        text: 'For sizing, wet vs dry heat and compartment count, see the full [how to choose a commercial bain marie](/blog/how-to-choose-commercial-bain-marie) guide and our [best bain marie for restaurants](/blog/best-bain-marie-for-restaurants) breakdown.',
+      },
+      {
+        type: 'cta',
+        href: '/category/hot-equipment',
+        label: 'Browse Bain Maries',
+      },
+    ],
+  },
 ];
 
 /** All posts, newest first. */
