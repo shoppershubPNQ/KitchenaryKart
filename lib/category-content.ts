@@ -28,6 +28,8 @@ export interface CategoryContent {
   considerations: { heading: string; items: string[] };
   /** Closing paragraph before the product grid / CTA. */
   closing: string;
+  /** Related blog buying-guides for category → blog internal linking. */
+  relatedGuides?: Array<{ slug: string; label: string }>;
 }
 
 export const CATEGORY_CONTENT: CategoryContent[] = [
@@ -54,6 +56,10 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     },
     closing:
       'Not sure which model suits your menu? WhatsApp our team at +91 98903 52455 with your covers-per-day and we will recommend the right configuration with bulk pricing.',
+    relatedGuides: [
+      { slug: 'how-to-choose-commercial-bain-marie', label: 'How to Choose a Commercial Bain Marie' },
+      { slug: 'commercial-deep-fryer-buying-guide', label: 'Commercial Deep Fryer Buying Guide' },
+    ],
   },
   {
     slug: 'cold-equipment',
@@ -78,6 +84,9 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     },
     closing:
       'Need help sizing a snowflake machine or cold counter for your footfall? Message +91 98903 52455 and we will help you pick the right capacity.',
+    relatedGuides: [
+      { slug: 'snowflake-ice-machine-buying-guide', label: 'Snowflake Ice Machine Buying Guide' },
+    ],
   },
   {
     slug: 'kitchen-baking',
@@ -102,6 +111,9 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     },
     closing:
       'Planning a bakery or pizza line? WhatsApp +91 98903 52455 with your menu and volume for a tailored equipment list.',
+    relatedGuides: [
+      { slug: 'how-to-choose-commercial-planetary-mixer', label: 'How to Choose a Commercial Planetary Mixer' },
+    ],
   },
   {
     slug: 'buffet-tableware',

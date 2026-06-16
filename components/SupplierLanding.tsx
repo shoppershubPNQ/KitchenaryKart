@@ -44,6 +44,11 @@ export function supplierMetadata(slug: string): Metadata {
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${p.title} — KitchenaryKart`,
+      description: p.metaDescription,
+    },
   };
 }
 

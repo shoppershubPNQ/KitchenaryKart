@@ -20,6 +20,57 @@ import { imgSrc } from './format';
 
 const SITE_URL = 'https://kitchenarykart.com';
 
+/**
+ * Sitewide Organization JSON-LD. Defines the brand entity for Google
+ * (logo, contact, social profiles) — feeds the knowledge panel and
+ * brand-name search signals. `sameAs` should be the live social-profile
+ * URLs (pass only non-empty ones; omit the array when there are none).
+ */
+export function buildOrganizationJsonLd(sameAs: string[] = []): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    '@context': 'https://schema.org/',
+    '@type': 'Organization',
+    name: 'Kitchenary Kart',
+    legalName: 'Shoppers Hub',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    description:
+      'D2C supplier of commercial kitchen equipment — bain maries, fryers, snowflake ice machines, mixers and HORECA essentials — with GST invoicing and pan-India delivery.',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+91-98903-52455',
+      contactType: 'customer service',
+      areaServed: 'IN',
+      availableLanguage: ['en', 'hi'],
+    },
+  };
+  const clean = sameAs.filter((u) => !!u && /^https?:/i.test(u));
+  if (clean.length > 0) out.sameAs = clean;
+  return out;
+}
+
+/**
+ * Sitewide WebSite JSON-LD with a SearchAction so Google can show the
+ * sitelinks search box. The target maps to the shop page's `?q=` filter,
+ * which ShopView reads on mount — so the box actually performs a search.
+ */
+export function buildWebsiteJsonLd(): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'WebSite',
+    name: 'Kitchenary Kart',
+    url: SITE_URL,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/shop?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
 export interface ProductJsonLdInput {
   sku: string;
   name: string;

@@ -36,6 +36,11 @@ export function generateMetadata({ params }: Params): Metadata {
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${c.title} — KitchenaryKart`,
+      description: c.metaDescription,
+    },
   };
 }
 
@@ -116,6 +121,28 @@ export default async function CategoryLandingPage({ params }: Params) {
           </ul>
           <p className="text-[15px] leading-relaxed text-muted">{content.closing}</p>
         </section>
+
+        {/* Related buying guides — category → blog internal links, so the
+            guides get crawled and the category page gains topical depth. */}
+        {content.relatedGuides && content.relatedGuides.length > 0 && (
+          <section className="mt-12 max-w-[68ch]">
+            <h2 className="font-head text-[clamp(1.1rem,1.6vw,1.35rem)] font-bold text-ink mb-4">
+              Related buying guides
+            </h2>
+            <ul className="space-y-2">
+              {content.relatedGuides.map((g) => (
+                <li key={g.slug}>
+                  <Link
+                    href={`/blog/${g.slug}`}
+                    className="text-brand underline underline-offset-2 hover:opacity-80"
+                  >
+                    {g.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Cross-links to the other category landing pages — keeps every
             category page internally linked (no orphans) and spreads

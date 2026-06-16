@@ -89,6 +89,10 @@ export const POSTS: BlogPost[] = [
         text: 'If you run a GST-registered business, buy from a seller that issues a proper tax invoice — you can claim the full Input Tax Credit on commercial kitchen equipment, which effectively reduces the cost by the GST rate. Every Kitchenary Kart order ships with a compliant GST invoice for exactly this reason.',
       },
       {
+        type: 'p',
+        text: 'A popular front-of-house pick is our [Electric Bain Marie with Glass (6 Compartments)](/product/KKHE0012-BMWG6) — six GN pans under a glass sneeze-guard, ideal for buffets and live counters. For banquet-scale holding, the mobile [Hot Bain Marie Ready Counter](/product/KKHE0021-HBM3C) adds a heated lower cabinet and LED display.',
+      },
+      {
         type: 'cta',
         href: '/category/hot-equipment',
         label: 'Browse Bain Maries & Hot Equipment',
@@ -142,6 +146,10 @@ export const POSTS: BlogPost[] = [
       {
         type: 'p',
         text: 'A snowflake machine is a refrigeration appliance, so compressor warranty matters. Buy from a seller who states the warranty clearly and issues a GST invoice so you can claim Input Tax Credit. That combination protects both your kitchen and your books.',
+      },
+      {
+        type: 'p',
+        text: 'For most dessert counters, our [Electric Snowflake Machine (Digital Model)](/product/KKCE0034-80FD) makes up to 80 kg of fluffy snow ice a day with repeatable digital settings — turning a low-cost ingredient into a high-margin bingsu menu. Prefer simpler controls? The [knob-model snowflake machine](/product/KKCE0035-80F) makes the same ice with fewer electronics to maintain.',
       },
       {
         type: 'cta',
@@ -258,6 +266,10 @@ export const POSTS: BlogPost[] = [
         text: 'Look for a cool-zone design (a cooler area below the heating element where debris settles instead of burning), a drain tap for easy oil changes, and a sturdy basket with a heat-proof handle. Easy daily cleaning keeps oil fresher for longer and protects food quality.',
       },
       {
+        type: 'p',
+        text: 'For high-volume frying, our [Digital Double Deep Fryer (14L + 14L, standing model)](/product/KKHE0097-FY14LD) runs two independent tanks so you can keep veg and non-veg oils — or fries and fish — completely separate, with a digital thermostat for repeatable results during the rush.',
+      },
+      {
         type: 'cta',
         href: '/category/hot-equipment',
         label: 'Browse Commercial Deep Fryers',
@@ -308,6 +320,10 @@ export const POSTS: BlogPost[] = [
         text: 'Look for a stable, heavy base that won\'t walk across the bench during heavy kneading, a stainless-steel bowl, and a safety guard that stops the machine when raised. A bowl-lift or tilt-head mechanism makes adding ingredients and removing the bowl much easier in a busy kitchen.',
       },
       {
+        type: 'p',
+        text: 'For serious daily production, our [40L Electric Planetary Mixer (Belt Model)](/product/KKKBE0003-B40) handles up to 8 kg of dough per batch and ships with whisk, beater and dough hook. For a growing café or small bakery, the bench-top [7L Planetary Mixer (Gear Model)](/product/KKKBE0005-B7) is the right first machine.',
+      },
+      {
         type: 'cta',
         href: '/category/kitchen-baking',
         label: 'Browse Planetary Mixers & Bakery Equipment',
@@ -356,6 +372,10 @@ export const POSTS: BlogPost[] = [
       {
         type: 'p',
         text: 'For a GST-registered restaurant, buying from a supplier that issues a proper tax invoice lets you claim full Input Tax Credit — effectively reducing the cost by the GST rate. Every Kitchenary Kart order includes one.',
+      },
+      {
+        type: 'p',
+        text: 'Two popular picks: the [Electric Bain Marie with Glass (6 Compartments)](/product/KKHE0012-BMWG6) for front-of-house buffets and live counters, and the mobile [Hot Bain Marie Ready Counter](/product/KKHE0021-HBM3C) for banquet-scale holding.',
       },
       {
         type: 'cta',

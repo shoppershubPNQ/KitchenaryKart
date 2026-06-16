@@ -17,6 +17,8 @@ const ALLOWED_TAGS = new Set([
   'category-counts',
   'collections',
   'policies',
+  'products',
+  'product',
   'reels',
   'reviews',
   'social',

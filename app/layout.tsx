@@ -11,6 +11,8 @@ import { FooterTrustUpper } from '@/components/FooterTrustUpper';
 import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 import { getCategoryTree, getCategoryCounts } from '@/lib/products';
+import { getSocialLinks } from '@/lib/social';
+import { buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/json-ld';
 
 // Modals / drawers — only render after user interaction (click cart,
 // click wishlist, etc.). Loading them via next/dynamic keeps ~1100
@@ -115,11 +117,30 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Layout is a server component; fetch nav data once per request.
-  const [tree, counts] = await Promise.all([getCategoryTree(), getCategoryCounts()]);
+  const [tree, counts, social] = await Promise.all([
+    getCategoryTree(),
+    getCategoryCounts(),
+    getSocialLinks(),
+  ]);
+
+  // sameAs = public social profiles only (WhatsApp is a contact channel,
+  // not a profile, so it's excluded from the Organization schema).
+  const sameAs = [social.instagram, social.youtube, social.twitter, social.facebook]
+    .filter((u): u is string => !!u);
+  const orgLd = buildOrganizationJsonLd(sameAs);
+  const websiteLd = buildWebsiteJsonLd();
 
   return (
     <html lang="en" className={`${montserrat.variable} ${roboto.variable}`}>
       <body className="font-body">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }}
+        />
         <PromoBar />
         <div className="h-1 bg-top-strip" />
         <Header categoryTree={tree} categoryCounts={counts} />
