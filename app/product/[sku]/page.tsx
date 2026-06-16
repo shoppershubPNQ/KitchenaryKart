@@ -27,6 +27,23 @@ interface Params {
 // via /api/revalidate?tag=products, so users still see fresh data after edits.
 export const revalidate = 300;
 
+/**
+ * PDP <title> with the primary buyer keyword.
+ *
+ * Most product names already carry the product type ("Electric UFO Burger
+ * Machine", "Bain Marie with Glass"), but the one high-intent modifier they
+ * all lack is "Commercial" — the term restaurant/hotel buyers actually
+ * search. We prepend it (unless the name already has it) so every PDP title
+ * targets "commercial <product>", and keep the clean product name as the
+ * on-page H1. Uses an absolute title so the layout's "%s — KitchenaryKart"
+ * template doesn't double the brand.
+ */
+function pdpSeoTitle(displayName: string): string {
+  const name = displayName.trim();
+  const withKeyword = /\bcommercial\b/i.test(name) ? name : `Commercial ${name}`;
+  return `${withKeyword} — KitchenaryKart`;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const requestedSku = decodeURIComponent(params.sku);
   const p = await getProductBySku(requestedSku);
@@ -44,7 +61,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
         : ''}`
     : p.name;
   const productCategory = p.subcategory || p.category || 'kitchen equipment';
-  const title = displayName;
+  const seoTitle = pdpSeoTitle(displayName);
   // Prefer the product's real description for the meta tag — unique per
   // product (better for SEO than a repeated template), cleaned and
   // clamped to ~160 chars at a word boundary. Fall back to a concise,
@@ -68,14 +85,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const ogImage = ogImageSrc ? imgSrc(ogImageSrc) : '/logo.png';
 
   return {
-    title,
+    title: { absolute: seoTitle },
     description,
     keywords: p.metaKeywords ?? undefined,
     alternates: { canonical: canonicalPath },
     openGraph: {
       type: 'website',
       url: canonicalPath,
-      title,
+      title: seoTitle,
       description,
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
@@ -83,7 +100,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: seoTitle,
       description,
       images: [ogImage],
     },
