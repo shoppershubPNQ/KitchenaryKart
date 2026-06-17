@@ -10,7 +10,7 @@ const VISIBLE_TILES=7;const GAP_PX=20;const SLIDE_STEP=3;const INTERVAL_MS=2500;
 function tilePitch(el:HTMLElement):number{const first=el.firstElementChild as HTMLElement|null;if(!first)return 0;return first.getBoundingClientRect().width+GAP_PX;}
 export function CategoryTiles({tree}:Props){
 const subs:Sub[]=[];const orderedCats=[...CATEGORY_ORDER.filter((c)=>tree[c]),...Object.keys(tree).filter((c)=>!CATEGORY_ORDER.includes(c))];
-for(const cat of orderedCats){for(const s of tree[cat]??[]){if(s.subName.trim().toLowerCase()==='sample')continue;subs.push({category:cat,subName:s.subName,count:s.count,thumb:s.thumb});}}
+for(const cat of orderedCats){for(const s of tree[cat]??[]){const n=s.subName.trim();if(!n||n.toLowerCase()==='sample'||/^[-–—]+$/.test(n)||s.count===0)continue;subs.push({category:cat,subName:s.subName,count:s.count,thumb:s.thumb});}}
 const scrollRef=useRef<HTMLDivElement>(null);const paused=useRef(false);
 useEffect(()=>{const id=setInterval(()=>{if(paused.current)return;const el=scrollRef.current;if(!el)return;const max=el.scrollWidth-el.clientWidth;if(el.scrollLeft+2>=max){el.scrollTo({left:0,behavior:'smooth'});}else{el.scrollBy({left:tilePitch(el)*SLIDE_STEP,behavior:'smooth'});}},INTERVAL_MS);return()=>clearInterval(id);},[]);
 const scroll=(dir:-1|1)=>{const el=scrollRef.current;if(!el)return;el.scrollBy({left:tilePitch(el)*SLIDE_STEP*dir,behavior:'smooth'});};

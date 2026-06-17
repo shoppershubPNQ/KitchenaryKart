@@ -561,7 +561,8 @@ async function _getCategoryTree(): Promise<Record<string, CategoryTreeNode[]>> {
   const tree: Record<string, CategoryTreeNode[]> = {};
   for (const g of groups) {
     const cat = g.category as string;
-    const sub = g.subcategory ?? '—';
+    const sub = g.subcategory;
+    if (!sub || !sub.trim()) continue;   // skip products with no subcategory
     (tree[cat] ||= []).push({
       subName: sub,
       count: g._count._all,
