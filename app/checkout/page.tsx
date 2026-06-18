@@ -178,6 +178,40 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
 
+  // Google Customer Reviews opt-in — fires on the order-confirmation
+  // ("Payment received") state. Google shows the customer a post-purchase
+  // survey opt-in; if they accept, Google emails them a survey after the
+  // estimated delivery date and aggregates a verified store rating.
+  // Requires an email; phone-only customers simply won't see the opt-in.
+  useEffect(() => {
+    if (!done?.orderNumber) return;
+    const email = customer?.email || '';
+    if (!email) return;
+    // Estimated delivery ~7 days out (matches our 3–7 business-day window).
+    const est = new Date();
+    est.setDate(est.getDate() + 7);
+    const estimatedDeliveryDate = est.toISOString().slice(0, 10);
+    (window as any).renderOptIn = function () {
+      (window as any).gapi.load('surveyoptin', function () {
+        (window as any).gapi.surveyoptin.render({
+          merchant_id: 5809109517,
+          order_id: done.orderNumber,
+          email,
+          delivery_country: 'IN',
+          estimated_delivery_date: estimatedDeliveryDate,
+        });
+      });
+    };
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/platform.js?onload=renderOptIn';
+    s.async = true;
+    s.defer = true;
+    document.body.appendChild(s);
+    return () => {
+      s.remove();
+    };
+  }, [done, customer]);
+
   async function applyCoupon() {
     const code = couponInput.trim();
     if (!code) return;
