@@ -226,7 +226,7 @@ function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
               // in production. Plain <img> with explicit w/h avoids it.
               <img
                 src={imgSrc(product.imageUrl)}
-                alt=""
+                alt={product.name}
                 width={36}
                 height={36}
                 loading="lazy"
@@ -315,7 +315,7 @@ function renderProductCard(p: PublicProduct, i: number) {
             // Reverted from next/image 2026-05-23.
             <img
               src={imgSrc(p.imageUrl)}
-              alt=""
+              alt={p.name}
               width={36}
               height={36}
               loading="lazy"

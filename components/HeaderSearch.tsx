@@ -144,7 +144,7 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={imgSrc(hit.imageUrl)}
-                        alt=""
+                        alt={hit.name}
                         width={48}
                         height={48}
                         loading="lazy"

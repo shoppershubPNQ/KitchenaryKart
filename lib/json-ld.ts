@@ -324,6 +324,53 @@ export function buildFaqJsonLd(
 }
 
 /**
+ * Build an ItemList of products for a category landing page. Each entry
+ * is a full Product node (Google prefers inline Product over bare URLs
+ * for merchant list results). Only emit products actually rendered on
+ * the page so the markup matches visible content.
+ */
+export interface ItemListEntry {
+  sku: string;
+  name: string;
+  imageUrl: string | null;
+  price: number;
+}
+
+export function buildItemListJsonLd(
+  items: ItemListEntry[],
+  listName: string,
+): Record<string, unknown> | null {
+  if (!items || items.length === 0) return null;
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'ItemList',
+    name: listName,
+    numberOfItems: items.length,
+    itemListElement: items.map((p, i) => {
+      const pdpUrl = `${SITE_URL}/product/${encodeURIComponent(p.sku)}`;
+      return {
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Product',
+          name: p.name,
+          sku: p.sku,
+          url: pdpUrl,
+          image: p.imageUrl ? toAbsoluteUrl(p.imageUrl) : `${SITE_URL}/logo.png`,
+          brand: { '@type': 'Brand', name: 'Kitchenary Kart' },
+          offers: {
+            '@type': 'Offer',
+            url: pdpUrl,
+            priceCurrency: 'INR',
+            price: Number(p.price.toFixed(2)),
+          },
+        },
+      };
+    }),
+  };
+}
+
+/**
  * Resolve a stored image URL (which may be `/images/...` or already
  * an absolute https URL) to an absolute one suitable for JSON-LD.
  */

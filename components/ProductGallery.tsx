@@ -62,7 +62,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
                 intrinsic box so it can skip layout pass. */}
             <img
               src={imgSrc(u)}
-              alt=""
+              alt={`${name} — view ${i + 1}`}
               width={72}
               height={72}
               loading={i === 0 ? 'eager' : 'lazy'}

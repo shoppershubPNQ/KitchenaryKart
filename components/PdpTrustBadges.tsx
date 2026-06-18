@@ -10,8 +10,9 @@
  *        / cloud-kitchen owners can claim back the 18% GST on their
  *        next filing, effectively making the equipment 18% cheaper.
  *        Single biggest trust signal for HORECA buyers in India.
- *   2. Free Shipping (orders > ₹5,000)
+ *   2. Free Shipping (orders above ₹3,000)
  *        Removes the "what's shipping going to cost me?" mental block.
+ *        Below ₹3,000 a flat ₹399 fee applies (see lib/shipping.ts).
  *   3. Secure Payment (UPI · Card · EMI)
  *        Reassurance for first-time buyers worried about card fraud
  *        on an unfamiliar storefront.

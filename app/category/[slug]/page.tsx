@@ -8,7 +8,7 @@ import {
 import { CATEGORY_SHORT } from '@/lib/categories';
 import { getCategoryFeatured } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
-import { buildCrumbsJsonLd } from '@/lib/json-ld';
+import { buildCrumbsJsonLd, buildItemListJsonLd } from '@/lib/json-ld';
 
 interface Params {
   params: { slug: string };
@@ -56,6 +56,8 @@ export default async function CategoryLandingPage({ params }: Params) {
     { name: content.title },
   ]);
 
+  const itemListLd = buildItemListJsonLd(featured, `Popular in ${content.title}`);
+
   // Link into the existing client-filtered shop view for the full list.
   const shopHref = `/shop?cat=${encodeURIComponent(content.category)}`;
 
@@ -65,6 +67,12 @@ export default async function CategoryLandingPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbsLd) }}
       />
+      {itemListLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+        />
+      )}
 
       <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-10 md:py-14">
         <nav className="text-xs text-muted flex items-center gap-2 mb-6 flex-wrap">

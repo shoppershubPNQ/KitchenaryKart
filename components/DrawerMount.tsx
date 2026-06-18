@@ -129,7 +129,7 @@ export function DrawerMount() {
                     >
                       <div className="w-[72px] h-[72px] rounded bg-bg-soft grid place-items-center overflow-hidden font-head font-bold text-brand">
                         {i.imageUrl ? (
-                          <img src={imgSrc(i.imageUrl)} alt="" className="w-full h-full object-contain" />
+                          <img src={imgSrc(i.imageUrl)} alt={i.name} className="w-full h-full object-contain" />
                         ) : (
                           letter(i.name)
                         )}

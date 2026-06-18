@@ -387,7 +387,7 @@ export default function CheckoutPage() {
                       {i.imageUrl ? (
                         <img
                           src={imgSrc(i.imageUrl)}
-                          alt=""
+                          alt={i.name}
                           className="w-full h-full object-contain"
                         />
                       ) : (
@@ -576,7 +576,7 @@ export default function CheckoutPage() {
                   <span className="w-4 h-4 rounded-full border-[5px] border-brand bg-white shrink-0" />
                   <span>
                     <span className="block text-[14px] font-semibold text-ink">Standard Delivery</span>
-                    <span className="block text-[12px] text-muted italic">5–7 business days</span>
+                    <span className="block text-[12px] text-muted italic">3–7 business days</span>
                   </span>
                 </span>
                 {shippingFee === 0 ? (
