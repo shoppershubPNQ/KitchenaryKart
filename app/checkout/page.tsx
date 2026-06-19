@@ -374,6 +374,19 @@ export default function CheckoutPage() {
           ondismiss: () => {
             setSubmitting(false);
             setError('Payment cancelled. You can try again.');
+            // Best-effort: mark the just-created unpaid order as cancelled
+            // so it doesn't linger in admin as a "pending" order that looks
+            // like a real one. Fire-and-forget + non-blocking; the server
+            // only cancels orders that are STILL unpaid, so this can never
+            // affect a payment that actually went through.
+            fetch('/admin-api/public/orders/cancel', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: data.orderId,
+                razorpayOrderId: data.razorpayOrderId,
+              }),
+            }).catch(() => {});
           },
         },
       });
