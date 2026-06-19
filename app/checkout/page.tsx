@@ -336,7 +336,19 @@ export default function CheckoutPage() {
             try {
               trackPurchase({
                 orderNumber: data.orderNumber,
-                total: items.reduce((s, i) => s + i.price * i.qty, 0),
+                // Use the server's binding charge (Razorpay amount, in
+                // paise) so revenue includes the ₹399 shipping and any
+                // discount. Fall back to the line-item subtotal only if
+                // the API didn't return an amount.
+                total:
+                  typeof data.amount === 'number'
+                    ? data.amount / 100
+                    : items.reduce((s, i) => s + i.price * i.qty, 0),
+                shipping:
+                  typeof data.shippingCost === 'number'
+                    ? data.shippingCost
+                    : undefined,
+                coupon: data.couponCode || appliedCoupon?.code || undefined,
                 items: items.map((i) => ({
                   sku: i.sku,
                   name: i.name,

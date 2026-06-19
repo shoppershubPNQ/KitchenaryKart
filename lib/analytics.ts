@@ -145,7 +145,15 @@ export function trackInitiateCheckout(c: CartPayload) {
 
 interface PurchasePayload {
   orderNumber: string;
+  /** True amount the customer was charged — after-discount subtotal +
+   *  shipping. This is the value GA4/Ads revenue must reflect, NOT the
+   *  bare line-item subtotal (which omits the ₹399 shipping fee). */
   total: number;
+  /** Shipping fee charged on this order (0 when free). Reported to GA4 as
+   *  the `shipping` param so it's broken out of `value` in reporting. */
+  shipping?: number;
+  /** Coupon code applied at checkout, if any. */
+  coupon?: string | null;
   items: Array<{ sku: string; name: string; price: number; quantity: number }>;
 }
 
@@ -164,11 +172,15 @@ export function trackPurchase(p: PurchasePayload) {
   }
 
   if (window.gtag) {
-    // GA4 purchase event
+    // GA4 purchase event. `value` is the full charged total (incl.
+    // shipping); `shipping` and `coupon` are broken out per the GA4
+    // recommended-event spec so reporting attributes them correctly.
     window.gtag('event', 'purchase', {
       transaction_id: p.orderNumber,
       currency: 'INR',
       value: p.total,
+      shipping: p.shipping ?? undefined,
+      coupon: p.coupon || undefined,
       items: p.items.map((i) => ({
         item_id: i.sku,
         item_name: i.name,
