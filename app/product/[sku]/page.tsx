@@ -202,7 +202,7 @@ export default async function ProductPage({ params }: Params) {
     productSku: requestedSku,
   });
   const specs: Array<[string, string | null]> = [
-    ['SKU', p.sku],
+    ['SKU', requestedSku],
     ['Category', p.subcategory || p.category || null],
     ['Dimensions', p.dimensions],
     ['Power', p.power],
@@ -366,7 +366,17 @@ export default async function ProductPage({ params }: Params) {
           </div>
 
           <div className="flex flex-wrap gap-3 mb-6">
-            <AddToInquiryButton product={p} />
+            <AddToInquiryButton
+              product={p}
+              cartItem={{
+                sku: requestedSku,
+                name: displayName,
+                price: displayPrice,
+                mrp: displayMrp,
+                imageUrl: selectedVariant?.imageUrl ?? p.imageUrl,
+                category: p.category,
+              }}
+            />
           </div>
         </div>
       </div>
