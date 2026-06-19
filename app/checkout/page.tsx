@@ -282,6 +282,9 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Link the order to the signed-in account so it appears in
+          // "My Orders" (server re-verifies this id before linking).
+          customerId: customer.id,
           customerName: address.name || customer.name,
           customerEmail: customer.email || '',
           customerPhone: address.phone || customer.phone || '',
