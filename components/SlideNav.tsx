@@ -84,7 +84,7 @@ export function SlideNav({ tree }: Props) {
       <aside
         role="dialog"
         aria-label="Navigation"
-        className={`fixed top-0 left-0 h-screen w-[320px] max-w-[85%] bg-white shadow-2xl z-[201] flex flex-col transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 h-dvh w-[320px] max-w-[85%] bg-white shadow-2xl z-[201] flex flex-col transition-transform duration-300 ease-out ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ transitionTimingFunction: 'cubic-bezier(.22,.61,.36,1)' }}

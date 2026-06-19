@@ -84,7 +84,7 @@ export function DrawerMount() {
         }`}
       />
       <aside
-        className={`fixed top-0 right-0 h-screen w-[440px] max-w-full bg-[#F5F5F5] shadow-lg z-[201] flex flex-col transition-transform duration-200 ${
+        className={`fixed top-0 right-0 h-dvh w-[440px] max-w-full bg-[#F5F5F5] shadow-lg z-[201] flex flex-col transition-transform duration-200 ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
