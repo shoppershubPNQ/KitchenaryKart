@@ -250,22 +250,30 @@ export function DrawerMount() {
                       <dd>− {inr(summary.discountAmount)}</dd>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <dt className="text-muted">Net Value</dt>
-                    <dd className="text-ink">{inr(summary.netValue)}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted">GST ({summary.gstRateLabel})</dt>
-                    <dd className="text-ink">{inr(summary.gstAmount)}</dd>
-                  </div>
+                  {summary.discountPct > 0 && (
+                    <div className="flex justify-between">
+                      <dt className="text-muted">Net Value</dt>
+                      <dd className="text-ink">{inr(summary.netValue)}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <dt className="text-ink">
-                      Shipping Cost{summary.shipping === 0 ? ' (Free)' : ''}
+                      Shipping Fee{summary.shipping === 0 ? ' (Free)' : ''}
                     </dt>
                     <dd className={summary.shipping === 0 ? 'text-success font-semibold' : 'text-ink'}>
                       {inr(summary.shipping)}
                     </dd>
                   </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted">GST ({summary.gstRateLabel})</dt>
+                    <dd className="text-ink">{inr(summary.gstAmount)}</dd>
+                  </div>
+                  {summary.roundOff !== 0 && (
+                    <div className="flex justify-between text-muted">
+                      <dt>Round Off</dt>
+                      <dd>{summary.roundOff > 0 ? '+ ' : '− '}{inr(Math.abs(summary.roundOff))}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold border-t border-line pt-2 text-[15px]">
                     <dt className="text-ink">Net Payable Amount</dt>
                     <dd className="text-ink">{inr(summary.netPayable)}</dd>

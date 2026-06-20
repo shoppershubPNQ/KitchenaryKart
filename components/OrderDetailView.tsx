@@ -158,21 +158,24 @@ export function OrderDetailView({ order }: { order: PublicOrder }) {
                 taxPercent: it.taxPercent,
               })),
               order.discountAmount,
+              order.shippingCost, // stored shipping = what the customer paid
             );
-            // Shipping comes from the stored order (the binding charge), not
-            // re-derived, so it always matches what the customer paid.
-            const shipping = order.shippingCost;
             return (
               <dl className="space-y-1.5">
                 <Row label="Excluding GST Price (Net Price)" value={inr(summary.netPrice)} />
                 {summary.discountPct > 0 && (
                   <Row label={`Discount (${summary.discountPct}%)`} value={`− ${inr(summary.discountAmount)}`} />
                 )}
-                <Row label="Net Value" value={inr(summary.netValue)} />
+                {summary.discountPct > 0 && (
+                  <Row label="Net Value" value={inr(summary.netValue)} />
+                )}
+                <Row label={`Shipping Fee${summary.shipping === 0 ? ' (Free)' : ''}`} value={inr(summary.shipping)} />
                 <Row label={`GST (${summary.gstRateLabel})`} value={inr(summary.gstAmount)} />
-                <Row label={`Shipping Cost${shipping === 0 ? ' (Free)' : ''}`} value={inr(shipping)} />
+                {summary.roundOff !== 0 && (
+                  <Row label="Round Off" value={`${summary.roundOff > 0 ? '+ ' : '− '}${inr(Math.abs(summary.roundOff))}`} />
+                )}
                 <div className="border-t border-line pt-2 mt-2">
-                  <Row label="Net Payable Amount" value={inr(order.totalAmount)} bold />
+                  <Row label="Net Payable Amount" value={inr(summary.netPayable)} bold />
                 </div>
               </dl>
             );

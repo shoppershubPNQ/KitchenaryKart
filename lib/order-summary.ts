@@ -41,7 +41,9 @@ export interface OrderSummary {
   gstRateLabel: string;
   /** Flat fee, or 0 when free. */
   shipping: number;
-  /** netValue + gstAmount + shipping. */
+  /** Adjustment to reach a whole-rupee Net Payable (can be + or −). */
+  roundOff: number;
+  /** netValue + gstAmount + shipping, rounded to the nearest whole rupee. */
   netPayable: number;
 }
 
@@ -56,6 +58,9 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 export function computeOrderSummary(
   items: SummaryItem[],
   discountInclusive = 0,
+  /** Use the order's stored shipping (order views) instead of re-deriving
+   *  it from the threshold (cart/checkout). */
+  shippingOverride?: number,
 ): OrderSummary {
   const inclusiveTotal = items.reduce((s, i) => s + i.price * (i.qty || 1), 0);
   const discountPct = inclusiveTotal > 0 ? (discountInclusive / inclusiveTotal) * 100 : 0;
@@ -76,19 +81,33 @@ export function computeOrderSummary(
   // Free shipping is decided on the after-discount amount (threshold kept at
   // ₹3,000 inclusive to match the live policy + the server's binding charge).
   const afterDiscountInclusive = inclusiveTotal - discountInclusive;
-  const shipping = afterDiscountInclusive >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  const shipping =
+    shippingOverride ??
+    (afterDiscountInclusive >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE);
 
   const rates = [...new Set(items.map((i) => i.taxPercent ?? 18))];
   const gstRateLabel = rates.length === 1 ? `${rates[0]}%` : '';
+
+  // Shipping/freight is part of the taxable value (CGST Act s.15), so GST is
+  // charged on (Net Value + Shipping). Taxed at the order's single rate, or
+  // 18% for a mixed-rate cart.
+  const shippingRate = rates.length === 1 ? rates[0] : 18;
+  const gstTotal = round2(gstAmount + shipping * (shippingRate / 100));
+
+  // Round the final payable to a whole rupee; the difference is shown as a
+  // "Round Off" line (standard on Indian GST invoices).
+  const exactPayable = round2(netValue + shipping + gstTotal);
+  const netPayable = Math.round(exactPayable);
 
   return {
     netPrice: round2(netPrice),
     discountPct: round2(discountPct),
     discountAmount: round2(netPrice - netValue),
     netValue: round2(netValue),
-    gstAmount: round2(gstAmount),
+    gstAmount: gstTotal,
     gstRateLabel,
     shipping: round2(shipping),
-    netPayable: round2(netValue + gstAmount + shipping),
+    roundOff: round2(netPayable - exactPayable),
+    netPayable,
   };
 }

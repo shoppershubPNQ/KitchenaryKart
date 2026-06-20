@@ -137,7 +137,6 @@ export default function CheckoutPage() {
   // threshold, flat fee below).
   const amountAfterDiscount = Math.max(0, total - couponDiscount);
   const shippingFee = shippingFor(amountAfterDiscount);
-  const youPay = amountAfterDiscount + shippingFee;
   const savings = Math.max(subtotal - total, 0);
 
   // GST-compliant breakdown via the shared helper — identical labels +
@@ -733,18 +732,26 @@ export default function CheckoutPage() {
                   <span>−{inr(summary.discountAmount)}</span>
                 </div>
               )}
+              {summary.discountPct > 0 && (
+                <div className="flex justify-between text-ink-soft">
+                  <span>Net Value</span>
+                  <span>{inr(summary.netValue)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-ink-soft">
-                <span>Net Value</span>
-                <span>{inr(summary.netValue)}</span>
+                <span>Shipping Fee{summary.shipping === 0 ? ' (Free)' : ''}</span>
+                <span>{inr(summary.shipping)}</span>
               </div>
               <div className="flex justify-between text-ink-soft">
                 <span>GST ({summary.gstRateLabel})</span>
                 <span>{inr(summary.gstAmount)}</span>
               </div>
-              <div className="flex justify-between text-ink-soft">
-                <span>Shipping Cost{summary.shipping === 0 ? ' (Free)' : ''}</span>
-                <span>{inr(summary.shipping)}</span>
-              </div>
+              {summary.roundOff !== 0 && (
+                <div className="flex justify-between text-ink-soft">
+                  <span>Round Off</span>
+                  <span>{summary.roundOff > 0 ? '+ ' : '− '}{inr(Math.abs(summary.roundOff))}</span>
+                </div>
+              )}
               <div className="flex justify-between text-ink font-head font-bold text-base pt-1 border-t border-line">
                 <span>Net Payable Amount</span>
                 <span>{inr(summary.netPayable)}</span>
@@ -775,7 +782,7 @@ export default function CheckoutPage() {
             >
               {submitting
                 ? 'Opening payment…'
-                : `Pay Now · ${inr(youPay)}${count ? `  (${count} ${count === 1 ? 'item' : 'items'})` : ''}`}
+                : `Pay Now · ${inr(summary.netPayable)}${count ? `  (${count} ${count === 1 ? 'item' : 'items'})` : ''}`}
             </button>
 
             <p className="text-center text-[11px] text-muted">
