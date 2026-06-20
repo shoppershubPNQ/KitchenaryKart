@@ -139,6 +139,22 @@ export default function CheckoutPage() {
   const youPay = amountAfterDiscount + shippingFee;
   const savings = Math.max(subtotal - total, 0);
 
+  // GST split for the summary (storefront prices are GST-inclusive), plus
+  // the coupon discount as a percentage — same clear bifurcation as the
+  // tax invoice so the buyer trusts the amount before paying.
+  const gstAmount = items.reduce((acc, i) => {
+    const lineSell = i.price * (i.qty || 1);
+    const rate = i.taxPercent ?? 18;
+    return acc + (lineSell - lineSell / (1 + rate / 100));
+  }, 0);
+  const taxableValue = total - gstAmount;
+  const gstRates = [...new Set(items.map((i) => i.taxPercent ?? 18))];
+  const gstRateLabel = gstRates.length === 1 ? ` (${gstRates[0]}%)` : '';
+  const discPct = total > 0 && couponDiscount > 0 ? (couponDiscount / total) * 100 : 0;
+  const discPctLabel = discPct > 0
+    ? ` (${Number.isInteger(+discPct.toFixed(2)) ? discPct.toFixed(0) : discPct.toFixed(1)}%)`
+    : '';
+
   // Re-validate a previously applied coupon when the cart total changes
   // (e.g. customer edits qty in another tab). Clears it if it no longer
   // qualifies. Skips when nothing's applied.
@@ -712,15 +728,24 @@ export default function CheckoutPage() {
               )}
             </section>
 
-            {/* Price breakdown */}
+            {/* Price breakdown — clear GST bifurcation (like the tax
+                invoice); discount line shows only when a coupon applies. */}
             <div className="border-t border-line pt-3 space-y-1.5 text-[13.5px]">
               <div className="flex justify-between text-ink-soft">
-                <span>Subtotal</span>
+                <span>Taxable Value (excl. GST)</span>
+                <span>{inr(taxableValue)}</span>
+              </div>
+              <div className="flex justify-between text-ink-soft">
+                <span>GST{gstRateLabel}</span>
+                <span>{inr(gstAmount)}</span>
+              </div>
+              <div className="flex justify-between text-ink font-medium border-t border-line pt-1.5">
+                <span>Item Total (incl. GST)</span>
                 <span>{inr(total)}</span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-success font-medium">
-                  <span>Coupon ({appliedCoupon?.code})</span>
+                  <span>Discount{discPctLabel}</span>
                   <span>−{inr(couponDiscount)}</span>
                 </div>
               )}
@@ -728,8 +753,8 @@ export default function CheckoutPage() {
                 <span>Shipping</span>
                 <span>{shippingFee === 0 ? 'Free' : inr(shippingFee)}</span>
               </div>
-              <div className="flex justify-between text-ink font-head font-bold text-base pt-1">
-                <span>Total</span>
+              <div className="flex justify-between text-ink font-head font-bold text-base pt-1 border-t border-line">
+                <span>You Pay (incl. GST)</span>
                 <span>{inr(youPay)}</span>
               </div>
             </div>

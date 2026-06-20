@@ -373,6 +373,7 @@ export default async function ProductPage({ params }: Params) {
                 name: displayName,
                 price: displayPrice,
                 mrp: displayMrp,
+                taxPercent: p.taxPercent,
                 imageUrl: selectedVariant?.imageUrl ?? p.imageUrl,
                 category: p.category,
               }}

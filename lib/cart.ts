@@ -17,6 +17,9 @@ export interface CartItem {
   price: number;
   /** Catalog MRP before discount, when the product has one. */
   mrp: number | null;
+  /** GST rate % for this line (prices are GST-inclusive). Used to show the
+   *  tax split in the cart/checkout. Defaults to 18 for older cart items. */
+  taxPercent: number;
   imageUrl: string | null;
   category: string | null;
   qty: number;
@@ -42,6 +45,7 @@ export function addToCart(p: {
   name: string;
   price: number;
   mrp?: number | null;
+  taxPercent?: number | null;
   imageUrl?: string | null;
   category?: string | null;
 }) {
@@ -58,6 +62,7 @@ export function addToCart(p: {
       name: p.name,
       price: p.price,
       mrp: p.mrp ?? null,
+      taxPercent: p.taxPercent ?? 18,
       imageUrl: p.imageUrl ?? null,
       category: p.category ?? null,
       qty: 1,

@@ -75,6 +75,18 @@ export function DrawerMount() {
   const youPay = total + shipping; // selling-price sum + shipping
   const pctOff = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
 
+  // GST split — storefront prices are GST-inclusive, so back the tax out of
+  // each line to show a clear taxable-value + GST breakdown (like the
+  // invoice), instead of a confusing MRP-vs-discount summary.
+  const gstAmount = items.reduce((acc, i) => {
+    const lineSell = i.price * (i.qty || 1);
+    const rate = i.taxPercent ?? 18;
+    return acc + (lineSell - lineSell / (1 + rate / 100));
+  }, 0);
+  const taxableValue = total - gstAmount;
+  const gstRates = [...new Set(items.map((i) => i.taxPercent ?? 18))];
+  const gstRateLabel = gstRates.length === 1 ? ` (${gstRates[0]}%)` : '';
+
   return (
     <>
       <div
@@ -229,17 +241,24 @@ export function DrawerMount() {
                 </section>
               )}
 
-              {/* Price Summary */}
+              {/* Price Summary — clear GST bifurcation (taxable value + GST
+                  + shipping), like the tax invoice, so the buyer trusts the
+                  amount. MRP savings live in the banner above; a coupon
+                  discount (if any) is applied + shown at checkout. */}
               <section className="bg-white rounded-lg p-4">
                 <h3 className="font-head text-[15px] font-bold text-ink mb-3">Price Summary</h3>
                 <dl className="space-y-2 text-[14px]">
                   <div className="flex justify-between">
-                    <dt className="text-ink">Subtotal</dt>
-                    <dd className="text-ink">{inr(subtotal)}</dd>
+                    <dt className="text-muted">Taxable Value (excl. GST)</dt>
+                    <dd className="text-ink">{inr(taxableValue)}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-ink">Discount</dt>
-                    <dd className="text-ink">− {inr(discount)}</dd>
+                    <dt className="text-muted">GST{gstRateLabel}</dt>
+                    <dd className="text-ink">{inr(gstAmount)}</dd>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t border-line pt-2">
+                    <dt className="text-ink">Item Total (incl. GST)</dt>
+                    <dd className="text-ink">{inr(total)}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-ink">Shipping</dt>

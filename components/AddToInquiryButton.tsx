@@ -21,6 +21,7 @@ interface Props {
     name: string;
     price: number;
     mrp?: number | null;
+    taxPercent?: number | null;
     imageUrl?: string | null;
     category?: string | null;
   };
