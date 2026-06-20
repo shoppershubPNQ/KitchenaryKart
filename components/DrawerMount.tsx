@@ -259,12 +259,12 @@ export function DrawerMount() {
                     <dd className="text-ink">{inr(summary.gstAmount)}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-ink">Shipping</dt>
-                    {summary.shipping === 0 ? (
-                      <dd className="text-success font-semibold">Free</dd>
-                    ) : (
-                      <dd className="text-ink">{inr(summary.shipping)}</dd>
-                    )}
+                    <dt className="text-ink">
+                      Shipping Cost{summary.shipping === 0 ? ' (Free)' : ''}
+                    </dt>
+                    <dd className={summary.shipping === 0 ? 'text-success font-semibold' : 'text-ink'}>
+                      {inr(summary.shipping)}
+                    </dd>
                   </div>
                   <div className="flex justify-between font-bold border-t border-line pt-2 text-[15px]">
                     <dt className="text-ink">Net Payable Amount</dt>

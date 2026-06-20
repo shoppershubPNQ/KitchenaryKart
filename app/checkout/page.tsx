@@ -742,8 +742,8 @@ export default function CheckoutPage() {
                 <span>{inr(summary.gstAmount)}</span>
               </div>
               <div className="flex justify-between text-ink-soft">
-                <span>Shipping</span>
-                <span>{summary.shipping === 0 ? 'Free' : inr(summary.shipping)}</span>
+                <span>Shipping Cost{summary.shipping === 0 ? ' (Free)' : ''}</span>
+                <span>{inr(summary.shipping)}</span>
               </div>
               <div className="flex justify-between text-ink font-head font-bold text-base pt-1 border-t border-line">
                 <span>Net Payable Amount</span>
