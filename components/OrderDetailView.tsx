@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { imgSrc, inr, dateShortFromIso } from '@/lib/format';
 import { OrderStatusTimeline, StatusPill } from './OrderStatusTimeline';
 import type { PublicOrder } from '@/lib/orders';
+import { computeOrderSummary } from '@/lib/order-summary';
 
 export function OrderDetailView({ order }: { order: PublicOrder }) {
   // Customers can leave reviews once the order has been shipped or
@@ -147,14 +148,35 @@ export function OrderDetailView({ order }: { order: PublicOrder }) {
           <div className="text-xs text-muted uppercase tracking-wider mb-3">
             Order summary
           </div>
-          <dl className="space-y-1.5">
-            <Row label="Subtotal" value={inr(order.subtotal)} />
-            <Row label="Tax (GST)" value={inr(order.taxAmount)} />
-            <Row label="Shipping" value={order.shippingCost > 0 ? inr(order.shippingCost) : 'Free'} />
-            <div className="border-t border-line pt-2 mt-2">
-              <Row label="Total" value={inr(order.totalAmount)} bold />
-            </div>
-          </dl>
+          {(() => {
+            // Shared helper — same ladder + numbers as the invoice / admin /
+            // cart. GST on the discounted Net Value.
+            const summary = computeOrderSummary(
+              order.items.map((it) => ({
+                price: it.lineTotal,
+                qty: 1, // lineTotal already covers the line's quantity
+                taxPercent: it.taxPercent,
+              })),
+              order.discountAmount,
+            );
+            // Shipping comes from the stored order (the binding charge), not
+            // re-derived, so it always matches what the customer paid.
+            const shipping = order.shippingCost;
+            return (
+              <dl className="space-y-1.5">
+                <Row label="Excluding GST Price (Net Price)" value={inr(summary.netPrice)} />
+                {summary.discountPct > 0 && (
+                  <Row label={`Discount (${summary.discountPct}%)`} value={`− ${inr(summary.discountAmount)}`} />
+                )}
+                <Row label="Net Value" value={inr(summary.netValue)} />
+                <Row label={`GST (${summary.gstRateLabel})`} value={inr(summary.gstAmount)} />
+                <Row label={`Shipping Cost${shipping === 0 ? ' (Free)' : ''}`} value={inr(shipping)} />
+                <div className="border-t border-line pt-2 mt-2">
+                  <Row label="Net Payable Amount" value={inr(order.totalAmount)} bold />
+                </div>
+              </dl>
+            );
+          })()}
         </div>
       </div>
     </div>

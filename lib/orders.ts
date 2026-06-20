@@ -12,6 +12,8 @@ export interface PublicOrderItem {
   productSku: string;
   quantity: number;
   unitPrice: number;
+  /** GST rate %, needed for the price-breakdown ladder. */
+  taxPercent: number;
   lineTotal: number;
   imageUrl: string | null;
 }
@@ -24,6 +26,7 @@ export interface PublicOrder {
   paymentStatus: string;
   subtotal: number;
   taxAmount: number;
+  discountAmount: number;
   shippingCost: number;
   totalAmount: number;
   shippingAddress: string;
@@ -128,6 +131,7 @@ export async function loadPublicOrder(
     paymentStatus: order.paymentStatus,
     subtotal: Number(order.subtotal ?? 0),
     taxAmount: Number(order.taxAmount ?? 0),
+    discountAmount: Number(order.discountAmount ?? 0),
     shippingCost: Number(order.shippingCost ?? 0),
     totalAmount: Number(order.totalAmount ?? 0),
     shippingAddress: order.shippingAddress ?? '',
@@ -143,6 +147,7 @@ export async function loadPublicOrder(
       productSku: it.productSku ?? '',
       quantity: it.quantity,
       unitPrice: Number(it.unitPrice),
+      taxPercent: Number(it.taxPercent),
       lineTotal: Number(it.lineTotal),
       imageUrl: it.product?.imageUrl ?? null,
     })),
