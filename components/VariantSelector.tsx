@@ -79,15 +79,24 @@ export function VariantSelector({ variants, currentSku }: Props) {
   }, [current]);
 
   function pickValue(axisType: string, value: string) {
-    // Build the desired selection (current + new pick for this axis)
-    const target = { ...currentSelection, [axisType]: value };
-    // Find a variant matching ALL axis values in `target`
-    const match = variants.find((v) => {
-      const vals = typeof v.axisValues === 'string'
+    const valsOf = (v: PublicVariant): Record<string, string> =>
+      typeof v.axisValues === 'string'
         ? { [v.variantType]: v.axisValues }
         : (v.axisValues as Record<string, string>);
+    // Build the desired selection (current + new pick for this axis)
+    const target = { ...currentSelection, [axisType]: value };
+    // Prefer a variant matching ALL axis values in `target` (true matrix).
+    let match = variants.find((v) => {
+      const vals = valsOf(v);
       return Object.entries(target).every(([t, val]) => String(vals[t] ?? '') === val);
     });
+    // Fallback: sparse or "linked" matrices (e.g. each capacity pairs with one
+    // fixed power) have no exact combo for an off-diagonal pick. Navigate to any
+    // variant carrying the clicked value (prefer in-stock) so the button is never dead.
+    if (!match) {
+      const candidates = variants.filter((v) => String(valsOf(v)[axisType] ?? '') === value);
+      match = candidates.find((v) => v.stock > 0) ?? candidates[0];
+    }
     if (match) router.push(`/product/${encodeURIComponent(match.sku)}`);
   }
 
