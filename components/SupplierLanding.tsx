@@ -185,6 +185,25 @@ export async function SupplierLanding({ slug }: { slug: string }) {
           </section>
         )}
 
+        {/* Keyword-rich internal links — specific equipment + location
+            long-tail phrases (e.g. the Pune page). */}
+        {page.intentLinks && page.intentLinks.links.length > 0 && (
+          <section className="max-w-[70ch] mb-12">
+            <h2 className="font-head text-[clamp(1.1rem,1.6vw,1.35rem)] font-bold text-ink mb-4">
+              {page.intentLinks.heading}
+            </h2>
+            <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2.5 text-[15px] leading-relaxed">
+              {page.intentLinks.links.map((l) => (
+                <li key={l.href + l.label} className="list-disc ml-5">
+                  <Link href={l.href} className="text-ink/85 hover:text-brand transition">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Why buy from us — shared, factual trust block */}
         <section className="max-w-[70ch] bg-bg-soft rounded-xl p-6 md:p-8 mb-4">
           <h2 className="font-head text-[clamp(1.2rem,1.8vw,1.5rem)] font-bold text-ink mb-4">

@@ -29,6 +29,14 @@ export interface LandingPage {
   faqs: Array<{ q: string; a: string }>;
   /** DB category values to source the featured grid from. */
   featuredCategories: string[];
+  /**
+   * Optional keyword-rich internal-link block. Each link's visible text is a
+   * real long-tail search phrase (e.g. "Commercial bain marie supplier in
+   * Pune") pulled from Search Console, pointing at the matching shop filter /
+   * category page. Captures the specific equipment+location long-tail and
+   * spreads keyword-anchored internal links to the target pages.
+   */
+  intentLinks?: { heading: string; links: Array<{ label: string; href: string }> };
 }
 
 const ALL_MAIN = [
@@ -279,6 +287,25 @@ export const LANDING_PAGES: LandingPage[] = [
       },
     ],
     featuredCategories: ALL_MAIN,
+    intentLinks: {
+      heading: 'Commercial kitchen equipment we supply in Pune',
+      links: [
+        { label: 'Commercial bain marie supplier in Pune', href: '/shop?q=bain+marie' },
+        { label: 'Commercial deep fryer dealer in Pune', href: '/shop?q=deep+fryer' },
+        { label: 'Commercial planetary mixer supplier in Pune', href: '/shop?q=planetary+mixer' },
+        { label: 'Commercial dough mixer & kneader supplier in Pune', href: '/shop?q=dough' },
+        { label: 'Commercial food processor dealer in Pune', href: '/shop?q=food+processor' },
+        { label: 'Commercial meat slicer dealer in Pune', href: '/shop?q=meat+slicer' },
+        { label: 'Commercial oven & combi oven supplier in Pune', href: '/shop?q=oven' },
+        { label: 'Commercial toaster supplier in Pune', href: '/shop?q=toaster' },
+        { label: 'Commercial induction supplier in Pune', href: '/shop?q=induction' },
+        { label: 'Commercial bread slicer supplier in Pune', href: '/shop?q=bread+slicer' },
+        { label: 'Electric tawa & griddle supplier in Pune', href: '/shop?q=tawa' },
+        { label: 'Shawarma machine supplier in Pune', href: '/shop?q=shawarma' },
+        { label: 'Bakery equipment supplier in Pune', href: '/bakery-equipment-supplier' },
+        { label: 'Cloud kitchen equipment supplier in Pune', href: '/commercial-kitchen-equipment-supplier' },
+      ],
+    },
   },
 ];
 
