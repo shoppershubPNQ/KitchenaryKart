@@ -125,17 +125,22 @@ export default async function ProductPage({ params }: Params) {
   //   3. Otherwise, fall back to the parent's gallery as-is.
   const variantImages = selectedVariant?.images ?? [];
   const variantImage = selectedVariant?.imageUrl ?? null;
+  // Always surface the designated MAIN image (variant imageUrl, else parent
+  // imageUrl) as BOTH the hero AND the first thumbnail — so "set as main" in
+  // the admin is reflected at the front of the gallery, not buried mid-strip.
+  const mainFirst = (main: string | null, imgs: string[]): string[] =>
+    main ? [main, ...imgs.filter((u) => u !== main)] : imgs;
   let galleryImageUrl: string | null;
   let galleryImages: string[];
   if (variantImages.length > 0) {
     galleryImageUrl = variantImage ?? variantImages[0];
-    galleryImages = variantImages;
+    galleryImages = mainFirst(variantImage, variantImages);
   } else if (variantImage) {
     galleryImageUrl = variantImage;
-    galleryImages = [variantImage, ...p.images.filter((u) => u !== variantImage)];
+    galleryImages = mainFirst(variantImage, p.images);
   } else {
     galleryImageUrl = p.imageUrl;
-    galleryImages = p.images;
+    galleryImages = mainFirst(p.imageUrl, p.images);
   }
 
   // MRP shown on the page should match the variant's price (so the "SAVE %"
