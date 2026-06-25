@@ -29,6 +29,14 @@ interface Address {
   city: string;
   state: string;
   postalCode: string;
+  /** Optional buyer GSTIN for B2B customers who want a GST input-credit invoice. */
+  gstin?: string;
+}
+
+/** Indian GSTIN: 2-digit state + 10-char PAN + entity + 'Z' + checksum. */
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
+function isValidGstin(g: string): boolean {
+  return GSTIN_RE.test((g || '').trim().toUpperCase());
 }
 
 declare global {
@@ -41,7 +49,7 @@ const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
 const ADDR_KEY = 'kk_checkout_address';
 
 function loadAddress(fallback: Partial<Address> = {}): Address {
-  const empty: Address = { name: '', phone: '', line1: '', city: '', state: '', postalCode: '' };
+  const empty: Address = { name: '', phone: '', line1: '', city: '', state: '', postalCode: '', gstin: '' };
   if (typeof window === 'undefined') return { ...empty, ...fallback };
   try {
     const raw = localStorage.getItem(ADDR_KEY);
@@ -79,6 +87,9 @@ export default function CheckoutPage() {
   const { customer, loggedIn, loading: authLoading } = useAuth();
 
   const [address, setAddress] = useState<Address>(() => loadAddress());
+  // B2B: when checked, reveal a GSTIN field so the buyer gets a GST input-credit
+  // invoice. Pre-checked if a GSTIN was saved from a prior order.
+  const [isBusiness, setIsBusiness] = useState<boolean>(() => !!loadAddress().gstin);
   const [editing, setEditing] = useState(false);
   const [marketing, setMarketing] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -273,6 +284,11 @@ export default function CheckoutPage() {
       setError('Please complete your delivery address.');
       return;
     }
+    if (isBusiness && address.gstin?.trim() && !isValidGstin(address.gstin)) {
+      setEditing(true);
+      setError('Please enter a valid 15-character GSTIN (e.g. 27AAQPR2976J1ZU), or uncheck the business option.');
+      return;
+    }
     if (!RAZORPAY_KEY) {
       setError('Payment is not configured. Please contact support.');
       return;
@@ -294,6 +310,11 @@ export default function CheckoutPage() {
           customerEmail: customer.email || '',
           customerPhone: address.phone || customer.phone || '',
           shippingAddress: `${address.name} · ${address.phone}\n${fullAddress(address)}`,
+          // B2B GST invoice: only sent when the buyer ticked "business" + gave a valid GSTIN.
+          customerGstin:
+            isBusiness && address.gstin?.trim() && isValidGstin(address.gstin)
+              ? address.gstin.trim().toUpperCase()
+              : null,
           couponCode: appliedCoupon?.code || null,
           items: items.map((i) => ({
             sku: i.sku,
@@ -602,6 +623,25 @@ export default function CheckoutPage() {
                     onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value }))}
                     className="px-3 py-2 border border-line rounded text-sm focus:border-brand focus:ring-1 focus:ring-brand outline-none"
                   />
+                  {/* B2B GST invoice */}
+                  <label className="sm:col-span-2 flex items-start gap-2 text-[13px] text-ink-soft mt-1 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isBusiness}
+                      onChange={(e) => setIsBusiness(e.target.checked)}
+                      className="mt-0.5 accent-brand"
+                    />
+                    <span>Buying for a business? Add your <strong>GSTIN</strong> for a GST input-credit (ITC) invoice.</span>
+                  </label>
+                  {isBusiness && (
+                    <input
+                      placeholder="GSTIN (e.g. 27AAQPR2976J1ZU)"
+                      value={address.gstin || ''}
+                      onChange={(e) => setAddress((a) => ({ ...a, gstin: e.target.value.toUpperCase() }))}
+                      maxLength={15}
+                      className="px-3 py-2 border border-line rounded text-sm font-mono uppercase tracking-wide focus:border-brand focus:ring-1 focus:ring-brand outline-none sm:col-span-2"
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => {
