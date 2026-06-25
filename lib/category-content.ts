@@ -169,7 +169,7 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     title: 'Hotel Housekeeping & Room Essentials',
     h1: 'Hotel Housekeeping & Room Essentials',
     metaDescription:
-      'Shop hotel housekeeping and room essentials — service trolleys, soap dispensers, queue managers, signage, kettles and more. GST invoice and pan-India delivery.',
+      'Shop hotel housekeeping & room essentials — service trolleys, soap dispensers, queue managers, signage & kettles. GST invoice, pan-India delivery.',
     intro: [
       'Housekeeping and front-of-house essentials keep a hotel, office or facility running smoothly behind the scenes. From service and luggage trolleys to soap dispensers, queue managers, signage and in-room amenities, this range covers the everyday equipment that guests notice when it is missing.',
       'Kitchenary Kart supplies durable housekeeping and room essentials to hotels, banquet halls, offices and facilities across India, with a GST invoice on every order and pan-India delivery.',
@@ -217,7 +217,7 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     title: 'Polyrattan Baskets for Buffet & Bread Display',
     h1: 'Polyrattan Baskets',
     metaDescription:
-      'Shop polyrattan baskets for buffet, bread and display — durable woven baskets in lite and heavy ranges, with compartments and lids. GST invoice, pan-India delivery.',
+      'Shop polyrattan baskets for buffet, bread & display — durable woven baskets in lite & heavy ranges, with compartments & lids. GST invoice, pan-India delivery.',
     intro: [
       'Polyrattan baskets bring a warm, premium look to buffets, bread displays and in-room presentation — with the durability of synthetic rattan that handles daily commercial use far better than natural wicker. Available in lite and heavy ranges, including rectangle, compartment and lidded styles.',
       'Kitchenary Kart supplies polyrattan baskets to hotels, bakeries, buffets and caterers across India, GST-invoiced and built to last through repeated service.',
@@ -241,7 +241,7 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     title: 'Commercial Kitchen Equipment Spare Parts',
     h1: 'Commercial Kitchen Equipment Spare Parts',
     metaDescription:
-      'Shop genuine spare parts for commercial kitchen equipment — ovens, mixers, induction, blenders, juice dispensers, trolleys and more. GST invoice, pan-India delivery.',
+      'Shop genuine spare parts for commercial kitchen equipment — ovens, mixers, induction, blenders, dispensers & more. GST invoice, pan-India delivery.',
     intro: [
       'Downtime costs money, so keeping the right spare parts on hand keeps your kitchen running. This range covers genuine replacement parts for a wide range of commercial equipment — ovens, planetary mixers, induction cooktops, blenders, juice and cereal dispensers, toasters, trolleys, meat mincers and many more.',
       'Kitchenary Kart supplies spare parts pan-India with a GST invoice on every order. Not sure which part you need? Send us your equipment model and we will help you identify the right one.',

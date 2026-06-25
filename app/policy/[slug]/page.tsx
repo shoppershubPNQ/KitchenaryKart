@@ -7,9 +7,31 @@ export const revalidate = 300;
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const p = await getPolicyBySlug(params.slug);
   if (!p) return { title: 'Not found — KitchenaryKart' };
+  // Clamp to ~155 chars at a word boundary (was a hard 160-char slice, which
+  // Ahrefs flagged as "meta description too long").
+  const clean = p.body.replace(/\s+/g, ' ').trim();
+  let description = clean;
+  if (clean.length > 160) {
+    const cut = clean.slice(0, 157);
+    const lastSpace = cut.lastIndexOf(' ');
+    description = (lastSpace > 100 ? cut.slice(0, lastSpace) : cut).trim() + '…';
+  }
+  const canonical = `/policy/${params.slug}`;
+  const title = `${p.title} — KitchenaryKart`;
+  // Self-canonical + matching og:url (these pages previously inherited the
+  // homepage og:url, which Ahrefs flagged as "OG URL not matching canonical").
   return {
-    title: `${p.title} — KitchenaryKart`,
-    description: p.body.slice(0, 160).replace(/\s+/g, ' '),
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: 'article',
+      url: canonical,
+      title,
+      description,
+      siteName: 'KitchenaryKart',
+      locale: 'en_IN',
+    },
   };
 }
 

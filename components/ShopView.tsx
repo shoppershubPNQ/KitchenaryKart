@@ -139,6 +139,13 @@ export function ShopView({
           {filterContent}
         </aside>
         <main>
+          {/* Semantic H1 for SEO + a11y — the shop/catalog page had none.
+              Reflects the active category scope; visually hidden. */}
+          <h1 className="sr-only">
+            {cat
+              ? `${CATEGORY_SHORT[cat] ?? cat} — Commercial Kitchen Equipment`
+              : 'Shop Commercial Kitchen Equipment'}
+          </h1>
           {collectionLabel && (
             <div className="mb-4 flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold tracking-[2px] uppercase text-brand">

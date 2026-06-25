@@ -4,6 +4,16 @@ export const metadata = {
   title: 'About — KitchenaryKart',
   description:
     'KitchenaryKart supplies commercial kitchen equipment to restaurants, hotels and cloud kitchens across India and worldwide.',
+  alternates: { canonical: '/about' },
+  openGraph: {
+    type: 'website',
+    url: '/about',
+    title: 'About — KitchenaryKart',
+    description:
+      'KitchenaryKart supplies commercial kitchen equipment to restaurants, hotels and cloud kitchens across India.',
+    siteName: 'KitchenaryKart',
+    locale: 'en_IN',
+  },
 };
 
 export default function AboutPage() {

@@ -23,6 +23,11 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Semantic H1 for SEO + accessibility — the hero is image-only, so the
+          home page had no <h1>. Visually hidden; crawled + read by screen readers. */}
+      <h1 className="sr-only">
+        KitchenaryKart — Commercial Kitchen Equipment Supplier in India
+      </h1>
       <HeroCarousel banners={banners} />
       <CategoryTiles tree={tree} />
       <TrustStrip />

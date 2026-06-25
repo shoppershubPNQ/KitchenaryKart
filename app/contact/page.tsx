@@ -4,6 +4,16 @@ export const metadata = {
   title: 'Contact — KitchenaryKart',
   description:
     'Get a quote for commercial kitchen equipment. Bulk pricing, spec sheets, and DDP export quotes within 4 business hours.',
+  alternates: { canonical: '/contact' },
+  openGraph: {
+    type: 'website',
+    url: '/contact',
+    title: 'Contact — KitchenaryKart',
+    description:
+      'Get a quote for commercial kitchen equipment. Bulk pricing and spec sheets within 4 business hours.',
+    siteName: 'KitchenaryKart',
+    locale: 'en_IN',
+  },
 };
 
 export default function ContactPage() {

@@ -52,7 +52,7 @@ export const LANDING_PAGES: LandingPage[] = [
     title: 'Commercial Kitchen Equipment Supplier in India',
     h1: 'Commercial Kitchen Equipment Supplier',
     metaDescription:
-      'Kitchenary Kart is a commercial kitchen equipment supplier in India — 2,000+ HORECA products with GST invoice, direct brand pricing and free pan-India delivery above ₹3,000.',
+      'Commercial kitchen equipment supplier in India — 2,000+ HORECA products with GST invoice, direct brand pricing and free pan-India delivery above ₹3,000.',
     intro: [
       'Kitchenary Kart is a commercial kitchen equipment supplier serving restaurants, hotels, cafés, cloud kitchens, bakeries and caterers across India. We carry over 2,000 commercial-grade products — from bain maries and deep fryers to snowflake ice machines, dough sheeters and cold display counters — all from one source, so you can equip an entire kitchen without chasing multiple dealers.',
       'Because we sell direct, you get genuine brand pricing with no middleman markup, a GST tax invoice on every order for full Input Tax Credit, and pan-India delivery. Whether you are kitting out a single outlet or a multi-location chain, we supply the complete list with bulk pricing on request.',
@@ -92,7 +92,7 @@ export const LANDING_PAGES: LandingPage[] = [
     title: 'Hotel Kitchen Equipment Supplier',
     h1: 'Hotel Kitchen Equipment Supplier',
     metaDescription:
-      'Hotel kitchen equipment supplier for India — banquet, buffet and production kitchen gear. GST invoice, bulk pricing and free pan-India delivery above ₹3,000.',
+      'Hotel kitchen equipment supplier in India — banquet, buffet & production gear. GST invoice, bulk pricing and free pan-India delivery above ₹3,000.',
     intro: [
       'Kitchenary Kart supplies hotels and banquet operations across India with the full range of commercial kitchen and buffet equipment. From high-volume production-line gear to presentation-grade buffet ware, we help hotels run consistent service across restaurants, banquets and room service.',
       'We understand a hotel buys in volume and on tight timelines, so we offer direct brand pricing, GST invoicing for Input Tax Credit, bulk rates and pan-India delivery. One supplier, one invoice, the whole kitchen.',
@@ -132,7 +132,7 @@ export const LANDING_PAGES: LandingPage[] = [
     title: 'Restaurant Equipment Supplier',
     h1: 'Restaurant Equipment Supplier',
     metaDescription:
-      'Restaurant equipment supplier in India — commercial cooking, holding and cold gear for restaurants and cloud kitchens. GST invoice, direct pricing, pan-India delivery.',
+      'Restaurant equipment supplier in India — commercial cooking, holding & cold gear for restaurants & cloud kitchens. GST invoice, pan-India delivery.',
     intro: [
       'Kitchenary Kart equips restaurants and cloud kitchens across India with reliable, commercial-grade equipment built for daily high-volume service. From the hot line to cold storage and prep, we supply the gear your covers-per-hour depend on.',
       'Opening a new restaurant or replacing tired equipment? We offer direct brand pricing, GST invoicing for Input Tax Credit, and pan-India delivery — with bulk rates for full kitchen setups.',
@@ -172,7 +172,7 @@ export const LANDING_PAGES: LandingPage[] = [
     title: 'Bakery Equipment Supplier',
     h1: 'Bakery Equipment Supplier',
     metaDescription:
-      'Bakery equipment supplier in India — dough sheeters, planetary mixers, baking tools and dessert display. GST invoice, direct pricing and free pan-India delivery above ₹3,000.',
+      'Bakery equipment supplier in India — dough sheeters, planetary mixers & baking tools. GST invoice, direct pricing & free pan-India delivery above ₹3,000.',
     intro: [
       'Kitchenary Kart supplies bakeries, patisseries, pizzerias and dessert cafés across India with the equipment that turns repetitive prep into consistent, high-volume output. Dough sheeters, planetary mixers, baking tools and dessert display — all commercial-grade and built for daily use.',
       'We sell direct, so you get genuine pricing, a GST invoice for Input Tax Credit, and pan-India delivery, with bulk rates for full bakery setups.',
@@ -212,7 +212,7 @@ export const LANDING_PAGES: LandingPage[] = [
     title: 'HORECA Equipment Supplier',
     h1: 'HORECA Equipment Supplier',
     metaDescription:
-      'HORECA equipment supplier in India for hotels, restaurants and catering. 2,000+ commercial products, GST invoice, bulk pricing and free pan-India delivery above ₹3,000.',
+      'HORECA equipment supplier in India for hotels, restaurants & catering. 2,000+ products, GST invoice, bulk pricing & free pan-India delivery above ₹3,000.',
     intro: [
       'Kitchenary Kart is a HORECA equipment supplier serving the hotel, restaurant and catering industry across India. Our 2,000+ SKU range covers the entire kitchen — hot, cold, baking, buffet, bar and spares — so HORECA buyers can source everything from a single, GST-compliant supplier.',
       'We offer direct brand pricing, GST invoicing for Input Tax Credit, bulk and wholesale rates, and pan-India delivery — the supplier base a growing HORECA operation needs.',
@@ -252,7 +252,7 @@ export const LANDING_PAGES: LandingPage[] = [
     title: 'Commercial Kitchen Equipment Supplier in Pune',
     h1: 'Commercial Kitchen Equipment Supplier in Pune',
     metaDescription:
-      'Pune-based commercial kitchen equipment supplier for restaurants, hotels, cafés and bakeries. GST invoice, direct brand pricing, fast local delivery and pan-India shipping.',
+      'Pune commercial kitchen equipment supplier for restaurants, hotels, cafés & bakeries. GST invoice, direct pricing, fast local delivery + pan-India shipping.',
     isLocal: true,
     intro: [
       'Kitchenary Kart is a Pune-based commercial kitchen equipment supplier, serving restaurants, hotels, cafés, cloud kitchens, bakeries and caterers in Pune and across India. Located in Kondhwa Budruk, we stock 2,000+ commercial-grade products — bain maries, deep fryers, snowflake ice machines, dough sheeters, cold display counters and more.',
