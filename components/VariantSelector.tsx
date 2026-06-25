@@ -17,6 +17,7 @@
  */
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { inr } from '@/lib/format';
 import type { PublicVariant } from '@/lib/products';
 
@@ -142,6 +143,27 @@ export function VariantSelector({ variants, currentSku }: Props) {
           </div>
         );
       })()}
+
+      {/* Crawlable links to every sibling variant. The visible selector
+          navigates via JS (router.push), which Googlebot can't follow — so
+          each variant SKU URL was orphaned. These real <a> anchors give every
+          variant a dofollow internal link from its siblings' PDPs. Visually
+          hidden (sr-only) so the UI is unchanged; still crawled + accessible. */}
+      <nav aria-label="Other variants" className="sr-only">
+        {variants
+          .filter((v) => v.sku !== currentSku)
+          .map((v) => {
+            const label =
+              typeof v.axisValues === 'string'
+                ? v.axisValues
+                : Object.values(v.axisValues).filter(Boolean).join(' / ');
+            return (
+              <Link key={v.sku} href={`/product/${encodeURIComponent(v.sku)}`}>
+                {label || v.sku}
+              </Link>
+            );
+          })}
+      </nav>
     </div>
   );
 }

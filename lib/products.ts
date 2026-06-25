@@ -202,6 +202,14 @@ export async function getAllShopProducts(): Promise<PublicProduct[]> {
 
   for (const row of rows) {
     const parent = toPublic(row);
+    // The shop grid (ProductCard) + search filter + sitemap never read these
+    // heavy fields — but they were serialized into the /shop page's SSR/RSC
+    // payload for all ~2,000 rows, pushing it past Googlebot's 2 MB limit and
+    // slowing hydration. Clear them here so the shop payload stays lean.
+    // (Variants below spread `...parent`, so they inherit this automatically.)
+    parent.description = null;
+    parent.faqs = [];
+    parent.images = [];
     const variants = (row as any).variants as
       | Array<{
           variantType: string | null;

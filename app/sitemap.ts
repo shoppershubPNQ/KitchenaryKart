@@ -12,7 +12,7 @@
  * the site is verified there — it accelerates discovery of new SKUs.
  */
 import type { MetadataRoute } from 'next';
-import { getAllShopProducts, getCategoryTree } from '@/lib/products';
+import { getAllShopProducts } from '@/lib/products';
 import { getActivePolicies } from '@/lib/policies';
 import { getAllPosts } from '@/lib/blog';
 import { getAllCategoryContent } from '@/lib/category-content';
@@ -23,9 +23,8 @@ const BASE_URL = 'https://kitchenarykart.com';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Variant-aware list: each variant SKU gets its own sitemap entry
   // so Google can crawl and rank them independently.
-  const [products, categoryTree, policies] = await Promise.all([
+  const [products, policies] = await Promise.all([
     getAllShopProducts(),
-    getCategoryTree(),
     getActivePolicies(),
   ]);
 
@@ -72,14 +71,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // categoryTree is a Record<category, subcategoryNodes[]>. We use the
-  // top-level category keys as ?category=… filters on the shop page.
-  const categoryPages: MetadataRoute.Sitemap = Object.keys(categoryTree).map((category) => ({
-    url: `${BASE_URL}/shop?category=${encodeURIComponent(category)}`,
-    lastModified: now,
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }));
+  // NOTE: we intentionally do NOT emit `/shop?category=…` filter URLs here —
+  // they canonical to bare `/shop` (so Ahrefs flagged them as non-canonical in
+  // the sitemap), and the real, indexable `/category/<slug>` landing pages are
+  // already included above (categoryLandingPages).
 
   const policyPages: MetadataRoute.Sitemap = policies.map((policy) => ({
     url: `${BASE_URL}/policy/${policy.slug}`,
@@ -94,7 +89,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...categoryLandingPages,
     ...blogPages,
     ...productPages,
-    ...categoryPages,
     ...policyPages,
   ];
 }
