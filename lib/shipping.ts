@@ -7,8 +7,8 @@
  * must be kept in sync with that route (and with the Merchant Center
  * shipping policy).
  */
-export const FREE_SHIPPING_THRESHOLD = 3000;
-export const SHIPPING_FEE = 399;
+export const FREE_SHIPPING_THRESHOLD = 5000;
+export const SHIPPING_FEE = 250;
 
 /**
  * Shipping charge for an order whose payable amount (after discount) is

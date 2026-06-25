@@ -16,11 +16,12 @@ import { inr } from '@/lib/format';
  *
  * Hidden entirely when the cart is empty (no nudge for a zero cart).
  *
- * Threshold is hardcoded to match the `free_shipping_above` setting in
- * the DB (₹3,000). If that setting changes, update this constant.
+ * Threshold is hardcoded to match the authoritative shipping rule in
+ * web/lib/shipping.ts + admin /api/public/checkout (₹5,000). If that
+ * changes, update this constant.
  */
 
-const FREE_SHIPPING_THRESHOLD = 3000;
+const FREE_SHIPPING_THRESHOLD = 5000;
 /** Within this distance from the threshold → switch to urgent tone. */
 const MAGIC_ZONE_DISTANCE = 500;
 

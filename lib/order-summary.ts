@@ -17,8 +17,8 @@
  *
  * Keep in sync with admin/lib/order-summary.ts.
  */
-export const FREE_SHIPPING_THRESHOLD = 3000;
-export const SHIPPING_FEE = 399;
+export const FREE_SHIPPING_THRESHOLD = 5000;
+export const SHIPPING_FEE = 250;
 
 export interface SummaryItem {
   price: number; // GST-inclusive unit price
@@ -79,7 +79,7 @@ export function computeOrderSummary(
   }
 
   // Free shipping is decided on the after-discount amount (threshold kept at
-  // ₹3,000 inclusive to match the live policy + the server's binding charge).
+  // ₹5,000 inclusive to match the live policy + the server's binding charge).
   const afterDiscountInclusive = inclusiveTotal - discountInclusive;
   const shipping =
     shippingOverride ??
