@@ -30,7 +30,7 @@ export function TrustStrip() {
     },
     {
       label: 'Pan-India Delivery',
-      sub: 'Free shipping above ₹3,000',
+      sub: 'Free shipping above ₹5,000',
       svg: (
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="1" y="3" width="15" height="13" />

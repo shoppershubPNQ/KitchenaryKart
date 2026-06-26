@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCustomerSession } from '@/lib/auth';
@@ -8,6 +9,13 @@ import { prisma } from '@/lib/db';
  * home (AuthModal is triggered from the header, not from a deep link).
  */
 export const dynamic = 'force-dynamic';
+
+// Auth-gated, personalised — never index. (robots.txt also disallows
+// /account/; this is the belt-and-suspenders meta for any known URL.)
+export const metadata: Metadata = {
+  title: 'My Account — KitchenaryKart',
+  robots: { index: false, follow: false },
+};
 
 export default async function AccountPage() {
   const session = getCustomerSession();

@@ -212,7 +212,7 @@ export async function SupplierLanding({ slug }: { slug: string }) {
           <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-[15px] leading-relaxed text-ink/85">
             <li><strong className="text-ink">GST invoice</strong> on every order — full Input Tax Credit</li>
             <li><strong className="text-ink">Direct brand pricing</strong> — no middleman markup</li>
-            <li><strong className="text-ink">Free pan-India delivery</strong> above ₹3,000</li>
+            <li><strong className="text-ink">Free pan-India delivery</strong> above ₹5,000</li>
             <li><strong className="text-ink">Bulk &amp; HORECA pricing</strong> on request</li>
             <li><strong className="text-ink">Secure payments</strong> — UPI, Card &amp; EMI</li>
             <li><strong className="text-ink">7-day returns</strong> on manufacturing defects</li>

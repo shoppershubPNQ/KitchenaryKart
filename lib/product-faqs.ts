@@ -21,7 +21,7 @@
 import type { ProductFaq } from './products';
 
 const WHATSAPP = '+91 98903 52455';
-const FREE_SHIP_ABOVE = '₹3,000';
+const FREE_SHIP_ABOVE = '₹5,000';
 
 interface FaqProductInput {
   name: string;

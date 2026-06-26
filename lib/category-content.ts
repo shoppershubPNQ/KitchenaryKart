@@ -113,6 +113,7 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
       'Planning a bakery or pizza line? WhatsApp +91 98903 52455 with your menu and volume for a tailored equipment list.',
     relatedGuides: [
       { slug: 'how-to-choose-commercial-planetary-mixer', label: 'How to Choose a Commercial Planetary Mixer' },
+      { slug: 'pizzeria-equipment-guide', label: 'Pizzeria Equipment Guide: The Complete Pizza Equipment List' },
     ],
   },
   {
@@ -258,6 +259,9 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     },
     closing:
       'Need a spare part? WhatsApp +91 98903 52455 with your equipment model or a photo and we will identify it for you.',
+    relatedGuides: [
+      { slug: 'commercial-kitchen-spare-parts', label: 'Commercial Kitchen Spare Parts: Find the Right Replacement' },
+    ],
   },
 ];
 

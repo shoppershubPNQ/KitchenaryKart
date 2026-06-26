@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { getCustomerSession } from '@/lib/auth';
@@ -5,6 +6,12 @@ import { loadPublicOrder } from '@/lib/orders';
 import { OrderDetailView } from '@/components/OrderDetailView';
 
 export const dynamic = 'force-dynamic';
+
+// Auth-gated single-order view — never index.
+export const metadata: Metadata = {
+  title: 'Order — KitchenaryKart',
+  robots: { index: false, follow: false },
+};
 
 interface Props {
   params: { number: string };

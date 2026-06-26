@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description:
     'Track your KitchenaryKart order using your order number and the phone number you placed the order with. See order status, shipment tracking and delivery updates.',
   alternates: { canonical: '/track' },
+  // Personalised utility page — thin/duplicate to Google and no SEO value.
+  // Keep it crawlable for links but out of the index.
+  robots: { index: false, follow: true },
 };
 
 export default function TrackPage({

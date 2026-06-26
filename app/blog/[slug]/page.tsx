@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAllPosts, getPostBySlug } from '@/lib/blog';
 import { BlogProse } from '@/components/BlogProse';
-import { buildArticleJsonLd, buildCrumbsJsonLd } from '@/lib/json-ld';
+import { buildArticleJsonLd, buildCrumbsJsonLd, buildFaqJsonLd } from '@/lib/json-ld';
 
 interface Params {
   params: { slug: string };
@@ -69,6 +69,9 @@ export default function BlogPostPage({ params }: Params) {
     { name: 'Blog', path: '/blog' },
     { name: post.title },
   ]);
+  const faqLd = post.faqs?.length
+    ? buildFaqJsonLd(post.faqs.map((f) => ({ q: f.q, a: f.a })))
+    : null;
 
   return (
     <>
@@ -80,6 +83,12 @@ export default function BlogPostPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbsLd) }}
       />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
 
       <article className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-10 md:py-14">
         <nav className="text-xs text-muted flex items-center gap-2 mb-6 flex-wrap">
@@ -107,6 +116,22 @@ export default function BlogPostPage({ params }: Params) {
         </header>
 
         <BlogProse body={post.body} />
+
+        {post.faqs && post.faqs.length > 0 && (
+          <section className="mt-12 max-w-[68ch]">
+            <h2 className="font-head text-[clamp(1.3rem,2.2vw,1.7rem)] font-bold text-ink mb-5">
+              Frequently asked questions
+            </h2>
+            <dl className="divide-y divide-line">
+              {post.faqs.map((f, i) => (
+                <div key={i} className="py-4">
+                  <dt className="font-semibold text-ink text-[16px] mb-1.5">{f.q}</dt>
+                  <dd className="text-[16px] leading-relaxed text-ink/85">{f.a}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
 
         {others.length > 0 && (
           <aside className="mt-14 pt-8 border-t border-line">

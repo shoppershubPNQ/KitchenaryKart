@@ -37,6 +37,13 @@ export interface BlogPost {
   /** One-line category tag for the card. */
   tag: string;
   body: BlogBlock[];
+  /**
+   * Optional on-page FAQ. When present, the post renders a "Frequently
+   * asked questions" section AND emits FAQPage JSON-LD (rich-result
+   * accordion in Google + verbatim lift by AI answer engines). The
+   * on-page questions must match the markup, so both come from here.
+   */
+  faqs?: Array<{ q: string; a: string }>;
 }
 
 export const POSTS: BlogPost[] = [
@@ -648,6 +655,283 @@ export const POSTS: BlogPost[] = [
         type: 'cta',
         href: '/category/hot-equipment',
         label: 'Browse Bain Maries',
+      },
+    ],
+  },
+  {
+    slug: 'commercial-kitchen-spare-parts',
+    title: 'Commercial Kitchen Spare Parts: Find the Right Replacement',
+    description:
+      'Need a spare part for your commercial kitchen? Genuine parts for bain marie, fryer, popcorn, shawarma, planetary mixer and more — with GST invoice and fast delivery.',
+    date: '2026-06-25',
+    author: 'Kitchenary Kart',
+    readMins: 7,
+    tag: 'Guide',
+    body: [
+      {
+        type: 'p',
+        text: 'A single ₹300 thermostat can keep a ₹50,000 machine sitting idle. In a commercial kitchen, downtime is lost revenue — every hour a fryer, bain marie or popcorn machine is out of action is covers you can\'t serve. The good news: most failures are a worn wear-part, not a dead machine, and the right [spare parts](/category/spare-parts) get you running again fast. This guide explains how to find the exact part you need and which spares are worth keeping on the shelf.',
+      },
+      { type: 'h2', text: 'How to find the right spare part' },
+      {
+        type: 'p',
+        text: 'Ordering the wrong part wastes days. Work through these four steps before you buy and you\'ll get a part that actually fits the first time:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Identify the machine — note the exact model and, if you bought from us, the product SKU. The same "popcorn machine" comes in several builds, and parts are not always interchangeable.',
+          'Match the part — find the failed component (thermostat, heating element, motor, glass, knob) and the part it sits in. A photo of the old part next to a ruler helps enormously.',
+          'Confirm the spec — check voltage (single vs three phase), wattage, thread size or dimensions. A 2000W element will not behave like a 1500W one.',
+          'Order with the invoice — buy from a supplier who issues a GST invoice so you can claim Input Tax Credit on the repair.',
+        ],
+      },
+      {
+        type: 'p',
+        text: 'Not sure which part you\'re looking at? Skip the guesswork — WhatsApp a clear photo of the broken part (and the machine\'s rating label) to +91 98903 52455 and we\'ll identify it and confirm the fitment before you pay.',
+      },
+      { type: 'h2', text: 'Spare parts by machine' },
+      {
+        type: 'p',
+        text: 'Here are the parts that fail most often, grouped by machine, with a direct link to the matching spares. Each link runs a live search of our [spare parts catalogue](/category/spare-parts) so you see what\'s in stock right now.',
+      },
+      {
+        type: 'p',
+        text: 'Popcorn machine spare parts — the usual replacements are the kettle/bowl, stirring handle, lid, heating element and thermostat. The kettle and element take the most wear because they run hot all day. Browse [popcorn machine spares](/shop?q=popcorn).',
+      },
+      {
+        type: 'p',
+        text: 'Bain marie spare parts — a bain marie that won\'t hold temperature is almost always a failed thermostat or heating element; the glass sneeze-guard, indicator lamp and GN pans are the other common buys. See [bain marie spares](/shop?q=bain+marie) and our guide on [how to choose a commercial bain marie](/blog/how-to-choose-commercial-bain-marie) if you\'re weighing a replacement unit.',
+      },
+      {
+        type: 'p',
+        text: 'Deep fryer spare parts — the thermostat, heating element and basket are the wear items; a fryer that overheats or won\'t hold 180°C usually needs a new thermostat. Browse [deep fryer spares](/shop?q=fryer), and see the [commercial deep fryer buying guide](/blog/commercial-deep-fryer-buying-guide) for sizing a new one.',
+      },
+      {
+        type: 'p',
+        text: 'Shawarma machine spare parts — the motor (rotisserie drive), burner/heating element and the central skewer rod are the parts that wear or burn out. Find [shawarma machine spares](/shop?q=shawarma).',
+      },
+      {
+        type: 'p',
+        text: 'Planetary mixer spare parts — the bowl, whisk, flat beater, dough hook and gear set are all replaceable; a mixer that grinds or slips under dough usually needs a gear or belt, not a new machine. Browse [planetary mixer spares](/shop?q=mixer) and the [planetary mixer buying guide](/blog/how-to-choose-commercial-planetary-mixer).',
+      },
+      {
+        type: 'p',
+        text: 'Soft-serve, crepe and chocolate-fountain parts — soft ice-cream machines need scraper blades and seals; crepe makers need the hotplate and thermostat; chocolate fountains need the auger, motor and tiers. Search the catalogue for your machine name to see what we stock.',
+      },
+      {
+        type: 'cta',
+        href: '/category/spare-parts',
+        label: 'Browse all Spare Parts',
+      },
+      { type: 'h2', text: 'Parts every kitchen should keep on the shelf' },
+      {
+        type: 'p',
+        text: 'Some parts are generic wear items that fail across many machines. Keeping a small buffer of these turns a half-day breakdown into a five-minute swap:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Thermostats — the single most common failure on any heated appliance',
+          'Heating elements — they degrade with thermal cycling; a spare saves a service line',
+          'Knobs, switches and indicator lamps — cheap, easily broken, instantly visible to customers',
+          'Gaskets, seals and belts — small rubber and drive parts that quietly wear out',
+        ],
+      },
+      { type: 'h2', text: 'Genuine vs local spares — what to watch for' },
+      {
+        type: 'p',
+        text: 'A cheaper local part can be a false economy. The three things that matter are fitment (does it physically seat and seal correctly), electrical spec (matching voltage and wattage, so it doesn\'t trip, under-heat or burn out), and safety (a mismatched element or thermostat is a fire and shock risk in a wet, busy kitchen). Genuine, spec-matched parts last longer and protect the machine around them — which is why a slightly dearer correct part is almost always cheaper over a year.',
+      },
+      { type: 'h2', text: 'Buy spares with a GST invoice and pan-India delivery' },
+      {
+        type: 'p',
+        text: 'Every Kitchenary Kart spare-parts order ships with a compliant GST invoice, so a registered business reclaims the tax as Input Tax Credit, and we deliver across India. As a [commercial kitchen equipment supplier](/commercial-kitchen-equipment-supplier) we keep parts for the machines we sell — so you\'re sourcing the equipment and its spares from one place.',
+      },
+      {
+        type: 'cta',
+        href: '/category/spare-parts',
+        label: 'Find your spare part',
+      },
+      {
+        type: 'p',
+        text: 'Can\'t find your part in the catalogue? Send a photo of the broken component to +91 98903 52455 and we\'ll match it for you.',
+      },
+    ],
+    faqs: [
+      {
+        q: 'How do I find the right spare part for my machine?',
+        a: 'Identify the exact machine model (or SKU if you bought from us), locate the failed component, confirm its voltage/wattage and dimensions, then match it to the catalogue. If you are unsure, WhatsApp a photo of the broken part and the machine rating label to +91 98903 52455 and we will identify it for you.',
+      },
+      {
+        q: 'Do you have popcorn machine, bain marie and shawarma spare parts?',
+        a: 'Yes. We stock spares for popcorn machines (kettle, element, thermostat, handle), bain maries (thermostat, heating element, glass, indicator), shawarma machines (motor, burner, skewer rod), deep fryers, planetary mixers and many more — all in the Spare Parts category.',
+      },
+      {
+        q: 'Are these genuine spare parts?',
+        a: 'We supply genuine, spec-matched parts for the equipment we sell. Genuine parts ensure correct fitment, matching voltage and wattage, and safe operation — a mismatched element or thermostat is a fire and shock risk and usually fails sooner.',
+      },
+      {
+        q: 'Do you ship spare parts across India with a GST invoice?',
+        a: 'Yes. Every spare-parts order ships pan-India with a compliant GST invoice, so a GST-registered business can claim Input Tax Credit on the repair.',
+      },
+      {
+        q: 'What if I cannot identify the part I need?',
+        a: 'Send a clear photo of the broken part (next to a ruler for scale) and the machine model to +91 98903 52455 on WhatsApp. We will identify the part and confirm fitment before you order.',
+      },
+    ],
+  },
+  {
+    slug: 'pizzeria-equipment-guide',
+    title: 'Pizzeria Equipment Guide: The Complete Pizza Equipment List',
+    description:
+      'The complete pizzeria equipment list for India — commercial pizza ovens, peels, cutters, dockers, lifters, pans and oven spares, with price tips, GST and delivery.',
+    date: '2026-06-25',
+    author: 'Kitchenary Kart',
+    readMins: 11,
+    tag: 'Pillar Guide',
+    body: [
+      {
+        type: 'p',
+        text: 'Great pizza comes down to three things: the right oven, the right tools, and zero downtime. Get the oven wrong and your bases never crisp; skip a ₹500 tool and your pizzaiolo fights the dough all night; ignore spares and a single failed element shuts the kitchen mid-rush. This guide is the complete pizzeria equipment list for India — every machine and tool you need to open or restock a pizza operation, with buying advice and direct links to each product type. Use it as a checklist: oven, dough and prep, tools, serving, and spares.',
+      },
+      { type: 'h2', text: '1. Commercial pizza ovens — the heart of the kitchen' },
+      {
+        type: 'p',
+        text: 'The oven is the single biggest decision and the biggest line in your budget. Everything else supports it. Get the throughput and heat right and the rest of the kitchen falls into place. Browse the range of [commercial pizza ovens](/shop?q=pizza+oven) and read the sections below before you choose.',
+      },
+      {
+        type: 'p',
+        text: 'Electric vs gas — electric pizza ovens are easy to install on a standard connection, give precise, even deck heat and suit cafés, cloud kitchens and most mid-volume pizzerias. Gas ovens recover heat faster between bakes and can be cheaper to run at high volume where you already have a gas line, but need proper ventilation. For most Indian pizzerias starting out, an electric deck oven is the simpler, more controllable choice.',
+      },
+      {
+        type: 'p',
+        text: 'Deck and tray configuration — pizza ovens are described by decks and trays (for example 1 Deck 1 Tray, or 1 Deck 2 Tray). More decks and trays mean more pizzas baking at once, so size the oven to your peak orders-per-hour, not your average. A single busy outlet is usually well served by a one or two-tray deck oven; multi-outlet or high-delivery-volume kitchens stack decks.',
+      },
+      {
+        type: 'p',
+        text: 'With stone vs without stone — a refractory baking stone stores and radiates heat into the base for the crisp, evenly-cooked bottom that defines a proper pizza. If authentic crust matters to your menu, choose an oven with a stone deck. Build quality also varies from economy to premium models; a heavier, better-insulated oven holds temperature more steadily through a long service.',
+      },
+      {
+        type: 'p',
+        text: 'Mini and counter-top pizza makers — for a café, kiosk or low-volume corner, a compact counter-top pizza maker bakes one pizza at a time without the footprint or power draw of a full deck oven. It\'s the right first machine when pizza is a side item rather than the core menu.',
+      },
+      {
+        type: 'cta',
+        href: '/shop?q=pizza+oven',
+        label: 'Browse Commercial Pizza Ovens',
+      },
+      { type: 'h2', text: '2. Dough and prep equipment' },
+      {
+        type: 'p',
+        text: 'Consistent pizza starts with consistent dough, and hand-kneading doesn\'t scale. A [planetary or dough mixer](/shop?q=dough) handles your daily dough batches; a dough sheeter speeds up rolling bases to an even thickness; and you\'ll want work tables, dough trays and a weighing scale for portioning. For mixer sizing and the planetary-vs-spiral choice, see the [planetary mixer buying guide](/blog/how-to-choose-commercial-planetary-mixer) and [planetary vs spiral mixer](/blog/planetary-mixer-vs-spiral-mixer) — spiral mixers knead bread and pizza dough more gently and are worth it once dough is your core product. Round out the prep zone from our [kitchen and baking range](/category/kitchen-baking).',
+      },
+      { type: 'h2', text: '3. Pizza tools — the essentials every pizzaiolo needs' },
+      {
+        type: 'p',
+        text: 'Tools are cheap relative to the oven but they make or break the workflow. Here are the essentials and what each one does.',
+      },
+      {
+        type: 'p',
+        text: 'Pizza peel / pizza bat — the flat paddle used to launch a raw pizza into the oven and retrieve it. A wooden round bat releases the dough cleanly on the way in (less sticking than metal); a thin metal peel is better for sliding under a baked pizza to lift it out. Many kitchens keep both. Browse [pizza peels and bats](/shop?q=pizza+bat).',
+      },
+      {
+        type: 'p',
+        text: 'Pizza lifter / server — a stainless-steel lifter (commonly 10" and 12") for serving slices and moving baked pizzas without folding them. Match the size to your typical pizza diameter. See [pizza lifters and servers](/shop?q=pizza+lifter).',
+      },
+      {
+        type: 'p',
+        text: 'Pizza cutter — three styles dominate: the classic wheel cutter (quick, one-handed), the half-moon rocker or mezzaluna (clean single-press cuts, great for thick crust and high volume), and the U-shaped cutter. For a busy line the rocker is fastest and most consistent. Browse [pizza cutters](/shop?q=pizza+cutter).',
+      },
+      {
+        type: 'p',
+        text: 'Pizza docker — a spiked roller that pricks the dough so it bakes flat instead of bubbling up. A docker is the cheap tool that quietly fixes uneven, blistered bases. Look for a stainless head with a comfortable handle. See [pizza dockers](/shop?q=pizza+docker).',
+      },
+      {
+        type: 'p',
+        text: 'Pizza pans and trays — a non-stick (Teflon) pizza pan, ideally with a removable bottom, makes pan pizzas easy to release; a cast-iron slice pan holds heat for deep-dish and reheats. Browse [pizza pans and trays](/shop?q=pizza+pan).',
+      },
+      { type: 'h2', text: '4. Serving and display' },
+      {
+        type: 'p',
+        text: 'Finish the kitchen with the front-of-house pieces: pizza stands and boards for table service, GN pans to hold prepped toppings on the make-line, and a menu or specials display board. A clean topping station speeds up assembly and keeps your line moving during the rush — see our [buffet and tableware range](/category/buffet-tableware).',
+      },
+      { type: 'h2', text: '5. Spare parts — keep your oven running' },
+      {
+        type: 'p',
+        text: 'A pizza oven is a heated, high-cycle machine, and a single failed part during Friday-night service is the most expensive thing in this guide. The common pizza-oven spares are the baking stone, heating element, thermostat, timer, door spring, front glass, blower and ignitor. We keep 30+ pizza-oven spare parts in stock — stock the wear items (element, thermostat, stone) before you need them. Browse [pizza oven spares](/shop?q=pizza), and for how to identify a part, see our [commercial kitchen spare parts guide](/blog/commercial-kitchen-spare-parts).',
+      },
+      {
+        type: 'cta',
+        href: '/category/spare-parts',
+        label: 'Browse Pizza Oven Spares',
+      },
+      { type: 'h2', text: 'How much does pizza equipment cost in India?' },
+      {
+        type: 'p',
+        text: 'Budget in three buckets. The oven is by far the largest single outlay and scales with deck/tray count and build quality. Tools (peel, cutter, docker, lifter, pans) are a small one-time cost — usually a few thousand rupees for the full set. Spares are an ongoing line: budget a little each quarter to keep wear parts on the shelf. For a precise, itemised quote for your menu and volume, WhatsApp +91 98903 52455 and we\'ll build a full pizzeria list with bulk pricing.',
+      },
+      { type: 'h2', text: 'Sample pizzeria equipment checklist' },
+      {
+        type: 'p',
+        text: 'A quick tick-list to equip a pizza kitchen from scratch:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Commercial pizza oven (electric or gas; stone deck for crisp bases)',
+          'Dough mixer (planetary or spiral) and a dough sheeter',
+          'Work table, dough trays and a weighing scale',
+          'Pizza peel / bat and a metal lifter',
+          'Pizza cutter (wheel or rocker) and a pizza docker',
+          'Pizza pans and trays in your standard sizes',
+          'Topping make-line: GN pans, pizza stands/boards, menu display board',
+          'Spare-parts buffer: element, thermostat, baking stone',
+        ],
+      },
+      { type: 'h2', text: 'Where to buy — and what to check' },
+      {
+        type: 'p',
+        text: 'When you source pizzeria equipment, check four things: genuine direct pricing (no middleman markup), a GST invoice on every item (so a registered business reclaims Input Tax Credit), spare-parts availability for the oven you\'re buying (so a breakdown is a quick swap, not a new machine), and pan-India delivery from a single supplier. As a [commercial kitchen equipment supplier](/commercial-kitchen-equipment-supplier) carrying the full pizza ecosystem — ovens, every tool, and 30+ spares — Kitchenary Kart covers all four. Setting up a cloud-kitchen pizza brand? Our [cloud kitchen equipment checklist](/blog/cloud-kitchen-equipment-checklist) walks the rest of the build.',
+      },
+      {
+        type: 'cta',
+        href: '/shop?q=pizza',
+        label: 'Shop all Pizza Equipment',
+      },
+      {
+        type: 'p',
+        text: 'Setting up a pizzeria? WhatsApp +91 98903 52455 for a complete equipment-and-spares list with bulk pricing tailored to your menu.',
+      },
+    ],
+    faqs: [
+      {
+        q: 'What equipment do I need to start a pizzeria in India?',
+        a: 'At minimum: a commercial pizza oven (electric or gas, ideally with a stone deck), a dough mixer, and the core tools — a pizza peel/bat, a lifter, a cutter, a docker and pizza pans. Add a topping make-line (GN pans, work table) and a buffer of oven spare parts (element, thermostat, stone) so a breakdown does not stop service.',
+      },
+      {
+        q: 'Electric vs gas pizza oven — which is better?',
+        a: 'Electric ovens install on a standard connection, give precise, even deck heat and suit most cafés, cloud kitchens and mid-volume pizzerias. Gas ovens recover heat faster and can be cheaper to run at high volume where you already have a gas line, but need proper ventilation. For most Indian pizzerias starting out, electric is the simpler, more controllable choice.',
+      },
+      {
+        q: 'What is the difference between a pizza peel, bat and lifter?',
+        a: 'A peel or bat is the flat paddle used to launch a raw pizza into the oven and retrieve it — a wooden round bat releases dough cleanly going in, a thin metal peel slides under a baked pizza to lift it out. A lifter (server) is a smaller stainless tool for serving slices and moving baked pizzas. Many kitchens keep all three.',
+      },
+      {
+        q: 'What does a pizza docker do?',
+        a: 'A pizza docker is a spiked roller that pricks small holes in the rolled-out dough so it bakes flat instead of bubbling up into large blisters. It is a cheap tool that gives you an even, professional base every time.',
+      },
+      {
+        q: 'Which pizza cutter is best — wheel, rocker or U-shaped?',
+        a: 'A wheel cutter is quick and one-handed for general use. A half-moon rocker (mezzaluna) makes clean single-press cuts and is fastest and most consistent on a busy line, especially for thick crust. A U-shaped cutter is an alternative press-style design. For high volume, most kitchens prefer the rocker.',
+      },
+      {
+        q: 'Do you stock pizza oven spare parts like stone, element and thermostat?',
+        a: 'Yes — we keep 30+ pizza-oven spare parts, including the baking stone, heating element, thermostat, timer, door spring, front glass, blower and ignitor. Stock the wear items before you need them so a failure is a quick swap rather than lost service.',
+      },
+      {
+        q: 'Do you provide a GST invoice and pan-India delivery?',
+        a: 'Yes. Every order — ovens, tools and spares — ships with a compliant GST invoice so a registered business can claim Input Tax Credit, and we deliver across India from a single supplier.',
       },
     ],
   },

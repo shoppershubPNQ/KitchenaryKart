@@ -37,11 +37,26 @@ export const revalidate = 300;
  * targets "commercial <product>", and keep the clean product name as the
  * on-page H1. Uses an absolute title so the layout's "%s — KitchenaryKart"
  * template doesn't double the brand.
+ *
+ * Length: Google truncates titles past ~60–65 chars. We keep the brand
+ * suffix only when the whole title fits; for long product names we drop
+ * the suffix (the brand is still in OG siteName + the domain) and, if the
+ * name itself is over budget, trim it at a word boundary. This stops the
+ * "title too long" Ahrefs flags without losing the keyword-first opening.
  */
+const PDP_TITLE_MAX = 65;
+const PDP_BRAND_SUFFIX = ' — KitchenaryKart';
+
 function pdpSeoTitle(displayName: string): string {
   const name = displayName.trim();
   const withKeyword = /\bcommercial\b/i.test(name) ? name : `Commercial ${name}`;
-  return `${withKeyword} — KitchenaryKart`;
+  if (withKeyword.length + PDP_BRAND_SUFFIX.length <= PDP_TITLE_MAX) {
+    return `${withKeyword}${PDP_BRAND_SUFFIX}`;
+  }
+  if (withKeyword.length <= PDP_TITLE_MAX) return withKeyword;
+  const cut = withKeyword.slice(0, PDP_TITLE_MAX);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).replace(/[\s–—-]+$/, '').trim();
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -66,7 +81,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // product (better for SEO than a repeated template), cleaned and
   // clamped to ~160 chars at a word boundary. Fall back to a concise,
   // accurate template only when the product has no description.
-  const fallbackDesc = `${displayName} — commercial-grade ${productCategory}. GST invoice for full Input Tax Credit. Free pan-India delivery above ₹3,000.`;
+  const fallbackDesc = `${displayName} — commercial-grade ${productCategory}. GST invoice for full Input Tax Credit. Free pan-India delivery above ₹5,000.`;
   let description = fallbackDesc;
   if (p.description && p.description.trim()) {
     const clean = p.description.replace(/\s+/g, ' ').trim();

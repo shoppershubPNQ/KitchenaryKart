@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCustomerSession } from '@/lib/auth';
@@ -6,6 +7,12 @@ import { inr, dateShortFromIso } from '@/lib/format';
 import { StatusPill } from '@/components/OrderStatusTimeline';
 
 export const dynamic = 'force-dynamic';
+
+// Auth-gated order history — never index.
+export const metadata: Metadata = {
+  title: 'My Orders — KitchenaryKart',
+  robots: { index: false, follow: false },
+};
 
 export default async function OrdersListPage() {
   const session = getCustomerSession();
