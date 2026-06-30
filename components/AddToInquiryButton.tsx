@@ -28,15 +28,36 @@ interface Props {
   /** Render only the primary "Add to Cart" button (used where the layout
    *  supplies its own secondary action). */
   onlyPrimary?: boolean;
+  /** Effective stock of the selected variant (or the parent when no variant
+   *  is chosen). When <= 0 the buy buttons are replaced with a disabled
+   *  "Out of Stock" state so an unavailable item can't be added to the cart.
+   *  Undefined = unknown → behave as in-stock (backwards compatible). */
+  stock?: number;
 }
 
-export function AddToInquiryButton({ product, cartItem, onlyPrimary }: Props) {
+export function AddToInquiryButton({ product, cartItem, onlyPrimary, stock }: Props) {
   const { loggedIn } = useAuth();
   // Add the selected variant when supplied; otherwise the parent product.
   const payload = cartItem ?? product;
+  const outOfStock = typeof stock === 'number' && stock <= 0;
   function gated(action: () => void) {
     if (loggedIn) action();
     else openAuth({ onSuccess: action });
+  }
+
+  // Out of stock — block the purchase entirely (no cart add). The server
+  // also re-checks stock at checkout, but this stops it at the source.
+  if (outOfStock) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-disabled="true"
+        className="btn btn-outline flex-1 opacity-60 cursor-not-allowed"
+      >
+        Out of Stock
+      </button>
+    );
   }
 
   if (onlyPrimary) {

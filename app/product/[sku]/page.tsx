@@ -388,6 +388,7 @@ export default async function ProductPage({ params }: Params) {
           <div className="flex flex-wrap gap-3 mb-6">
             <AddToInquiryButton
               product={p}
+              stock={selectedVariant?.stock ?? p.stock}
               cartItem={{
                 sku: requestedSku,
                 name: displayName,
