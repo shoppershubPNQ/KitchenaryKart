@@ -61,7 +61,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
                 paint), rest lazy. width/height tell the browser the
                 intrinsic box so it can skip layout pass. */}
             <img
-              src={imgSrc(u)}
+              src={imgSrc(u, 150)}
               alt={`${name} — view ${i + 1}`}
               width={72}
               height={72}
