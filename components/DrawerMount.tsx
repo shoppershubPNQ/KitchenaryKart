@@ -75,7 +75,10 @@ export function DrawerMount() {
 
   // GST-compliant breakdown via the shared helper (no coupon in the drawer,
   // so discountInclusive = 0; a coupon is applied + shown at checkout).
-  const summary = computeOrderSummary(items, 0);
+  // Delivery is zone × weight and needs the destination address, so it's
+  // shown as "Calculated at checkout" here — pass shippingOverride = 0 so the
+  // preview total doesn't include a guessed flat fee.
+  const summary = computeOrderSummary(items, 0, 0);
   const shipping = summary.shipping;
   const youPay = summary.netPayable;
 
@@ -257,12 +260,8 @@ export function DrawerMount() {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <dt className="text-ink">
-                      Shipping Fee{summary.shipping === 0 ? ' (Free)' : ''}
-                    </dt>
-                    <dd className={summary.shipping === 0 ? 'text-success font-semibold' : 'text-ink'}>
-                      {inr(summary.shipping)}
-                    </dd>
+                    <dt className="text-ink">Shipping Fee</dt>
+                    <dd className="text-muted text-xs">Calculated at checkout</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted">GST ({summary.gstRateLabel})</dt>

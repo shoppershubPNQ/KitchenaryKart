@@ -18,7 +18,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { clearCart, useCart } from '@/lib/cart';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import { imgSrc, inr, letter } from '@/lib/format';
-import { shippingFor } from '@/lib/shipping';
 import { trackPurchase } from '@/lib/analytics';
 import { computeOrderSummary } from '@/lib/order-summary';
 
@@ -143,17 +142,55 @@ export default function CheckoutPage() {
   // the backend recomputes as its `subtotal`. The coupon discount
   // applies on top of that.
   const couponDiscount = appliedCoupon?.discountAmount ?? 0;
-  // Shipping is recomputed on the after-discount amount and must match the
-  // server's binding charge in /api/public/checkout (free at/above the
-  // threshold, flat fee below).
   const amountAfterDiscount = Math.max(0, total - couponDiscount);
-  const shippingFee = shippingFor(amountAfterDiscount);
   const savings = Math.max(subtotal - total, 0);
 
+  // Zone × weight delivery charge — fetched from the server (shipping-quote)
+  // so the amount shown always equals the binding charge at /api/public/
+  // checkout. Needs the destination state + cart; null until both are known.
+  // cartKey keeps the effect stable (items is a fresh array each render).
+  const cartKey = items.map((i) => `${i.sku}:${i.qty}`).join(',');
+  const [shipQuote, setShipQuote] = useState<number | null>(null);
+  const [shipLoading, setShipLoading] = useState(false);
+  useEffect(() => {
+    if (!address.state.trim() || items.length === 0) {
+      setShipQuote(null);
+      return;
+    }
+    let cancelled = false;
+    setShipLoading(true);
+    fetch('/admin-api/public/shipping-quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map((i) => ({ sku: i.sku, quantity: i.qty })),
+        state: address.state,
+        amountAfterDiscount,
+      }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setShipQuote(typeof d?.shippingCost === 'number' ? d.shippingCost : null);
+      })
+      .catch(() => {
+        if (!cancelled) setShipQuote(null);
+      })
+      .finally(() => {
+        if (!cancelled) setShipLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartKey, address.state, amountAfterDiscount]);
+
+  // Whether we have a usable quote to show (state entered + fetched).
+  const shipKnown = !!address.state.trim() && shipQuote !== null;
+
   // GST-compliant breakdown via the shared helper — identical labels +
-  // calculation to the cart, invoice, admin and print view. GST is charged
-  // on the discounted Net Value; netPayable equals the server's charge.
-  const summary = computeOrderSummary(items, couponDiscount);
+  // calculation to the cart, invoice, admin and print view. Pass the fetched
+  // zone-weight shipping as the override (0 until a quote loads).
+  const summary = computeOrderSummary(items, couponDiscount, shipQuote ?? 0);
 
   // Re-validate a previously applied coupon when the cart total changes
   // (e.g. customer edits qty in another tab). Clears it if it no longer
@@ -271,7 +308,9 @@ export default function CheckoutPage() {
   function fullAddress(a: Address): string {
     return [a.line1, a.city, a.state, a.postalCode].filter(Boolean).join(', ');
   }
-  const addressFilled = !!(address.line1 && address.city && address.postalCode);
+  // State is required now: the delivery charge is zone-based, so without it
+  // the shown amount couldn't match the server's binding charge.
+  const addressFilled = !!(address.line1 && address.city && address.state && address.postalCode);
 
   async function placeOrder() {
     setError(null);
@@ -281,7 +320,13 @@ export default function CheckoutPage() {
     }
     if (!addressFilled) {
       setEditing(true);
-      setError('Please complete your delivery address.');
+      setError('Please complete your delivery address (including state).');
+      return;
+    }
+    // Don't let the order go through before the delivery charge is known —
+    // otherwise the customer could be charged a different amount than shown.
+    if (shipQuote === null) {
+      setError('Calculating delivery charge — please wait a moment and try again.');
       return;
     }
     if (isBusiness && address.gstin?.trim() && !isValidGstin(address.gstin)) {
@@ -686,13 +731,17 @@ export default function CheckoutPage() {
                     <span className="block text-[12px] text-muted italic">3–7 business days</span>
                   </span>
                 </span>
-                {shippingFee === 0 ? (
+                {!address.state.trim() ? (
+                  <span className="text-[12px] text-muted">Enter state</span>
+                ) : shipLoading || shipQuote === null ? (
+                  <span className="text-[12px] text-muted">Calculating…</span>
+                ) : shipQuote === 0 ? (
                   <span className="text-[12px] font-bold tracking-wider text-success border border-success rounded px-2 py-0.5">
                     FREE
                   </span>
                 ) : (
                   <span className="text-[12px] font-bold tracking-wider text-ink border border-line rounded px-2 py-0.5">
-                    {inr(shippingFee)}
+                    {inr(shipQuote)}
                   </span>
                 )}
               </label>
@@ -779,8 +828,8 @@ export default function CheckoutPage() {
                 </div>
               )}
               <div className="flex justify-between text-ink-soft">
-                <span>Shipping Fee{summary.shipping === 0 ? ' (Free)' : ''}</span>
-                <span>{inr(summary.shipping)}</span>
+                <span>Shipping Fee{shipKnown && summary.shipping === 0 ? ' (Free)' : ''}</span>
+                <span>{shipKnown ? inr(summary.shipping) : <span className="text-muted text-xs">enter state</span>}</span>
               </div>
               <div className="flex justify-between text-ink-soft">
                 <span>GST ({summary.gstRateLabel})</span>
@@ -817,12 +866,14 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={placeOrder}
-              disabled={submitting}
+              disabled={submitting || (addressFilled && shipLoading)}
               className="w-full py-4 rounded-md bg-brand text-white font-head font-bold tracking-wider uppercase text-sm hover:bg-brand-dark disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
               {submitting
                 ? 'Opening payment…'
-                : `Pay Now · ${inr(summary.netPayable)}${count ? `  (${count} ${count === 1 ? 'item' : 'items'})` : ''}`}
+                : addressFilled && shipLoading
+                  ? 'Calculating delivery…'
+                  : `Pay Now · ${inr(summary.netPayable)}${count ? `  (${count} ${count === 1 ? 'item' : 'items'})` : ''}`}
             </button>
 
             <p className="text-center text-[11px] text-muted">
