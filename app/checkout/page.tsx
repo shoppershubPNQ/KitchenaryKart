@@ -818,7 +818,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={placeOrder}
               disabled={submitting}
-              className="w-full py-4 rounded-md bg-ink text-white font-head font-bold tracking-wider uppercase text-sm hover:bg-black disabled:opacity-60 disabled:cursor-not-allowed transition"
+              className="w-full py-4 rounded-md bg-brand text-white font-head font-bold tracking-wider uppercase text-sm hover:bg-brand-dark disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
               {submitting
                 ? 'Opening payment…'

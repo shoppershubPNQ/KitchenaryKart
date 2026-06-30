@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { getProductBySku, getSimilarProducts } from '@/lib/products';
 import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
+import { MobileBuyBar } from '@/components/MobileBuyBar';
 import { SimilarProducts } from '@/components/SimilarProducts';
 import { VariantSelector } from '@/components/VariantSelector';
 import { pseudoRating, Stars } from '@/lib/rating';
@@ -385,7 +386,7 @@ export default async function ProductPage({ params }: Params) {
             </dl>
           </div>
 
-          <div className="flex flex-wrap gap-3 mb-6">
+          <div id="pdp-buybox" className="flex flex-wrap gap-3 mb-6">
             <AddToInquiryButton
               product={p}
               stock={selectedVariant?.stock ?? p.stock}
@@ -402,6 +403,21 @@ export default async function ProductPage({ params }: Params) {
           </div>
         </div>
       </div>
+
+      {/* Sticky mobile buy bar — pinned price + CTA that appears once the
+          in-page buy box (#pdp-buybox) scrolls out of view on phones. */}
+      <MobileBuyBar
+        stock={selectedVariant?.stock ?? p.stock}
+        cartItem={{
+          sku: requestedSku,
+          name: displayName,
+          price: displayPrice,
+          mrp: displayMrp,
+          taxPercent: p.taxPercent,
+          imageUrl: selectedVariant?.imageUrl ?? p.imageUrl,
+          category: p.category,
+        }}
+      />
 
       {/* Product description — admin free-text copy. Rendered as a
           full-width prose block under the main grid so it reads on

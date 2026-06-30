@@ -5,7 +5,8 @@
  * Both are auth-gated — if the user isn't signed in, the auth modal opens
  * and the cart action is queued to fire after a successful login.
  */
-import { addToCart, openDrawer } from '@/lib/cart';
+import { useRouter } from 'next/navigation';
+import { addToCart } from '@/lib/cart';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import type { PublicProduct } from '@/lib/products';
 
@@ -37,6 +38,7 @@ interface Props {
 
 export function AddToInquiryButton({ product, cartItem, onlyPrimary, stock }: Props) {
   const { loggedIn } = useAuth();
+  const router = useRouter();
   // Add the selected variant when supplied; otherwise the parent product.
   const payload = cartItem ?? product;
   const outOfStock = typeof stock === 'number' && stock <= 0;
@@ -86,7 +88,9 @@ export function AddToInquiryButton({ product, cartItem, onlyPrimary, stock }: Pr
         onClick={() =>
           gated(() => {
             addToCart(payload);
-            openDrawer();
+            // "Buy Now" = express intent → go straight to checkout, not the
+            // cart drawer (which added an extra step + broke the promise).
+            router.push('/checkout');
           })
         }
         className="btn btn-primary flex-1"

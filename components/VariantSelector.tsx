@@ -135,8 +135,6 @@ export function VariantSelector({ variants, currentSku }: Props) {
         const s = stockLabel(current.stock);
         return (
           <div className="text-xs text-muted">
-            Variant SKU: <span className="font-mono text-ink">{current.sku}</span>
-            {' · '}
             <span className={s.className}>{s.text}</span>
             {' · '}
             <span className="text-ink font-semibold">{inr(current.price)}</span>
