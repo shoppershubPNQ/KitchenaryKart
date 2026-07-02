@@ -28,14 +28,32 @@ const CLOUDINARY_HOST = `https://res.cloudinary.com/${
  * cards / thumbnails so a 250px grid slot doesn't download a 1600px image
  * (a big LCP / Core-Web-Vitals + bandwidth win across the catalog). Defaults
  * to 1600 for full-size use (PDP hero, OG cards, JSON-LD, merchant feed).
- * Absolute URLs (per-variant Cloudinary URLs) are returned untouched.
+ *
+ * Absolute Cloudinary URLs (per-variant images stored as
+ * `…/image/upload/v123/kk/<sku>/variant-…/x.webp`) are ALSO right-sized: the
+ * same transform is injected after `/image/upload/`. Previously these were
+ * returned untouched, so a 250px card downloaded a full-res image — the
+ * bandwidth leak that pushed the Cloudinary account past its free quota and
+ * got image delivery disabled. Non-Cloudinary hosts, and URLs that already
+ * carry a transform, are returned untouched.
  */
 export function imgSrc(url: string | null | undefined, width = 1600): string {
   if (!url) return '';
-  if (/^https?:/i.test(url)) return url;
+  const transform = `f_auto,q_auto,w_${width},c_limit`;
+  if (/^https?:/i.test(url)) {
+    const marker = '/image/upload/';
+    const at = url.indexOf(marker);
+    if (at === -1) return url; // not a Cloudinary upload URL — leave as-is
+    const restStart = at + marker.length;
+    const firstSeg = url.slice(restStart).split('/')[0];
+    // A transform segment starts with a Cloudinary param like `w_`,`f_`,`c_`…
+    // A version (`v123…`) or bare public id does not — prepend the transform.
+    if (/(?:^|,)[a-z]{1,3}_/.test(firstSeg)) return url;
+    return `${url.slice(0, restStart)}${transform}/${url.slice(restStart)}`;
+  }
   const m = url.match(/^\/?images\/(.+)$/i);
   if (!m) return url;
-  return `${CLOUDINARY_HOST}/f_auto,q_auto,w_${width},c_limit/kk/${m[1]}`;
+  return `${CLOUDINARY_HOST}/${transform}/kk/${m[1]}`;
 }
 
 /** "20 May 2026" format from an ISO string. Used on order pages. */
