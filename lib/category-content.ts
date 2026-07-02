@@ -58,7 +58,9 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
       'Not sure which model suits your menu? WhatsApp our team at +91 98903 52455 with your covers-per-day and we will recommend the right configuration with bulk pricing.',
     relatedGuides: [
       { slug: 'how-to-choose-commercial-bain-marie', label: 'How to Choose a Commercial Bain Marie' },
+      { slug: 'commercial-bain-marie-guide', label: 'Commercial Bain Marie: The Complete Buying & Use Guide' },
       { slug: 'commercial-deep-fryer-buying-guide', label: 'Commercial Deep Fryer Buying Guide' },
+      { slug: 'commercial-electric-tawa-buying-guide', label: 'Commercial Electric Tawa: Buying Guide & Price' },
     ],
   },
   {
@@ -114,6 +116,7 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     relatedGuides: [
       { slug: 'how-to-choose-commercial-planetary-mixer', label: 'How to Choose a Commercial Planetary Mixer' },
       { slug: 'pizzeria-equipment-guide', label: 'Pizzeria Equipment Guide: The Complete Pizza Equipment List' },
+      { slug: 'commercial-vegetable-cutter-guide', label: 'Commercial Vegetable Cutter: The Complete Buying Guide' },
     ],
   },
   {
@@ -163,6 +166,9 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     },
     closing:
       'Setting up a café or bar? WhatsApp +91 98903 52455 for a complete beverage-station list.',
+    relatedGuides: [
+      { slug: 'cream-charger-guide', label: 'Cream Chargers: The Complete Guide for Cafes & Bakeries' },
+    ],
   },
   {
     slug: 'housekeeping',
@@ -211,6 +217,11 @@ export const CATEGORY_CONTENT: CategoryContent[] = [
     },
     closing:
       'Stocking a new kitchen? WhatsApp +91 98903 52455 for a complete accessories list with bulk pricing.',
+    relatedGuides: [
+      { slug: 'cafe-menu-display-board-guide', label: 'Menu Board for Cafe: The Complete Display Board Guide' },
+      { slug: 'bamboo-dimsum-basket-guide', label: 'Bamboo Dimsum Basket: The Complete Guide for Restaurants' },
+      { slug: 'cream-charger-guide', label: 'Cream Chargers: The Complete Guide for Cafes & Bakeries' },
+    ],
   },
   {
     slug: 'polyrattan-basket',
