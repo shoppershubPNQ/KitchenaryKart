@@ -412,9 +412,9 @@ export function AuthModal() {
               </button>
               <p className="mt-4 text-xs text-muted text-center">
                 By continuing you agree to our{' '}
-                <a className="text-brand font-semibold hover:underline" href="/terms">Terms of Use</a>
+                <a className="text-brand font-semibold hover:underline" href="/policy/terms-and-conditions">Terms of Use</a>
                 {' '}and{' '}
-                <a className="text-brand font-semibold hover:underline" href="/privacy">Privacy Policy</a>.
+                <a className="text-brand font-semibold hover:underline" href="/policy/privacy-policy">Privacy Policy</a>.
               </p>
             </div>
           )}
