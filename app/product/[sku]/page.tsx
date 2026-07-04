@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 import { getProductBySku, getSimilarProducts } from '@/lib/products';
 import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
@@ -126,7 +126,22 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function ProductPage({ params }: Params) {
   const requestedSku = decodeURIComponent(params.sku);
   const p = await getProductBySku(requestedSku);
-  if (!p) notFound();
+  if (!p) {
+    // Old WooCommerce product URLs used descriptive slugs (e.g.
+    // /product/heavy-duty-ss-rice-strainer-...), not SKUs, so they 404'd after
+    // the migration. Rather than a dead end, send the visitor (and the old link
+    // equity) to a relevant search built from the slug words — a live, relevant
+    // page instead of a hard 404. Falls back to /shop when the slug has no usable
+    // words (e.g. /product/180). Valid SKUs never reach here (p is truthy).
+    const q = requestedSku
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !/^\d+$/.test(w))
+      .slice(0, 5)
+      .join(' ');
+    permanentRedirect(q ? `/shop?q=${encodeURIComponent(q)}` : '/shop');
+  }
 
   // Find the currently selected variant (if URL matches a variant SKU)
   const selectedVariant = p.variants.find((v) => v.sku === requestedSku);

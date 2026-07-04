@@ -52,11 +52,43 @@ const nextConfig = {
       'cancellation-policy',
       'shipping-policy',
     ];
-    return policySlugs.map((slug) => ({
+    const policyRedirects = policySlugs.map((slug) => ({
       source: `/${slug}`,
       destination: `/policy/${slug}`,
       permanent: true,
     }));
+
+    // Legacy WooCommerce/WordPress → Next.js migration redirects (301). The old
+    // site used /product-category/, /product-tag/, /shop/page/N/, etc. After the
+    // migration every URL changed, so Google's indexed old URLs now 404 —
+    // dropping ~2.8k pages and their link equity. Map each old pattern to the
+    // closest live page so authority transfers ("moved", not "gone"). Query
+    // strings (?add-to-cart / ?add_to_wishlist / _wpnonce) match on path and are
+    // dropped by the destination. Old /product/<slug> URLs are handled in the
+    // product page itself (can't pattern-match here without hitting valid SKUs).
+    // Order matters: most specific first, generic catch-all last.
+    const legacyRedirects = [
+      { source: '/product-category/equipments/hot-equipments/:rest*', destination: '/category/hot-equipment', permanent: true },
+      { source: '/product-category/equipments/cold-equipments/:rest*', destination: '/category/cold-equipment', permanent: true },
+      { source: '/product-category/house-keeping/:rest*', destination: '/category/housekeeping', permanent: true },
+      { source: '/product-category/queue-managers/:rest*', destination: '/category/housekeeping', permanent: true },
+      { source: '/product-category/accessories/bar-accessories/:rest*', destination: '/category/bar-beverage', permanent: true },
+      { source: '/product-category/kitchen-accessories/:rest*', destination: '/category/accessories', permanent: true },
+      { source: '/product-category/accessories/:rest*', destination: '/category/accessories', permanent: true },
+      { source: '/product-category/:path*', destination: '/shop', permanent: true },
+      { source: '/product-tag/:path*', destination: '/shop', permanent: true },
+      { source: '/shop/page/:n*', destination: '/shop', permanent: true },
+      { source: '/about-us', destination: '/about', permanent: true },
+      { source: '/track-your-order', destination: '/track', permanent: true },
+      { source: '/home', destination: '/', permanent: true },
+      { source: '/compare', destination: '/shop', permanent: true },
+      { source: '/all-subcategories', destination: '/shop', permanent: true },
+      { source: '/category', destination: '/shop', permanent: true },
+      { source: '/category/:id(\\d+)', destination: '/shop', permanent: true },
+      { source: '/product', destination: '/shop', permanent: true },
+    ];
+
+    return [...policyRedirects, ...legacyRedirects];
   },
 };
 
