@@ -6,12 +6,20 @@ import {
   getAllCategoryContent,
 } from '@/lib/category-content';
 import { CATEGORY_SHORT } from '@/lib/categories';
-import { getCategoryFeatured } from '@/lib/products';
+import { getCategoryProductsPage } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
 import { buildCrumbsJsonLd, buildItemListJsonLd } from '@/lib/json-ld';
 
+const PER_PAGE = 48;
+
 interface Params {
   params: { slug: string };
+  searchParams?: { page?: string };
+}
+
+function parsePage(sp?: { page?: string }): number {
+  const n = parseInt(sp?.page ?? '1', 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
 export const revalidate = 600;
@@ -20,12 +28,17 @@ export function generateStaticParams() {
   return getAllCategoryContent().map((c) => ({ slug: c.slug }));
 }
 
-export function generateMetadata({ params }: Params): Metadata {
+export function generateMetadata({ params, searchParams }: Params): Metadata {
   const c = getCategoryContent(params.slug);
   if (!c) return { title: 'Not found' };
-  const canonical = `/category/${c.slug}`;
+  const page = parsePage(searchParams);
+  // Page 1 canonicalises to the clean /category/<slug>; deeper pages
+  // self-canonicalise (so paginated URLs stay crawlable and distinct, but
+  // ?page=1 never duplicates the base URL).
+  const canonical = page > 1 ? `/category/${c.slug}?page=${page}` : `/category/${c.slug}`;
+  const titleSuffix = page > 1 ? ` — Page ${page}` : '';
   return {
-    title: `${c.title} — KitchenaryKart`,
+    title: `${c.title}${titleSuffix} — KitchenaryKart`,
     description: c.metaDescription,
     alternates: { canonical },
     openGraph: {
@@ -44,11 +57,15 @@ export function generateMetadata({ params }: Params): Metadata {
   };
 }
 
-export default async function CategoryLandingPage({ params }: Params) {
+export default async function CategoryLandingPage({ params, searchParams }: Params) {
   const content = getCategoryContent(params.slug);
   if (!content) notFound();
 
-  const featured = await getCategoryFeatured(content.category, 12);
+  const page = parsePage(searchParams);
+  const { products, total } = await getCategoryProductsPage(content.category, page, PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  // Out-of-range page (e.g. ?page=999) → 404, not a thin 200 (avoids soft-404).
+  if (page > 1 && products.length === 0) notFound();
 
   const crumbsLd = buildCrumbsJsonLd([
     { name: 'Home', path: '/' },
@@ -56,10 +73,13 @@ export default async function CategoryLandingPage({ params }: Params) {
     { name: content.title },
   ]);
 
-  const itemListLd = buildItemListJsonLd(featured, `Popular in ${content.title}`);
+  const itemListLd = buildItemListJsonLd(products, `${content.title}`);
 
-  // Link into the existing client-filtered shop view for the full list.
+  // Link into the client-filtered shop view (search/sort). The full product
+  // list is now rendered + paginated ON this page so every product is a
+  // crawlable link (no orphans).
   const shopHref = `/shop?cat=${encodeURIComponent(content.category)}`;
+  const pageHref = (n: number) => (n <= 1 ? `/category/${content.slug}` : `/category/${content.slug}?page=${n}`);
 
   return (
     <>
@@ -100,19 +120,69 @@ export default async function CategoryLandingPage({ params }: Params) {
           </Link>
         </header>
 
-        {featured.length > 0 && (
+        {products.length > 0 && (
           <section className="mb-12">
-            <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-5">
-              Popular in {content.title}
-            </h2>
+            <div className="flex items-baseline justify-between gap-4 flex-wrap mb-5">
+              <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink">
+                All {content.title}{' '}
+                <span className="text-muted text-base font-normal">({total})</span>
+              </h2>
+              {totalPages > 1 && (
+                <span className="text-sm text-muted">Page {page} of {totalPages}</span>
+              )}
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-              {featured.map((p) => (
+              {products.map((p) => (
                 <ProductCard key={p.sku} product={p} />
               ))}
             </div>
-            <div className="mt-6">
+
+            {/* Crawlable pagination — every page is a real <a href> so Google
+                reaches (and indexes) every product page. This is the fix for
+                the orphan-product indexation gap. */}
+            {totalPages > 1 && (
+              <nav
+                className="mt-8 flex flex-wrap items-center justify-center gap-2"
+                aria-label={`${content.title} pages`}
+              >
+                {page > 1 && (
+                  <Link
+                    href={pageHref(page - 1)}
+                    rel="prev"
+                    className="px-3 py-2 rounded-md border border-line text-sm font-medium text-ink hover:border-brand hover:text-brand transition"
+                  >
+                    ← Prev
+                  </Link>
+                )}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                  <Link
+                    key={n}
+                    href={pageHref(n)}
+                    aria-current={n === page ? 'page' : undefined}
+                    className={`px-3.5 py-2 rounded-md border text-sm font-medium transition ${
+                      n === page
+                        ? 'border-brand bg-brand text-white'
+                        : 'border-line text-ink hover:border-brand hover:text-brand'
+                    }`}
+                  >
+                    {n}
+                  </Link>
+                ))}
+                {page < totalPages && (
+                  <Link
+                    href={pageHref(page + 1)}
+                    rel="next"
+                    className="px-3 py-2 rounded-md border border-line text-sm font-medium text-ink hover:border-brand hover:text-brand transition"
+                  >
+                    Next →
+                  </Link>
+                )}
+              </nav>
+            )}
+
+            <div className="mt-6 text-center">
               <Link href={shopHref} className="text-brand font-semibold hover:opacity-80">
-                See all {content.title.toLowerCase()} →
+                Search &amp; filter all {content.title.toLowerCase()} →
               </Link>
             </div>
           </section>

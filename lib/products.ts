@@ -503,6 +503,38 @@ export const getCategoryFeatured = unstable_cache(
   { revalidate: 600, tags: ['products'] },
 );
 
+/**
+ * A page of ALL active products in a category, server-rendered so every product
+ * is reachable through a crawlable <a> link. Fixes the orphan-product
+ * indexation gap: category pages used to link only 12 featured items + a
+ * JS-filtered shop, leaving ~2,000 products discoverable only via the sitemap
+ * ("Discovered/Crawled – currently not indexed" in GSC). Ordered stock-first so
+ * page 1 still leads with in-stock, popular items.
+ */
+async function _getCategoryProductsPage(
+  category: string,
+  page: number,
+  perPage: number,
+): Promise<{ products: PublicProduct[]; total: number }> {
+  const [rows, total] = await Promise.all([
+    prisma.product.findMany({
+      where: { status: 'active', category },
+      orderBy: [{ stock: 'desc' }, { name: 'asc' }],
+      skip: Math.max(0, (page - 1) * perPage),
+      take: perPage,
+      select: commonSelect,
+    }),
+    prisma.product.count({ where: { status: 'active', category } }),
+  ]);
+  return { products: rows.map(toPublic), total };
+}
+
+export const getCategoryProductsPage = unstable_cache(
+  _getCategoryProductsPage,
+  ['kk:category-products-page'],
+  { revalidate: 600, tags: ['products'] },
+);
+
 // Uncached core — exported under a different name so callers can pick.
 async function _getCategoryCounts(): Promise<Record<string, number>> {
   const rows = await prisma.product.groupBy({
