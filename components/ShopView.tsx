@@ -43,6 +43,25 @@ export function ShopView({
     router.replace(qs ? `/shop?${qs}` : '/shop', { scroll: false });
   }, [cat, sub, q, router, collectionSlug]);
 
+  // Sync filter state FROM the URL when it changes. Without this, a new search
+  // from the header (which navigates /shop?q=A → /shop?q=B on the SAME route,
+  // so this component never remounts) updated the URL but left cat/sub/q at
+  // their mount-time values — the grid kept showing the OLD query's results.
+  // Guarded (no-op when unchanged) so it never ping-pongs with the state→URL
+  // effect above. Depends on the serialized string so it only fires on a real
+  // param change, not every render.
+  const search = params.toString();
+  useEffect(() => {
+    const uq = params.get('q') ?? '';
+    const ucat = params.get('cat') ?? '';
+    const usub = params.get('sub') ?? '';
+    setQ((cur) => (cur === uq ? cur : uq));
+    setCat((cur) => (cur === ucat ? cur : ucat));
+    setSub((cur) => (cur === usub ? cur : usub));
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let list = products.slice();
