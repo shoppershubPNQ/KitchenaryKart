@@ -33,7 +33,7 @@ export default async function OrderDetailPage({ params }: Props) {
           ← All orders
         </Link>
       </div>
-      <OrderDetailView order={order} />
+      <OrderDetailView order={order} canDownloadInvoice />
     </div>
   );
 }
