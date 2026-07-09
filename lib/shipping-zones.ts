@@ -10,7 +10,7 @@
  *   ≤ 100 g             70    70     70    70     100
  *   ≤ 500 g            100   100    100   100     200
  *   ≤ 1000 g (1 kg)    250   250    250   250     350
- *   > 1000 g (1–10 kg  100   200    200   200     200
+ *   > 1000 g (1–10 kg  100   200    200   200     400
  *     and > 10 kg)
  *   free order:        West/Central/North/South ≥ ₹5,000 · East ≥ ₹10,000
  *
@@ -45,7 +45,7 @@ const MATRIX: Record<Zone, [number, number, number, number]> = {
   Central: [70, 100, 250, 200],
   North: [70, 100, 250, 200],
   South: [70, 100, 250, 200],
-  East: [100, 200, 350, 200],
+  East: [100, 200, 350, 400],
 };
 
 // Indian state/UT (lowercased) → zone. Seller is in Maharashtra (West).
