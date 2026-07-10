@@ -415,7 +415,7 @@ function renderReelCard(reel: PublicReel, playVideo: boolean) {
           <div className="w-9 h-9 rounded-full bg-bg-soft grid place-items-center overflow-hidden shrink-0">
             {product.imageUrl ? (
               <img
-                src={imgSrc(product.imageUrl)}
+                src={imgSrc(product.imageUrl, 72)}
                 alt={product.name}
                 width={36}
                 height={36}
@@ -454,8 +454,10 @@ function renderProductCard(p: PublicProduct, i: number, animate: boolean) {
       >
         {p.imageUrl ? (
           <img
-            src={imgSrc(p.imageUrl)}
+            src={imgSrc(p.imageUrl, 400)}
             alt={p.name}
+            width={400}
+            height={600}
             loading="lazy"
             className={`${animate ? 'kk-reel-img ' : ''}absolute inset-0 w-full h-full object-cover`}
             style={animate ? { animationDelay: `${i * -2.25}s` } : undefined}
@@ -500,7 +502,7 @@ function renderProductCard(p: PublicProduct, i: number, animate: boolean) {
         <div className="w-9 h-9 rounded-full bg-bg-soft grid place-items-center overflow-hidden shrink-0">
           {p.imageUrl ? (
             <img
-              src={imgSrc(p.imageUrl)}
+              src={imgSrc(p.imageUrl, 96)}
               alt={p.name}
               width={36}
               height={36}

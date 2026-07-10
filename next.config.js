@@ -22,6 +22,9 @@ const nextConfig = {
     serverComponentsExternalPackages: ['pdfkit'],
   },
   images: {
+    // Prefer AVIF (~20–30% smaller than WebP) then WebP for every next/image
+    // (hero banners, promo slides, reel posters). No call-site changes needed.
+    formats: ['image/avif', 'image/webp'],
     // Admin serves product images at /images/{sku}/... via the website static server today,
     // but once this Next app runs on :3001 it needs to know where to load them from.
     // In dev we proxy through /images/* to disk via rewrites (see below).
