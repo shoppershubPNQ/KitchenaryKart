@@ -6,12 +6,13 @@
  *
  * Matrix (₹), per the owner's 2026-06-30 spec:
  *
- *   weight \ zone   West   East   North  South
- *   ≤ 100 g         FREE   100    FREE   FREE
- *   ≤ 500 g         100    200    100    100
- *   ≤ 1000 g        250    350    250    250
- *   > 1000 g        FREE   500    FREE   FREE
- *   free order:     West/North/South ≥ ₹5,000 · East ≥ ₹10,000
+ *   weight \ zone      West  Central North South  East
+ *   ≤ 100 g             70    70     70    70     100
+ *   ≤ 500 g            100   100    100   100     200
+ *   ≤ 1000 g (1 kg)    250   250    250   250     350
+ *   > 1000 g (1–10 kg  100   200    200   200     400
+ *     and > 10 kg)
+ *   free order:        West/Central/North/South ≥ ₹5,000 · East ≥ ₹10,000
  *
  * Products with no weight default to the 500–1000 g bracket (DEFAULT_ITEM_GRAMS),
  * i.e. ₹250 in the home zones — refine as real weights get filled in.
@@ -20,12 +21,13 @@
  * match). Keep both in sync, like web/lib/shipping.ts.
  */
 
-export type Zone = 'West' | 'East' | 'North' | 'South';
+export type Zone = 'West' | 'East' | 'North' | 'South' | 'Central';
 
-/** Order value at/above which delivery is free — per zone. West/North/South
- *  go free above ₹5,000; East above ₹10,000 (owner's 2026-06-30 spec). */
+/** Order value at/above which delivery is free — per zone. West/Central/North/
+ *  South go free above ₹5,000; East above ₹10,000. */
 export const FREE_ORDER_THRESHOLD: Record<Zone, number> = {
   West: 5000,
+  Central: 5000,
   North: 5000,
   South: 5000,
   East: 10000,
@@ -35,12 +37,15 @@ export const DEFAULT_ITEM_GRAMS = 750;
 /** Destination we can't map to a zone → charge as the seller's home zone. */
 const FALLBACK_ZONE: Zone = 'West';
 
-// Charge matrix: zone → [≤100, ≤500, ≤1000, >1000].
+// Charge matrix: zone → [≤100 g, ≤500 g, ≤1000 g, >1000 g]. The >1000 g bracket
+// covers both 1–10 kg and >10 kg (same rate). Home zone (West) is cheapest on
+// heavy items (₹100); all other zones ₹200.
 const MATRIX: Record<Zone, [number, number, number, number]> = {
-  West: [0, 100, 250, 0],
-  East: [100, 200, 350, 500],
-  North: [0, 100, 250, 0],
-  South: [0, 100, 250, 0],
+  West: [70, 100, 250, 100],
+  Central: [70, 100, 250, 200],
+  North: [70, 100, 250, 200],
+  South: [70, 100, 250, 200],
+  East: [100, 200, 350, 400],
 };
 
 // Indian state/UT (lowercased) → zone. Seller is in Maharashtra (West).
@@ -51,9 +56,11 @@ const STATE_ZONE: Record<string, Zone> = {
   'ladakh': 'North', 'uttarakhand': 'North', 'uttar pradesh': 'North',
   'rajasthan': 'North', 'chandigarh': 'North', 'bihar': 'North', // Bihar → North (owner override)
   // West
-  'maharashtra': 'West', 'gujarat': 'West', 'goa': 'West', 'madhya pradesh': 'West',
-  'chhattisgarh': 'West', 'dadra and nagar haveli': 'West', 'daman and diu': 'West',
+  'maharashtra': 'West', 'gujarat': 'West', 'goa': 'West',
+  'dadra and nagar haveli': 'West', 'daman and diu': 'West',
   'dadra and nagar haveli and daman and diu': 'West',
+  // Central (owner spec — MP + Chhattisgarh moved out of West)
+  'madhya pradesh': 'Central', 'chhattisgarh': 'Central',
   // South
   'karnataka': 'South', 'tamil nadu': 'South', 'kerala': 'South',
   'andhra pradesh': 'South', 'telangana': 'South', 'puducherry': 'South',
@@ -72,20 +79,38 @@ export function zoneForState(state: string | null | undefined): Zone {
 }
 
 /**
- * Parse a free-text weight into grams. Handles "717g", "950 g", "2kg",
- * "7kg 700g", "1.5 kg", "2kg 370g". Returns null when nothing parseable.
+ * Parse a free-text weight into grams. Tolerant of the formats a person
+ * actually types: "250", "250g", "950 g", "250gm", "250 gms", "500 grams",
+ * "1.5 kg", "1 kilo", "2kg 370g", "7kg 700g". Returns null only when nothing
+ * parseable.
  */
 export function parseGrams(weight: string | null | undefined): number | null {
-  if (!weight) return null;
-  const s = String(weight).toLowerCase();
-  const kg = s.match(/(\d+(?:\.\d+)?)\s*kg/);
-  // grams: a number followed by g but NOT kg (avoid matching the "k" in kg)
-  const g = s.match(/(\d+(?:\.\d+)?)\s*g(?![a-z])/);
+  if (weight == null) return null;
+  const s = String(weight).toLowerCase().trim();
+  if (!s) return null;
+
   let total = 0;
-  if (kg) total += parseFloat(kg[1]) * 1000;
-  if (g) total += parseFloat(g[1]);
-  if (total > 0) return Math.round(total);
-  // bare number with no unit → assume grams
+  let matched = false;
+
+  // Kilograms: "kg", "kgs", "kilo(s)", "kilogram(s)".
+  const kgRe = /(\d+(?:\.\d+)?)\s*(?:kgs?|kilo(?:gram)?s?)\b/g;
+  for (let m = kgRe.exec(s); m; m = kgRe.exec(s)) {
+    total += parseFloat(m[1]) * 1000;
+    matched = true;
+  }
+
+  // Grams: "g", "gm(s)", "gram(s)". Strip kg tokens first so the "g" inside
+  // a "kg" token is never miscounted as grams.
+  const withoutKg = s.replace(/(\d+(?:\.\d+)?)\s*(?:kgs?|kilo(?:gram)?s?)\b/g, ' ');
+  const gRe = /(\d+(?:\.\d+)?)\s*(?:gms?|grams?|g)\b/g;
+  for (let m = gRe.exec(withoutKg); m; m = gRe.exec(withoutKg)) {
+    total += parseFloat(m[1]);
+    matched = true;
+  }
+
+  if (matched && total > 0) return Math.round(total);
+
+  // bare number with no unit → assume grams ("250", "0.5")
   const bare = s.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
   if (bare) return Math.round(parseFloat(bare[1]));
   return null;

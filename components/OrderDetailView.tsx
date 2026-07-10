@@ -12,7 +12,16 @@ import { OrderStatusTimeline, StatusPill } from './OrderStatusTimeline';
 import type { PublicOrder } from '@/lib/orders';
 import { computeOrderSummary } from '@/lib/order-summary';
 
-export function OrderDetailView({ order }: { order: PublicOrder }) {
+export function OrderDetailView({
+  order,
+  // Only the logged-in /account view passes this — the guest /track page
+  // has no customer session, so the (auth-gated) invoice download is hidden
+  // there. Shown only for paid orders.
+  canDownloadInvoice = false,
+}: {
+  order: PublicOrder;
+  canDownloadInvoice?: boolean;
+}) {
   // Customers can leave reviews once the order has been shipped or
   // delivered. The PDP's #reviews anchor opens the existing review
   // CTA so we don't have to duplicate the auth/eligibility UI here.
@@ -35,9 +44,19 @@ export function OrderDetailView({ order }: { order: PublicOrder }) {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusPill status={order.orderStatus} />
-          <StatusPill status={order.paymentStatus} />
+        <div className="flex flex-col items-start sm:items-end gap-2">
+          <div className="flex items-center gap-2">
+            <StatusPill status={order.orderStatus} />
+            <StatusPill status={order.paymentStatus} />
+          </div>
+          {canDownloadInvoice && order.paymentStatus === 'completed' && (
+            <a
+              href={`/api/orders/${encodeURIComponent(order.orderNumber)}/invoice`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-brand px-3 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-brand hover:text-white"
+            >
+              <span aria-hidden>⬇</span> Download Tax Invoice
+            </a>
+          )}
         </div>
       </div>
 

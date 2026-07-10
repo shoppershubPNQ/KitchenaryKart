@@ -14,6 +14,12 @@ const nextConfig = {
   // don't use, but cheap insurance for the future).
   experimental: {
     optimizePackageImports: ['@vercel/analytics', '@vercel/speed-insights'],
+    // PDFKit ships font-metric (.afm) files it reads at runtime relative
+    // to its own bundled location; Next's serverless bundler tree-shakes
+    // them out and rewrites the lookup paths. Keeping pdfkit external
+    // leaves it in node_modules so the data files stay colocated. Mirrors
+    // the admin app (used by the customer tax-invoice PDF route).
+    serverComponentsExternalPackages: ['pdfkit'],
   },
   images: {
     // Admin serves product images at /images/{sku}/... via the website static server today,
