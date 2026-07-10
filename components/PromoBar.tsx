@@ -22,10 +22,10 @@ export function PromoBar() {
     'Pan-India delivery',
   ];
   return (
-    <div className="bg-ink text-cream text-[11px] md:text-xs tracking-wide py-2 px-3 md:px-4 overflow-hidden">
-      <div className="max-w-site mx-auto flex items-center justify-center gap-2 md:gap-4 flex-wrap text-center">
+    <div className="bg-ink text-cream text-[10px] md:text-xs tracking-wide py-2 px-2 md:px-4 overflow-hidden">
+      <div className="max-w-site mx-auto flex items-center justify-center gap-1.5 md:gap-4 flex-nowrap text-center">
         {items.map((item, i) => (
-          <span key={item} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <span key={item} className="inline-flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
             <svg
               viewBox="0 0 24 24"
               width="11"
@@ -36,13 +36,13 @@ export function PromoBar() {
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
-              className="text-success"
+              className="text-success shrink-0"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
             <span>{item}</span>
             {i < items.length - 1 && (
-              <span className="ml-2 md:ml-4 opacity-30" aria-hidden="true">
+              <span className="ml-1 md:ml-4 opacity-30" aria-hidden="true">
                 ·
               </span>
             )}

@@ -1,30 +1,36 @@
 'use client';
 
 /**
- * "Watch & Shop" — row of 4 reel-style cards (Instagram/Shorts vertical 9:16).
+ * "Watch & Shop" — a 3D coverflow CAROUSEL of reel-style cards (Instagram /
+ * Shorts vertical 9:16). The active card faces the viewer; neighbours angle
+ * back into 3D space around a shallow ring.
  *
- * Two rendering modes:
+ * Two card modes:
  *
- *   1. Real reels (PublicReel[]) — uploaded MP4s play autoplay/muted/loop.
- *      Each card surfaces the linked product's name + price underneath and
- *      the whole card links to that product page.
+ *   1. Real reels (PublicReel[]) — uploaded MP4s. Only the ACTIVE card mounts
+ *      a <video> (autoplay/muted/loop); off-centre cards show the poster, so
+ *      at most one heavy MP4 plays at a time.
  *
- *   2. Fake reels (PublicProduct[]) — fallback used when no reels exist
- *      yet, or to pad out to 4 slots when fewer than 4 reels are active.
- *      Each fake card shows the product image with a slow ken-burns
- *      zoom/pan to suggest motion.
+ *   2. Fake reels (PublicProduct[]) — fallback / padding when there aren't
+ *      enough real reels. Shows the product image with a slow ken-burns pan.
  *
- * The page passes both — `reels` is preferred, `products` fills the rest.
+ * Controls: prev/next arrows, dot indicators, drag / swipe, ←/→ keys, and
+ * auto-advance that pauses on hover, when the section is off-screen, when the
+ * tab is hidden, or when the user prefers reduced motion.
  *
- * Performance: reel videos are heavy (5-60 MB each). The section sits
- * well below the fold on the home page, so we render the poster image
- * only until an IntersectionObserver tells us the section is in (or
- * about to enter) the viewport. This trims ~hundreds of KB of MP4 from
- * the initial home-page payload on mobile.
+ * Performance: the whole section is behind an IntersectionObserver gate — no
+ * <video> element mounts (and no MP4 downloads) until it nears the viewport.
  */
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { imgSrc, inr, letter } from '@/lib/format';
 import type { PublicProduct } from '@/lib/products';
 import type { PublicReel } from '@/lib/reels';
@@ -33,6 +39,10 @@ interface Props {
   reels?: PublicReel[];
   products: PublicProduct[];
 }
+
+// How many cards the carousel will hold at most. Real reels fill first, then
+// products pad the rest — more cards make the 3D ring feel fuller.
+const MAX_SLOTS = 8;
 
 // Deterministic pseudo view-count per SKU, e.g. "1.2K Views" / "475 Views"
 function pseudoViews(key: string): string {
@@ -56,71 +66,164 @@ type Slot =
   | { kind: 'product'; product: PublicProduct };
 
 export function WatchAndShop({ reels = [], products }: Props) {
-  // Build up to 4 slots. Real reels first, then fall back to products to
-  // fill any remaining slots so the section never looks empty.
-  const slots: Slot[] = [];
-  for (const r of reels) {
-    if (slots.length >= 4) break;
-    slots.push({ kind: 'reel', reel: r });
-  }
-  // Avoid showing the same product twice if it appears both as a reel target
-  // and in the product fallback list.
-  const usedSkus = new Set(
-    slots
-      .map((s) => (s.kind === 'reel' ? s.reel.productSku : null))
-      .filter((x): x is string => !!x),
-  );
-  for (const p of products) {
-    if (slots.length >= 4) break;
-    if (usedSkus.has(p.sku)) continue;
-    slots.push({ kind: 'product', product: p });
-  }
-  if (slots.length === 0) return null;
+  // Build up to MAX_SLOTS cards. Real reels first, then products to pad so the
+  // ring never looks sparse.
+  const slots: Slot[] = useMemo(() => {
+    const out: Slot[] = [];
+    for (const r of reels) {
+      if (out.length >= MAX_SLOTS) break;
+      out.push({ kind: 'reel', reel: r });
+    }
+    const usedSkus = new Set(
+      out
+        .map((s) => (s.kind === 'reel' ? s.reel.productSku : null))
+        .filter((x): x is string => !!x),
+    );
+    for (const p of products) {
+      if (out.length >= MAX_SLOTS) break;
+      if (usedSkus.has(p.sku)) continue;
+      out.push({ kind: 'product', product: p });
+    }
+    return out;
+  }, [reels, products]);
 
-  // Lazy-load gate. Section starts in `videosArmed=false` so reel cards
-  // render the poster image only (no <video> element, no MP4 download).
-  // Once the section approaches the viewport, we flip to true and the
-  // <video> elements mount and start autoplaying. rootMargin of 200px
-  // gives the videos a head start so the first one is buffered by the
-  // time it's actually on screen.
+  const n = slots.length;
+
   const sectionRef = useRef<HTMLElement | null>(null);
+  const [active, setActive] = useState(0);
   const [videosArmed, setVideosArmed] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [docHidden, setDocHidden] = useState(false);
+
+  // Clamp the active index if the slot count ever shrinks (e.g. HMR / prop
+  // change) so we never point past the end of the ring.
   useEffect(() => {
-    if (videosArmed) return;
-    // Guard for SSR + older browsers — fall back to immediate render.
-    if (typeof IntersectionObserver === 'undefined') {
+    if (n > 0 && active >= n) setActive(0);
+  }, [n, active]);
+
+  const go = useCallback(
+    (dir: 1 | -1) => {
+      if (n < 2) return;
+      setActive((a) => (a + dir + n) % n);
+    },
+    [n],
+  );
+
+  // Reduced-motion preference — disables auto-advance (respects the user).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => setReducedMotion(mq.matches);
+    apply();
+    mq.addEventListener?.('change', apply);
+    return () => mq.removeEventListener?.('change', apply);
+  }, []);
+
+  // Pause auto-advance when the tab isn't visible.
+  useEffect(() => {
+    const onVis = () => setDocHidden(document.hidden);
+    onVis();
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
+  // IntersectionObserver drives two things: arm the videos once (heavy MP4s
+  // only download when we near the section), and track in/out of view so
+  // auto-advance stops while off-screen.
+  useEffect(() => {
+    const node = sectionRef.current;
+    if (typeof IntersectionObserver === 'undefined' || !node) {
       setVideosArmed(true);
+      setInView(true);
       return;
     }
-    const node = sectionRef.current;
-    if (!node) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setVideosArmed(true);
-          io.disconnect();
-        }
+        const on = entries.some((e) => e.isIntersecting);
+        setInView(on);
+        if (on) setVideosArmed(true);
       },
       { rootMargin: '200px 0px' },
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [videosArmed]);
+  }, []);
+
+  const paused = hovering || !inView || docHidden || reducedMotion;
+
+  // Auto-advance the ring while playing.
+  useEffect(() => {
+    if (paused || n < 2) return;
+    const id = window.setInterval(() => setActive((a) => (a + 1) % n), 4200);
+    return () => window.clearInterval(id);
+  }, [paused, n]);
+
+  // Drag / swipe navigation.
+  const drag = useRef<{ x: number; down: boolean }>({ x: 0, down: false });
+  const onPointerDown = (e: ReactPointerEvent) => {
+    drag.current = { x: e.clientX, down: true };
+  };
+  const endDrag = (e: ReactPointerEvent) => {
+    if (!drag.current.down) return;
+    const dx = e.clientX - drag.current.x;
+    drag.current.down = false;
+    if (Math.abs(dx) > 45) go(dx < 0 ? 1 : -1);
+  };
+
+  if (n === 0) return null;
 
   return (
-    <section ref={sectionRef} className="py-14">
+    <section
+      ref={sectionRef}
+      className="py-14"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
       <style jsx>{`
         @keyframes kk-kenburns {
-          0%   { transform: scale(1.04) translate(0%, 0%); }
-          25%  { transform: scale(1.12) translate(-2%, -1.5%); }
-          50%  { transform: scale(1.18) translate(1%,  1.5%); }
-          75%  { transform: scale(1.10) translate(2%, -1%); }
+          0% { transform: scale(1.04) translate(0%, 0%); }
+          25% { transform: scale(1.12) translate(-2%, -1.5%); }
+          50% { transform: scale(1.18) translate(1%, 1.5%); }
+          75% { transform: scale(1.1) translate(2%, -1%); }
           100% { transform: scale(1.04) translate(0%, 0%); }
         }
         .kk-reel-img {
           animation: kk-kenburns 9s ease-in-out infinite;
           transform-origin: center;
           will-change: transform;
+        }
+        .kk-cf-viewport {
+          overflow: hidden;
+          padding: 0.5rem 0 1rem;
+        }
+        .kk-cf-stage {
+          position: relative;
+          height: 500px;
+          perspective: 1600px;
+          margin: 0 auto;
+        }
+        .kk-cf-card {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          width: 236px;
+          margin-left: -118px;
+          transform-style: preserve-3d;
+          transition:
+            transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
+            opacity 0.55s ease;
+          will-change: transform, opacity;
+        }
+        @media (max-width: 767px) {
+          .kk-cf-stage {
+            height: 448px;
+          }
+          .kk-cf-card {
+            width: 196px;
+            margin-left: -98px;
+          }
         }
       `}</style>
 
@@ -129,19 +232,117 @@ export function WatchAndShop({ reels = [], products }: Props) {
           Watch &amp; Shop
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 mx-auto md:max-w-[72%]" style={{ gap: '1.5cm' }}>
-          {slots.map((slot, i) =>
-            slot.kind === 'reel'
-              ? renderReelCard(slot.reel, i, videosArmed)
-              : renderProductCard(slot.product, i),
+        <div className="relative kk-cf-viewport">
+          <div
+            className="kk-cf-stage select-none"
+            style={{ touchAction: 'pan-y' }}
+            onPointerDown={onPointerDown}
+            onPointerUp={endDrag}
+            onPointerLeave={endDrag}
+            onPointerCancel={endDrag}
+          >
+            {slots.map((slot, i) => {
+              // Signed offset from the active card, wrapped so the cards form a
+              // ring: the card "opposite" the active one sits at the back.
+              let o = i - active;
+              if (o > n / 2) o -= n;
+              if (o < -n / 2) o += n;
+              const ao = Math.abs(o);
+              const visible = ao <= 2;
+
+              // Coverflow transform: fan out along X, push back in Z, angle in.
+              const translateX = o * 88; // % of own width
+              const translateZ = -ao * 180; // px
+              const rotateY = -o * 38; // deg
+              const scale = Math.max(0.7, 1 - ao * 0.15);
+              const opacity = ao === 0 ? 1 : ao === 1 ? 0.85 : ao === 2 ? 0.5 : 0;
+
+              const isActive = o === 0;
+              const key =
+                slot.kind === 'reel'
+                  ? `reel-${slot.reel.id}`
+                  : `product-${slot.product.sku}`;
+
+              return (
+                <div
+                  key={key}
+                  className="kk-cf-card"
+                  aria-hidden={!visible}
+                  style={{
+                    transform: `translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                    opacity,
+                    zIndex: 100 - ao,
+                    pointerEvents: visible ? 'auto' : 'none',
+                    cursor: isActive ? 'default' : 'pointer',
+                  }}
+                  // A click on a side card re-centres it instead of following
+                  // its link; the active card's links work normally.
+                  onClickCapture={(e) => {
+                    if (!isActive) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActive(i);
+                    }
+                  }}
+                >
+                  {slot.kind === 'reel'
+                    ? renderReelCard(slot.reel, videosArmed && isActive)
+                    : renderProductCard(slot.product, i, isActive)}
+                </div>
+              );
+            })}
+          </div>
+
+          {n > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous reel"
+                onClick={() => go(-1)}
+                className="absolute left-1 md:left-3 top-1/2 -translate-y-1/2 z-[200] w-11 h-11 rounded-full bg-white/95 border border-line shadow-md grid place-items-center text-ink hover:bg-brand hover:text-white transition"
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                aria-label="Next reel"
+                onClick={() => go(1)}
+                className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 z-[200] w-11 h-11 rounded-full bg-white/95 border border-line shadow-md grid place-items-center text-ink hover:bg-brand hover:text-white transition"
+              >
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+            </>
           )}
         </div>
+
+        {n > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-4">
+            {slots.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Go to reel ${i + 1}`}
+                aria-current={i === active}
+                onClick={() => setActive(i)}
+                className={`rounded-full transition-all ${
+                  i === active
+                    ? 'w-6 h-2 bg-brand'
+                    : 'w-2 h-2 bg-line hover:bg-brand/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
+function renderReelCard(reel: PublicReel, playVideo: boolean) {
   const product = reel.product;
   const href = product
     ? `/product/${encodeURIComponent(product.sku)}`
@@ -149,15 +350,13 @@ function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
   const viewsKey = product?.sku ?? `reel-${reel.id}`;
 
   return (
-    <div
-      key={`reel-${reel.id}`}
-      className="flex flex-col rounded-xl overflow-hidden border border-line bg-white shadow-sm hover:shadow-md transition"
-    >
+    <div className="flex flex-col rounded-xl overflow-hidden border border-line bg-white shadow-lg">
       <Link
         href={href}
         className="relative block aspect-[9/16] overflow-hidden bg-black"
+        draggable={false}
       >
-        {videosArmed ? (
+        {playVideo ? (
           <video
             src={reel.videoUrl}
             poster={reel.thumbnailUrl || undefined}
@@ -168,23 +367,17 @@ function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
             preload="metadata"
             className="absolute inset-0 w-full h-full object-cover"
           />
+        ) : reel.thumbnailUrl ? (
+          <Image
+            src={reel.thumbnailUrl}
+            alt={reel.caption || ''}
+            fill
+            sizes="(max-width: 768px) 45vw, 240px"
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         ) : (
-          // Poster-only render until the IntersectionObserver in the
-          // parent flips videosArmed. Keeps the home-page initial
-          // payload small on mobile (no MP4 download until the user
-          // scrolls near this section).
-          reel.thumbnailUrl ? (
-            <Image
-              src={reel.thumbnailUrl}
-              alt={reel.caption || ''}
-              fill
-              sizes="(max-width: 768px) 45vw, 200px"
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-ink/80 to-ink" />
-          )
+          <div className="absolute inset-0 bg-gradient-to-br from-ink/80 to-ink" />
         )}
 
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none" />
@@ -218,12 +411,9 @@ function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
       </Link>
 
       {product ? (
-        <Link href={href} className="flex items-center gap-2.5 p-3 hover:bg-bg-soft transition">
+        <Link href={href} className="flex items-center gap-2.5 p-3 hover:bg-bg-soft transition" draggable={false}>
           <div className="w-9 h-9 rounded-full bg-bg-soft grid place-items-center overflow-hidden shrink-0">
             {product.imageUrl ? (
-              // Reverted from next/image 2026-05-23 — same /images/*
-              // optimisation issue that broke CategoryTiles / ProductCard
-              // in production. Plain <img> with explicit w/h avoids it.
               <img
                 src={imgSrc(product.imageUrl)}
                 alt={product.name}
@@ -252,26 +442,23 @@ function renderReelCard(reel: PublicReel, i: number, videosArmed: boolean) {
   );
 }
 
-function renderProductCard(p: PublicProduct, i: number) {
+function renderProductCard(p: PublicProduct, i: number, animate: boolean) {
   const href = `/product/${encodeURIComponent(p.sku)}`;
   return (
-    <div
-      key={`product-${p.sku}`}
-      className="flex flex-col rounded-xl overflow-hidden border border-line bg-white shadow-sm hover:shadow-md transition"
-    >
+    <div className="flex flex-col rounded-xl overflow-hidden border border-line bg-white shadow-lg">
       <Link
         href={href}
         className="relative block aspect-[9/16] overflow-hidden"
         style={{ background: 'linear-gradient(180deg, #F5E6CF 0%, #E6C8A8 100%)' }}
+        draggable={false}
       >
         {p.imageUrl ? (
-          // Reverted from next/image 2026-05-23 — same /images/* issue.
           <img
             src={imgSrc(p.imageUrl)}
             alt={p.name}
             loading="lazy"
-            className="kk-reel-img absolute inset-0 w-full h-full object-cover"
-            style={{ animationDelay: `${i * -2.25}s` }}
+            className={`${animate ? 'kk-reel-img ' : ''}absolute inset-0 w-full h-full object-cover`}
+            style={animate ? { animationDelay: `${i * -2.25}s` } : undefined}
           />
         ) : (
           <span className="absolute inset-0 grid place-items-center text-7xl font-head font-black text-brand/40">
@@ -309,10 +496,9 @@ function renderProductCard(p: PublicProduct, i: number) {
         </div>
       </Link>
 
-      <Link href={href} className="flex items-center gap-2.5 p-3 hover:bg-bg-soft transition">
+      <Link href={href} className="flex items-center gap-2.5 p-3 hover:bg-bg-soft transition" draggable={false}>
         <div className="w-9 h-9 rounded-full bg-bg-soft grid place-items-center overflow-hidden shrink-0">
           {p.imageUrl ? (
-            // Reverted from next/image 2026-05-23.
             <img
               src={imgSrc(p.imageUrl)}
               alt={p.name}

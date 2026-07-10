@@ -30,11 +30,12 @@ export default async function HomePage() {
       </h1>
       <HeroCarousel banners={banners} />
       <CategoryTiles tree={tree} />
-      <TrustStrip />
 
-      <section className="pt-14 pb-0">
+      <section className="pt-14 pb-0 mb-14">
         <HomeTabs bestsellers={bestsellers} newArrivals={newArrivals} />
       </section>
+
+      <TrustStrip />
 
       <PromoCarousel slides={promoSlides} />
 

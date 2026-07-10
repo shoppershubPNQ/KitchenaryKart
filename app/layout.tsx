@@ -110,8 +110,10 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon:
-      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='12' fill='%23A01818'/><text x='12' y='17' text-anchor='middle' font-family='Montserrat' font-size='14' font-weight='700' fill='white'>K</text></svg>",
+    // Browser-tab favicon + iOS home-screen icon, both the brand logo.
+    icon: [{ url: '/logo.png', type: 'image/png' }],
+    shortcut: ['/logo.png'],
+    apple: [{ url: '/logo.png' }],
   },
 };
 

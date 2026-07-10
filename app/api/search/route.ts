@@ -6,22 +6,20 @@
  * name, price, imageUrl, category) so the dropdown can render
  * thumbnails + prices without a second fetch.
  *
- * Matches the same fields as the full shop search:
- *   - Product.name        ILIKE %q%
- *   - Product.sku         ILIKE %q%
- *   - Product.subcategory ILIKE %q%
- *   - ProductVariant.skuSuffix ILIKE %q%   (variant SKU search)
+ * SMART SEARCH: instead of a raw `ILIKE %q%` (which can't tolerate a typo),
+ * this ranks a cached in-memory index with the shared fuzzy ranker
+ * (`lib/search`). Correct spellings surface the most accurate match first;
+ * misspellings ("kettel") still surface similar products ("kettle"). The
+ * index is variant-flattened, so a variant SKU / composed name resolves too —
+ * matching what /shop?q=... shows.
  *
- * Variants are NOT flattened on the server side here — that would
- * double the payload for very little autocomplete value. If the buyer
- * presses enter / clicks "See all results", they land on /shop?q=...
- * which uses the variant-flattened list anyway.
- *
- * Cached for 60 s on the edge — a typo'd query won't re-hit Neon on
- * every keystroke from the same network.
+ * Cached for 60 s on the edge; the underlying index is itself cached 5 min
+ * server-side, so keystroke-frequency queries rank in memory rather than
+ * re-hitting Neon.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { getSearchIndex } from '@/lib/products';
+import { rankItems } from '@/lib/search';
 
 export const revalidate = 60;
 
@@ -44,45 +42,14 @@ export async function GET(req: NextRequest) {
 
     // Min 3 chars. Was 2, raised to 3 because 2-char queries match too
     // much ("le", "ba", "ic") — high DB cost, low autocomplete value.
-    // Also protects Neon's network-transfer quota: each query returns
-    // up to 6 rows × ~200 bytes = ~1.2 KB; 3-char minimum cuts the
-    // request frequency roughly in half vs 2-char.
     if (q.length < 3) {
       return NextResponse.json({ q, hits: [] as SearchHit[] });
     }
 
-    const rows = await prisma.product.findMany({
-      where: {
-        status: 'active',
-        OR: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { sku: { contains: q, mode: 'insensitive' } },
-          { subcategory: { contains: q, mode: 'insensitive' } },
-          {
-            variants: {
-              some: {
-                skuSuffix: { contains: q, mode: 'insensitive' },
-              },
-            },
-          },
-        ],
-      },
-      orderBy: [
-        // Boost in-stock products to the top of the dropdown.
-        { stock: 'desc' },
-        { name: 'asc' },
-      ],
-      take: limit,
-      select: {
-        sku: true,
-        name: true,
-        price: true,
-        imageUrl: true,
-        category: true,
-      },
-    });
+    const index = await getSearchIndex();
+    const ranked = rankItems(index, q).slice(0, limit);
 
-    const hits: SearchHit[] = rows.map((r) => ({
+    const hits: SearchHit[] = ranked.map((r) => ({
       sku: r.sku,
       name: r.name,
       price: Number(r.price),

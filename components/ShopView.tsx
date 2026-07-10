@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ProductCard } from './ProductCard';
 import { CATEGORY_SHORT, catLabel } from '@/lib/categories';
+import { rankItems } from '@/lib/search';
 import type { PublicProduct } from '@/lib/products';
 
 const PAGE_SIZE = 24;
@@ -28,6 +29,15 @@ export function ShopView({
   const [q, setQ] = useState<string>(params.get('q') ?? '');
   const [sort, setSort] = useState<string>('featured');
   const [page, setPage] = useState<number>(1);
+  // Additional refinements. Unlike cat/sub/q these are NOT mirrored to the URL
+  // — they're on-page refinements the buyer applies after landing, so keeping
+  // them out of the URL avoids bloating shareable links and complicating the
+  // URL⇄state sync below. Cleared alongside everything by "Clear all".
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
+  const [bestOnly, setBestOnly] = useState<boolean>(false);
+  const [newOnly, setNewOnly] = useState<boolean>(false);
   // Mobile-only: filter panel collapsed by default so products grid is the
   // first thing the buyer sees, especially after typing a search query.
   // Desktop ignores this — the aside is always visible at md+ breakpoints.
@@ -63,18 +73,24 @@ export function ShopView({
   }, [search]);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+    const needle = q.trim();
+    const min = minPrice.trim() ? Number(minPrice) : null;
+    const max = maxPrice.trim() ? Number(maxPrice) : null;
     let list = products.slice();
     if (cat) list = list.filter((p) => p.category === cat);
     if (sub) list = list.filter((p) => p.subcategory === sub);
+    if (min !== null && !Number.isNaN(min)) list = list.filter((p) => p.price >= min);
+    if (max !== null && !Number.isNaN(max)) list = list.filter((p) => p.price <= max);
+    if (inStockOnly) list = list.filter((p) => p.stock > 0);
+    if (bestOnly) list = list.filter((p) => p.isBestseller);
+    if (newOnly) list = list.filter((p) => p.isNewArrival);
     if (needle) {
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(needle) ||
-          p.sku.toLowerCase().includes(needle) ||
-          (p.subcategory || '').toLowerCase().includes(needle) ||
-          (p.metaKeywords || '').toLowerCase().includes(needle),
-      );
+      // Smart, typo-tolerant ranking (shared with the header autocomplete).
+      // Exact/prefix/substring matches rank first — so a correctly spelled
+      // query shows the most accurate result on top — while misspellings
+      // ("kettel") still surface similar products ("kettle"). Non-matches are
+      // dropped. `rankItems` returns a fresh array, so the sort below is safe.
+      list = rankItems(list, needle);
     }
     switch (sort) {
       case 'price-asc':
@@ -86,12 +102,26 @@ export function ShopView({
       case 'name':
         list.sort((a, b) => a.name.localeCompare(b.name));
         break;
+      // 'featured' + an active search keeps rankItems' relevance order.
     }
     return list;
-  }, [products, cat, sub, q, sort]);
+  }, [products, cat, sub, q, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
 
   const shown = filtered.slice(0, page * PAGE_SIZE);
   const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+
+  const anyRefinement =
+    !!sub || !!minPrice || !!maxPrice || inStockOnly || bestOnly || newOnly;
+
+  const clearRefinements = () => {
+    setSub('');
+    setMinPrice('');
+    setMaxPrice('');
+    setInStockOnly(false);
+    setBestOnly(false);
+    setNewOnly(false);
+    setPage(1);
+  };
   const total = products.length;
   const crumbCurrent = collectionLabel
     ? `${collectionLabel}${cat ? ' · ' + catLabel(cat) : ''}${sub ? ' · ' + sub : ''}`
@@ -135,6 +165,93 @@ export function ShopView({
           <span className="filter-count">{n}</span>
         </button>
       ))}
+
+      {/* Price range (₹). Empty inputs = unbounded on that side. */}
+      <div className="mt-5">
+        <h4 className="text-[11.5px] font-bold tracking-[1.5px] uppercase text-ink mb-3">
+          Price (₹)
+        </h4>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Min"
+            value={minPrice}
+            onChange={(e) => {
+              setMinPrice(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-2.5 py-1.5 border border-line rounded-md text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+          <span className="text-muted text-sm">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Max"
+            value={maxPrice}
+            onChange={(e) => {
+              setMaxPrice(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-2.5 py-1.5 border border-line rounded-md text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
+      </div>
+
+      {/* Availability + highlights — simple boolean refinements. */}
+      <div className="mt-5">
+        <h4 className="text-[11.5px] font-bold tracking-[1.5px] uppercase text-ink mb-3">
+          Refine
+        </h4>
+        <label className="flex items-center gap-2.5 px-2.5 py-1.5 text-sm text-ink-soft cursor-pointer">
+          <input
+            type="checkbox"
+            checked={inStockOnly}
+            onChange={(e) => {
+              setInStockOnly(e.target.checked);
+              setPage(1);
+            }}
+            className="accent-brand w-4 h-4"
+          />
+          In stock only
+        </label>
+        <label className="flex items-center gap-2.5 px-2.5 py-1.5 text-sm text-ink-soft cursor-pointer">
+          <input
+            type="checkbox"
+            checked={bestOnly}
+            onChange={(e) => {
+              setBestOnly(e.target.checked);
+              setPage(1);
+            }}
+            className="accent-brand w-4 h-4"
+          />
+          Bestsellers
+        </label>
+        <label className="flex items-center gap-2.5 px-2.5 py-1.5 text-sm text-ink-soft cursor-pointer">
+          <input
+            type="checkbox"
+            checked={newOnly}
+            onChange={(e) => {
+              setNewOnly(e.target.checked);
+              setPage(1);
+            }}
+            className="accent-brand w-4 h-4"
+          />
+          New arrivals
+        </label>
+      </div>
+
+      {anyRefinement && (
+        <button
+          type="button"
+          onClick={clearRefinements}
+          className="mt-4 text-sm font-medium text-brand hover:text-brand-dark underline underline-offset-2"
+        >
+          Clear all filters
+        </button>
+      )}
     </div>
   );
 
@@ -237,19 +354,24 @@ export function ShopView({
               }}
               className="px-3.5 py-2 border border-line rounded-md text-sm flex-1 min-w-0 md:min-w-[260px] md:flex-none focus:border-brand focus:ring-1 focus:ring-brand outline-none"
             />
-            <div className="text-sm text-muted">
-              {filtered.length.toLocaleString('en-IN')} products
+            {/* Count + sort grouped on the right (count bold), so the product
+                total sits next to the sort control instead of floating in the
+                middle of the toolbar. */}
+            <div className="flex items-center gap-4 shrink-0 ml-auto">
+              <div className="text-sm font-bold text-ink whitespace-nowrap">
+                {filtered.length.toLocaleString('en-IN')} products
+              </div>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="px-3.5 py-2 border border-line rounded-md text-sm bg-white"
+              >
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+                <option value="name">Name A–Z</option>
+              </select>
             </div>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="px-3.5 py-2 border border-line rounded-md text-sm bg-white"
-            >
-              <option value="featured">Featured</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-              <option value="name">Name A–Z</option>
-            </select>
           </div>
           {shown.length === 0 ? (
             <div className="py-16 text-center text-muted">

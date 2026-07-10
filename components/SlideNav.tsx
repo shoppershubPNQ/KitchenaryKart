@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CATEGORY_ORDER, catLabel } from '@/lib/categories';
+import { openAuth, useAuth } from '@/lib/useAuth';
 import type { CategoryTreeNode } from '@/lib/products';
 
 interface Props {
@@ -27,6 +28,7 @@ export function SlideNav({ tree }: Props) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [q, setQ] = useState('');
+  const { customer, loggedIn } = useAuth();
 
   // Listen for the hamburger toggle event.
   useEffect(() => {
@@ -132,6 +134,43 @@ export function SlideNav({ tree }: Props) {
               </svg>
             </button>
           </div>
+        </div>
+
+        {/* Account / sign-in (wishlist + cart live in the main header) */}
+        <div className="px-4 py-3 border-b border-line flex flex-col gap-2">
+          {loggedIn ? (
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5 hover:border-brand transition"
+            >
+              <span className="w-9 h-9 shrink-0 rounded-full bg-brand/10 text-brand grid place-items-center">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-ink truncate">{customer?.name}</span>
+                <span className="block text-[11px] text-muted">View my account</span>
+              </span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                openAuth();
+              }}
+              className="flex items-center justify-center gap-2 h-10 rounded-full bg-brand text-white font-head font-bold text-[13px] uppercase tracking-wide hover:bg-brand-hover transition"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Sign in / Register
+            </button>
+          )}
         </div>
 
         {/* Scrollable link list */}

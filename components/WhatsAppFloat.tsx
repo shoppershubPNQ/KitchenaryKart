@@ -40,7 +40,7 @@ export function WhatsAppFloat() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close WhatsApp chat' : 'Open WhatsApp chat'}
         aria-expanded={open}
-        className="kk-wa-float fixed bottom-4 right-4 md:bottom-5 md:right-5 w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-[#25D366] shadow-lg grid place-items-center z-[160] hover:scale-[1.08] transition-transform"
+        className="kk-wa-float fixed bottom-2 right-4 md:bottom-5 md:right-5 w-12 h-12 md:w-[54px] md:h-[54px] rounded-full bg-[#25D366] shadow-lg grid place-items-center z-[160] hover:scale-[1.08] transition-transform"
       >
         {open ? (
           <svg

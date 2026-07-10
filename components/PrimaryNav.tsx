@@ -14,9 +14,12 @@ import type { CategoryTreeNode } from '@/lib/products';
 interface Props {
   tree: Record<string, CategoryTreeNode[]>;
   counts: Record<string, number>;
+  /** When true the nav bar stays pinned on scroll (product pages only);
+   *  otherwise it sits in normal flow and scrolls away with the header. */
+  sticky?: boolean;
 }
 
-export function PrimaryNav({ tree, counts }: Props) {
+export function PrimaryNav({ tree, counts, sticky = false }: Props) {
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeTimer = useRef<any>(null);
@@ -43,7 +46,7 @@ export function PrimaryNav({ tree, counts }: Props) {
 
   return (
     <nav
-      className={`sticky top-[72px] z-[95] bg-white border-b border-line ${mobileOpen ? 'block' : 'hidden md:block'}`}
+      className={`${sticky ? 'sticky top-[72px]' : 'relative'} z-[95] bg-white border-b border-line ${mobileOpen ? 'block' : 'hidden md:block'}`}
     >
       {/* Fixed-height row with the category buttons. `relative` so the mega can
           position itself below this row and move with the sticky nav. */}

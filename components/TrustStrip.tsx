@@ -63,7 +63,7 @@ export function TrustStrip() {
   ];
 
   return (
-    <section className="bg-bg-soft border-y border-line mt-10 py-9">
+    <section className="bg-bg-soft border-y border-line py-9">
       <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] grid grid-cols-4 gap-3 md:gap-8">
         {items.map((i) => (
           <Item key={i.label} label={i.label} sub={i.sub} svg={i.svg} />

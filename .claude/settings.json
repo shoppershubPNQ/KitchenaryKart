@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3001 --max-time 30)",
+      "PowerShell($hba = \"C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\data\\\\pg_hba.conf\"; Write-Output \"=== auth methods \\(non-comment lines\\) ===\"; Select-String -Path $hba -Pattern \"^\\(host|local\\)\" | ForEach-Object { $_.Line })",
+      "PowerShell($env:PGPASSWORD=\"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\bin\\\\psql.exe\" -U postgres -h localhost -p 5432 -c \"SELECT version\\(\\);\" 2>&1 | Select-Object -First 3)",
+      "PowerShell($id = [System.Security.Principal.WindowsIdentity]::GetCurrent\\(\\); $p = New-Object System.Security.Principal.WindowsPrincipal\\($id\\); $isAdmin = $p.IsInRole\\([System.Security.Principal.WindowsBuiltInRole]::Administrator\\); Write-Output \"Running as admin: $isAdmin\"; Write-Output \"User: $\\($id.Name\\)\"; Write-Output \"=== can we stop the service? \\(dry test\\) ===\"; $svc = Get-Service postgresql-x64-18; Write-Output \"Service status: $\\($svc.Status\\), CanStop: $\\($svc.CanStop\\)\")",
+      "PowerShell($script = \"C:\\\\Users\\\\sc1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-sc1-Documents-GitHub-KitchenaryKart\\\\3187bd26-b7cc-411d-b08f-9c93e0f862f5\\\\scratchpad\\\\pg-reset.ps1\"; Start-Process powershell -Verb RunAs -ArgumentList \"-NoProfile\",\"-ExecutionPolicy\",\"Bypass\",\"-File\",\"`\"$script`\"\" -Wait; Write-Output \"Elevated process finished. Log:\"; if \\(Test-Path 'C:\\\\Users\\\\sc1\\\\AppData\\\\Local\\\\Temp\\\\pgreset.log'\\) { Get-Content 'C:\\\\Users\\\\sc1\\\\AppData\\\\Local\\\\Temp\\\\pgreset.log' } else { Write-Output \"NO LOG - UAC may have been declined\" })",
+      "PowerShell($env:PGPASSWORD=\"postgres\"; $bin=\"C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\bin\"; Write-Output \"=== verify login ===\"; & \"$bin\\\\psql.exe\" -U postgres -h localhost -p 5432 -c \"SELECT version\\(\\);\" | Select-Object -First 3; Write-Output \"=== create database ===\"; $exists = & \"$bin\\\\psql.exe\" -U postgres -h localhost -p 5432 -tAc \"SELECT 1 FROM pg_database WHERE datname='kitchenarykart';\"; if \\($exists -eq \"1\"\\) { Write-Output \"database kitchenarykart already exists\" } else { & \"$bin\\\\psql.exe\" -U postgres -h localhost -p 5432 -c \"CREATE DATABASE kitchenarykart;\"; Write-Output \"created kitchenarykart\" })",
+      "Bash(curl -s -o /dev/null -w \"Homepage: HTTP %{code}\\\\n\" http://localhost:3001 --max-time 60)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3001 --max-time 60)",
+      "PowerShell($conns = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($conns\\) { $conns.OwningProcess | Sort-Object -Unique | ForEach-Object { Write-Output \"Killing PID $_\"; Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue } } else { Write-Output \"nothing listening on 3001\" }; Start-Sleep 2; Write-Output \"port 3001 now: $\\(\\(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | Measure-Object\\).Count\\) listeners\")",
+      "Bash(curl -s -o /dev/null -w \"Homepage: HTTP %{http_code}\\\\n\" http://localhost:3001 --max-time 90)",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Output \"cleared old local dev-server process\" } else { Write-Output \"port 3001 already free\" })",
+      "Bash(curl -s \"http://localhost:3001/api/search?q=oven\" --max-time 60)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(npx tsx -e ' *)",
+      "Bash(npx tsx *)"
+    ]
+  }
+}

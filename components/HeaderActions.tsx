@@ -29,7 +29,8 @@ export function HeaderActions() {
 
   return (
     <div className="flex items-center gap-1">
-      <div ref={wrapRef} className="relative">
+      {/* Account — desktop only; on mobile, sign-in lives in the hamburger menu */}
+      <div ref={wrapRef} className="relative hidden md:block">
         <button
           type="button"
           onClick={() => {

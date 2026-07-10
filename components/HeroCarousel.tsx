@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type TouchEvent as ReactTouchEvent } from 'react';
 import type { PublicBanner } from '@/lib/banners';
 
 type Slide =
@@ -131,6 +131,11 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
 
   const [idx, setIdx] = useState(0);
   const paused = useRef(false);
+  // Touch-swipe support: the slides move via a translateX transform (not a
+  // native scroll), so on mobile we wire up touch handlers to advance slides.
+  // On desktop the arrow buttons handle this (and the arrows are hidden on
+  // mobile — see below).
+  const touchX = useRef<number | null>(null);
 
   useEffect(() => {
     // 6s per slide — slow enough that users can read each banner and
@@ -144,13 +149,31 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
 
   const go = (n: number) => setIdx(((n % count) + count) % count);
 
+  const onTouchStart = (e: ReactTouchEvent) => {
+    touchX.current = e.touches[0]?.clientX ?? null;
+    paused.current = true; // don't auto-advance mid-swipe
+  };
+  const onTouchEnd = (e: ReactTouchEvent) => {
+    const start = touchX.current;
+    touchX.current = null;
+    paused.current = false;
+    if (start === null) return;
+    const dx = (e.changedTouches[0]?.clientX ?? start) - start;
+    if (Math.abs(dx) > 40) go(dx < 0 ? idx + 1 : idx - 1);
+  };
+
   return (
     <section
       className="relative overflow-hidden"
       onMouseEnter={() => (paused.current = true)}
       onMouseLeave={() => (paused.current = false)}
     >
-      <div className="relative">
+      <div
+        className="relative"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{ touchAction: 'pan-y' }}
+      >
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${idx * 100}%)` }}
@@ -215,7 +238,7 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
           type="button"
           onClick={() => go(idx - 1)}
           aria-label="Previous slide"
-          className="absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 text-ink grid place-items-center text-2xl shadow-md hover:bg-brand hover:text-white z-[2]"
+          className="hidden md:grid absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 text-ink place-items-center text-2xl shadow-md hover:bg-brand hover:text-white z-[2]"
         >
           ‹
         </button>
@@ -223,7 +246,7 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
           type="button"
           onClick={() => go(idx + 1)}
           aria-label="Next slide"
-          className="absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 text-ink grid place-items-center text-2xl shadow-md hover:bg-brand hover:text-white z-[2]"
+          className="hidden md:grid absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 text-ink place-items-center text-2xl shadow-md hover:bg-brand hover:text-white z-[2]"
         >
           ›
         </button>

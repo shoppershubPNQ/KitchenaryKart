@@ -262,6 +262,92 @@ export async function getAllShopProducts(): Promise<PublicProduct[]> {
 }
 
 /**
+ * A lean product row for the smart-search index. Only the fields the ranker
+ * matches on (name/sku/subcategory/category/metaKeywords) plus the minimum a
+ * dropdown card needs (price/imageUrl) and the stock tie-breaker. Variants are
+ * flattened into their own rows, exactly like the shop grid, so a variant SKU
+ * or its composed name resolves to the right card.
+ */
+export interface SearchIndexItem {
+  sku: string;
+  name: string;
+  price: number;
+  imageUrl: string | null;
+  category: string | null;
+  subcategory: string | null;
+  metaKeywords: string | null;
+  stock: number;
+}
+
+async function _getSearchIndex(): Promise<SearchIndexItem[]> {
+  const rows = await prisma.product.findMany({
+    where: { status: 'active' },
+    orderBy: [{ name: 'asc' }],
+    select: {
+      sku: true,
+      name: true,
+      price: true,
+      imageUrl: true,
+      category: true,
+      subcategory: true,
+      metaKeywords: true,
+      stock: true,
+      variants: {
+        select: {
+          variantValue: true,
+          skuSuffix: true,
+          priceModifier: true,
+          stock: true,
+          imageUrl: true,
+        },
+      },
+    },
+  });
+
+  const out: SearchIndexItem[] = [];
+  for (const row of rows) {
+    const base: SearchIndexItem = {
+      sku: row.sku,
+      name: row.name,
+      price: Number(row.price),
+      imageUrl: row.imageUrl,
+      category: row.category,
+      subcategory: row.subcategory,
+      metaKeywords: row.metaKeywords ?? null,
+      stock: typeof row.stock === 'number' ? row.stock : 0,
+    };
+    const variants = row.variants;
+    if (!variants || variants.length === 0) {
+      out.push(base);
+      continue;
+    }
+    for (const v of variants) {
+      if (!v.skuSuffix) continue; // skip malformed rows
+      const qualifier = (v.variantValue || '').trim();
+      out.push({
+        ...base,
+        sku: v.skuSuffix,
+        name: qualifier ? `${base.name} — ${qualifier}` : base.name,
+        price: base.price + Number(v.priceModifier ?? 0),
+        stock: v.stock,
+        imageUrl: v.imageUrl ?? base.imageUrl,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Typo-tolerant search source for `/api/search`. Cached 5 min server-side
+ * (busted by `revalidateTag('products')`) so keystroke-frequency autocomplete
+ * hits the ranker in memory instead of round-tripping to Neon each time.
+ */
+export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v1'], {
+  revalidate: 300,
+  tags: ['products'],
+});
+
+/**
  * Data bundle the home page needs. Targeted queries instead of pulling the
  * full catalog — each is capped at 8–12 rows so the response payload stays
  * small.
