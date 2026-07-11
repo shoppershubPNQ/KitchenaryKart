@@ -4,7 +4,7 @@ import { CategoryTiles } from '@/components/CategoryTiles';
 import { HomeTabs } from '@/components/HomeTabs';
 import { TrustStrip } from '@/components/TrustStrip';
 import { PromoCarousel } from '@/components/PromoCarousel';
-import { WatchAndShop } from '@/components/WatchAndShop';
+import { WatchAndShopLazy } from '@/components/WatchAndShopLazy';
 import { getCategoryTree, getHomePageData } from '@/lib/products';
 import { getActiveBanners } from '@/lib/banners';
 import { getActiveReels } from '@/lib/reels';
@@ -39,7 +39,7 @@ export default async function HomePage() {
 
       <PromoCarousel slides={promoSlides} />
 
-      <WatchAndShop reels={reels} products={watchShop} />
+      <WatchAndShopLazy reels={reels} products={watchShop} />
     </>
   );
 }
