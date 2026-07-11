@@ -136,6 +136,39 @@ function toPublic(p: any): PublicProduct {
   };
 }
 
+/**
+ * Fill a card's price/image from its variants when the PARENT's own values are
+ * empty. Some products keep price=0 / imageUrl=null on the parent and carry the
+ * real values only on the variants (effective price = parent price + the
+ * variant's priceModifier). The /shop grid and the PDP already resolve this via
+ * the variants, but the home page renders ONE card per PRODUCT — so without this
+ * such a card shows "₹0" / a blank image. Only overrides when the parent value
+ * is missing, so normal products are untouched. Mutates + returns `pub`.
+ */
+function withVariantDisplay(
+  pub: PublicProduct,
+  variants?: Array<{ skuSuffix: string | null; priceModifier: unknown; imageUrl: string | null }>,
+): PublicProduct {
+  if (!variants?.length) return pub;
+  // Parent price 0 → show the cheapest variant's effective price (base + mod),
+  // matching what the /shop grid + PDP show, instead of "₹0".
+  if (pub.price === 0) {
+    const eff = variants
+      .map((v) => pub.price + Number((v.priceModifier as any) ?? 0))
+      .filter((n) => n > 0);
+    if (eff.length) pub.price = Math.min(...eff);
+  }
+  // Parent has no main image → fall back to a variant image (prefer the base
+  // variant whose suffix matches the product SKU).
+  if (!pub.imageUrl) {
+    const withImg =
+      variants.find((v) => v.skuSuffix === pub.sku && v.imageUrl) ??
+      variants.find((v) => v.imageUrl);
+    if (withImg?.imageUrl) pub.imageUrl = withImg.imageUrl;
+  }
+  return pub;
+}
+
 const commonSelect = {
   id: true,
   sku: true,
@@ -499,6 +532,37 @@ export async function getHomePageData(): Promise<{
   for (const p of photoPool) {
     if (watchShop.length >= 4) break;
     if (!watchShop.find((x) => x.sku === p.sku)) watchShop.push(toPublic(p));
+  }
+
+  // Some products keep their price/image only on the variants (parent price=0 /
+  // imageUrl=null). Fetch the variants for the cards we're about to show and
+  // fill those in so the home page never renders "₹0" / a blank image — the
+  // /shop grid + PDP already resolve this. One extra query, keyed by parent SKU.
+  const cardSkus = [...bestsellers, ...newArrivals, ...watchShop].map((x) => x.sku);
+  if (cardSkus.length) {
+    const vrows = await prisma.productVariant.findMany({
+      where: { product: { sku: { in: cardSkus } } },
+      select: {
+        skuSuffix: true,
+        priceModifier: true,
+        imageUrl: true,
+        product: { select: { sku: true } },
+      },
+    });
+    const byParent = new Map<
+      string,
+      Array<{ skuSuffix: string | null; priceModifier: unknown; imageUrl: string | null }>
+    >();
+    for (const v of vrows) {
+      const ps = v.product?.sku;
+      if (!ps) continue;
+      const arr = byParent.get(ps) ?? [];
+      arr.push({ skuSuffix: v.skuSuffix, priceModifier: v.priceModifier, imageUrl: v.imageUrl });
+      byParent.set(ps, arr);
+    }
+    for (const arr of [bestsellers, newArrivals, watchShop]) {
+      for (const pub of arr) withVariantDisplay(pub, byParent.get(pub.sku));
+    }
   }
 
   return { bestsellers, newArrivals, watchShop };
