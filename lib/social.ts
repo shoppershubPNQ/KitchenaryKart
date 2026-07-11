@@ -10,16 +10,19 @@ import { prisma } from './db';
  *   social.twitter
  *   social.facebook
  *   social.whatsapp
+ *   social.linkedin
  *
  * The admin manages them at /dashboard/social. Empty / missing values are
  * filtered out so the footer only renders icons that actually have a link.
+ * Keep this list in sync with the admin's PLATFORMS (app/api/social/route.ts).
  */
 export type SocialPlatform =
   | 'instagram'
   | 'youtube'
   | 'twitter'
   | 'facebook'
-  | 'whatsapp';
+  | 'whatsapp'
+  | 'linkedin';
 
 export const SOCIAL_PLATFORMS: SocialPlatform[] = [
   'instagram',
@@ -27,6 +30,7 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
   'twitter',
   'facebook',
   'whatsapp',
+  'linkedin',
 ];
 
 export type SocialLinks = Partial<Record<SocialPlatform, string>>;
