@@ -200,7 +200,7 @@ export function WatchAndShop({ reels = [], products }: Props) {
         }
         .kk-cf-stage {
           position: relative;
-          height: 500px;
+          height: 604px;
           perspective: 1600px;
           margin: 0 auto;
         }
@@ -208,8 +208,8 @@ export function WatchAndShop({ reels = [], products }: Props) {
           position: absolute;
           top: 0;
           left: 50%;
-          width: 236px;
-          margin-left: -118px;
+          width: 300px;
+          margin-left: -150px;
           transform-style: preserve-3d;
           transition:
             transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
@@ -218,11 +218,11 @@ export function WatchAndShop({ reels = [], products }: Props) {
         }
         @media (max-width: 767px) {
           .kk-cf-stage {
-            height: 448px;
+            height: 470px;
           }
           .kk-cf-card {
-            width: 196px;
-            margin-left: -98px;
+            width: 230px;
+            margin-left: -115px;
           }
         }
       `}</style>
@@ -350,7 +350,7 @@ function renderReelCard(reel: PublicReel, playVideo: boolean) {
   const viewsKey = product?.sku ?? `reel-${reel.id}`;
 
   return (
-    <div className="flex flex-col rounded-xl overflow-hidden border border-line bg-white shadow-lg">
+    <div className="flex flex-col rounded-xl overflow-hidden border-2 border-line bg-white shadow-lg">
       <Link
         href={href}
         className="relative block aspect-[9/16] overflow-hidden bg-black"
@@ -445,7 +445,7 @@ function renderReelCard(reel: PublicReel, playVideo: boolean) {
 function renderProductCard(p: PublicProduct, i: number, animate: boolean) {
   const href = `/product/${encodeURIComponent(p.sku)}`;
   return (
-    <div className="flex flex-col rounded-xl overflow-hidden border border-line bg-white shadow-lg">
+    <div className="flex flex-col rounded-xl overflow-hidden border-2 border-line bg-white shadow-lg">
       <Link
         href={href}
         className="relative block aspect-[9/16] overflow-hidden"

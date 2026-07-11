@@ -11,6 +11,7 @@ function Inner() {
   const msgRef = useRef<HTMLTextAreaElement>(null);
   const successRef = useRef<HTMLDivElement>(null);
   const [sent, setSent] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -27,9 +28,9 @@ function Inner() {
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
+    setFailed(false);
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const adminBase = process.env.NEXT_PUBLIC_ADMIN_API_BASE || 'http://localhost:3000';
     const payload = {
       customerName: fd.get('name') || '',
       customerEmail: fd.get('email') || '',
@@ -38,19 +39,29 @@ function Inner() {
       message: msgRef.current?.value || '',
       items: items.map((i) => ({ sku: i.sku, quantity: i.qty || 1 })),
     };
+    // Same-origin request; next.config rewrites /admin-api/* to the admin API
+    // server-side, so this no longer depends on a public localhost fallback.
+    let succeeded = false;
     try {
-      await fetch(adminBase.replace(/\/$/, '') + '/api/public/inquiries', {
+      const res = await fetch('/admin-api/public/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      succeeded = res.ok;
+      if (!res.ok) console.error('Inquiry submit failed with status', res.status);
     } catch (err) {
-      console.warn('Inquiry API unreachable (saved locally only)', err);
+      console.error('Inquiry API unreachable', err);
+    }
+    setSubmitting(false);
+    if (!succeeded) {
+      // Don't fake success or wipe the cart — let the customer retry.
+      setFailed(true);
+      return;
     }
     form.reset();
     clearCart();
     setSent(true);
-    setSubmitting(false);
     setTimeout(() => successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
   }
 
@@ -99,6 +110,12 @@ function Inner() {
         >
           ✓ Thanks! Your quote request has been captured. We will reply within 4 business hours.
           For urgent queries, call +91 98903 52455.
+        </div>
+      )}
+      {failed && (
+        <div className="bg-red-50 text-red-900 border border-red-200 px-4 py-3 rounded text-sm">
+          Sorry, we couldn&apos;t send your request just now. Please try again, or reach us
+          directly on +91 98903 52455 or support@kitchenarykart.com.
         </div>
       )}
     </form>

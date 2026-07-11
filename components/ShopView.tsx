@@ -43,6 +43,16 @@ export function ShopView({
   // Desktop ignores this — the aside is always visible at md+ breakpoints.
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
+  // Lock body scroll while the mobile filter popup is open.
+  useEffect(() => {
+    if (!mobileFilterOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileFilterOpen]);
+
   useEffect(() => {
     const sp = new URLSearchParams();
     if (collectionSlug) sp.set('collection', collectionSlug);
@@ -122,6 +132,21 @@ export function ShopView({
     setNewOnly(false);
     setPage(1);
   };
+  // Mobile popup owns the category too, so its "clear all" resets it as well.
+  const clearAllMobile = () => {
+    setCat('');
+    clearRefinements();
+  };
+  // Count of active filters — drives the badge on the mobile Filters button.
+  // Category counts too, since on mobile it now lives inside the popup.
+  const activeFilterCount =
+    (cat ? 1 : 0) +
+    (sub ? 1 : 0) +
+    (minPrice.trim() ? 1 : 0) +
+    (maxPrice.trim() ? 1 : 0) +
+    (inStockOnly ? 1 : 0) +
+    (bestOnly ? 1 : 0) +
+    (newOnly ? 1 : 0);
   const total = products.length;
   const crumbCurrent = collectionLabel
     ? `${collectionLabel}${cat ? ' · ' + catLabel(cat) : ''}${sub ? ' · ' + sub : ''}`
@@ -143,7 +168,6 @@ export function ShopView({
           setCat('');
           setSub('');
           setPage(1);
-          setMobileFilterOpen(false);
         }}
       >
         <span>All categories</span>
@@ -158,13 +182,30 @@ export function ShopView({
             setCat(c);
             setSub('');
             setPage(1);
-            setMobileFilterOpen(false);
           }}
         >
           <span>{CATEGORY_SHORT[c] ?? c}</span>
           <span className="filter-count">{n}</span>
         </button>
       ))}
+
+      {/* Sort — mobile only. On desktop the sort control lives in the toolbar,
+          so this is hidden there to avoid a duplicate. */}
+      <div className="mt-5 md:hidden">
+        <h4 className="text-[11.5px] font-bold tracking-[1.5px] uppercase text-ink mb-3">
+          Sort
+        </h4>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="w-full px-2.5 py-2 border border-line rounded-md text-sm bg-white outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        >
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </div>
 
       {/* Price range (₹). Empty inputs = unbounded on that side. */}
       <div className="mt-5">
@@ -255,10 +296,6 @@ export function ShopView({
     </div>
   );
 
-  // Label for the mobile filter toggle button — gives buyer at-a-glance
-  // context for what category they're currently inside.
-  const activeCatLabel = cat ? CATEGORY_SHORT[cat] ?? cat : 'All categories';
-
   return (
     <>
       <nav className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-4 text-xs text-muted flex items-center gap-2 flex-wrap">
@@ -301,18 +338,28 @@ export function ShopView({
             </div>
           )}
 
-          {/* Mobile-only filter toggle. Sits ABOVE the search row so the
-              entire grid feels close to the top of the viewport. Counts
-              are useful at-a-glance even when collapsed. */}
-          <div className="md:hidden mb-3">
-            <button
-              type="button"
-              onClick={() => setMobileFilterOpen((v) => !v)}
-              aria-expanded={mobileFilterOpen}
-              aria-controls="kk-mobile-filter-panel"
-              className="w-full flex items-center justify-between px-3.5 py-2.5 border border-line rounded-md bg-white text-sm font-medium text-ink hover:border-brand"
-            >
-              <span className="flex items-center gap-2">
+          <div className="pb-5 border-b border-line mb-6">
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                type="search"
+                placeholder="Search by name or SKU…"
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setPage(1);
+                }}
+                className="px-4 py-2.5 border border-line rounded-md text-sm flex-1 min-w-0 md:min-w-[260px] md:flex-none focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+              />
+              {/* Mobile-only Filters button — opens the popup that holds every
+                  filter (category, price, refine, sort). The badge shows how
+                  many are active at a glance. */}
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={mobileFilterOpen}
+                className="md:hidden shrink-0 inline-flex items-center gap-2 px-4 py-2.5 border border-line rounded-md bg-white text-sm font-medium text-ink hover:border-brand"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   width="16"
@@ -324,55 +371,93 @@ export function ShopView({
                 >
                   <path d="M3 6h18M6 12h12M10 18h4" />
                 </svg>
-                Filter: <span className="text-muted font-normal">{activeCatLabel}</span>
-              </span>
-              <span
-                className={`text-muted transition-transform ${mobileFilterOpen ? 'rotate-180' : ''}`}
-                aria-hidden="true"
-              >
-                ▾
-              </span>
-            </button>
-            {mobileFilterOpen && (
-              <div
-                id="kk-mobile-filter-panel"
-                className="mt-2 p-3 border border-line rounded-md bg-white max-h-[60vh] overflow-y-auto"
-              >
-                {filterContent}
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-white text-[11px] font-bold leading-none">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+              {/* Count + sort grouped on the right (count bold) — desktop only.
+                  On mobile these live in the count row below + the popup. */}
+              <div className="hidden md:flex items-center gap-4 shrink-0 ml-auto">
+                <div className="text-sm font-bold text-ink whitespace-nowrap">
+                  {filtered.length.toLocaleString('en-IN')} products
+                </div>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="px-3.5 py-2 border border-line rounded-md text-sm bg-white"
+                >
+                  <option value="featured">Featured</option>
+                  <option value="price-asc">Price: low to high</option>
+                  <option value="price-desc">Price: high to low</option>
+                  <option value="name">Name A–Z</option>
+                </select>
               </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pb-5 border-b border-line mb-6 gap-4 flex-wrap">
-            <input
-              type="search"
-              placeholder="Search…"
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
-              }}
-              className="px-3.5 py-2 border border-line rounded-md text-sm flex-1 min-w-0 md:min-w-[260px] md:flex-none focus:border-brand focus:ring-1 focus:ring-brand outline-none"
-            />
-            {/* Count + sort grouped on the right (count bold), so the product
-                total sits next to the sort control instead of floating in the
-                middle of the toolbar. */}
-            <div className="flex items-center gap-4 shrink-0 ml-auto">
-              <div className="text-sm font-bold text-ink whitespace-nowrap">
-                {filtered.length.toLocaleString('en-IN')} products
-              </div>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="px-3.5 py-2 border border-line rounded-md text-sm bg-white"
-              >
-                <option value="featured">Featured</option>
-                <option value="price-asc">Price: low to high</option>
-                <option value="price-desc">Price: high to low</option>
-                <option value="name">Name A–Z</option>
-              </select>
+            </div>
+            {/* Mobile-only product count row. */}
+            <div className="md:hidden mt-3 text-sm font-bold text-ink">
+              {filtered.length.toLocaleString('en-IN')} products
             </div>
           </div>
+
+          {/* Mobile filter popup — bottom sheet holding all filters. */}
+          {mobileFilterOpen && (
+            <div
+              className="md:hidden fixed inset-0 z-50 flex flex-col"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Filters"
+            >
+              <div
+                className="absolute inset-0 bg-black/40"
+                onClick={() => setMobileFilterOpen(false)}
+              />
+              <div className="relative mt-auto w-full bg-white rounded-t-2xl max-h-[88vh] flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-line">
+                  <h3 className="font-head font-bold text-ink text-base">Filters</h3>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFilterOpen(false)}
+                    aria-label="Close filters"
+                    className="p-1 -mr-1 text-muted hover:text-ink"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="22"
+                      height="22"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="overflow-y-auto px-4 py-4 flex-1">
+                  {filterContent}
+                </div>
+                <div className="flex items-center gap-3 px-4 py-3 border-t border-line">
+                  <button
+                    type="button"
+                    onClick={clearAllMobile}
+                    className="px-4 py-2.5 text-sm font-medium text-ink border border-line rounded-md hover:border-brand"
+                  >
+                    Clear all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileFilterOpen(false)}
+                    className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-brand rounded-md hover:bg-brand-dark"
+                  >
+                    Show {filtered.length.toLocaleString('en-IN')} results
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {shown.length === 0 ? (
             <div className="py-16 text-center text-muted">
               <h3 className="text-ink mb-2 font-head font-bold">No products match</h3>

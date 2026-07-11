@@ -44,7 +44,7 @@ export function Header({ categoryTree, categoryCounts }: Props) {
         <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] h-[72px] flex items-center gap-4 md:gap-6">
           {/* Logo — left on every breakpoint */}
           <Link href="/" className="inline-flex items-center shrink-0">
-            <Image src="/logo.png" alt="KitchenaryKart" width={163} height={52} priority className="h-[52px] w-auto" />
+            <Image src="/logo-original.png" alt="KitchenaryKart" width={52} height={52} priority className="h-[52px] w-auto" />
           </Link>
           {/* Desktop search fills the middle; on mobile this stays empty but
               its flex-grow still pushes the mobile controls to the right. */}

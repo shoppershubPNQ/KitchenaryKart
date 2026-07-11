@@ -119,18 +119,19 @@ function MegaPanel({
     <div
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className="absolute left-0 right-0 top-full border-y border-line shadow-lg z-[94] backdrop-blur-md"
+      className="absolute left-0 right-0 top-full border-t-2 border-t-brand border-b border-line shadow-2xl z-[94] backdrop-blur-xl"
       style={{
         maxHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
-        // 60% transparent (40% opaque) white. The blur keeps text legible
-        // when page content shows through underneath.
-        backgroundColor: 'rgba(255,255,255,0.4)',
+        // Frosted panel: mostly-opaque white so links stay crisp, with a
+        // strong blur so the little bit of page content showing through reads
+        // as texture, not clutter. Theme borders (below) give it structure.
+        backgroundColor: 'rgba(255,255,255,0.9)',
       }}
     >
       <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] grid grid-cols-1 lg:grid-cols-[260px_1fr]">
         {/* Left visual — hidden on narrow screens so the subcategory grid has room to breathe */}
-        <div className="hidden lg:flex border-r border-line p-4 flex-col gap-3">
-          <div className="relative aspect-square bg-bg-soft rounded-lg overflow-hidden grid place-items-center">
+        <div className="hidden lg:flex border-r border-brand/20 p-4 flex-col gap-3">
+          <div className="relative aspect-square bg-bg-soft rounded-lg overflow-hidden grid place-items-center border border-brand/20">
             {rep?.thumb ? (
               <img src={imgSrc(rep.thumb)} alt={catLbl} className="w-[96%] h-[96%] object-contain" />
             ) : (
@@ -152,7 +153,7 @@ function MegaPanel({
           style={{ maxHeight: 'calc(100vh - var(--header-h) - var(--nav-h))' }}
         >
           {/* Let long labels wrap instead of clipping. */}
-          <div className="flex justify-between items-baseline pb-4 border-b border-line gap-4">
+          <div className="flex justify-between items-baseline pb-4 border-b border-brand/25 gap-4">
             <div className="font-head text-[13px] font-bold tracking-widest uppercase text-muted break-words min-w-0">
               Browse {catLbl}
             </div>
@@ -198,7 +199,7 @@ function MegaPanel({
             )}
           </div>
 
-          <div className="flex justify-between items-center py-3 border-t border-line mt-auto gap-4">
+          <div className="flex justify-between items-center py-3 border-t border-brand/25 mt-auto gap-4">
             <div className="text-xs text-muted min-w-0 break-words">
               {subCount} subcategories in{' '}
               <strong className="text-ink font-bold uppercase tracking-wider">{catLbl}</strong> · {totalSkus} Products
