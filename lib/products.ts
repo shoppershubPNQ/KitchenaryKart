@@ -124,7 +124,11 @@ function toPublic(p: any): PublicProduct {
     color: p.color ?? null,
     hsnCode: p.hsnCode,
     price: Number(p.price),
-    mrp: p.mrp ? Number(p.mrp) : null,
+    // Prisma Decimal(0) is a truthy object, so `p.mrp ? … : null` would keep a
+    // ZERO mrp as 0 (not null). That makes `{mrp && mrp > price && …}` in the
+    // card render a literal "0" (React prints the falsy 0). Normalise a 0/blank
+    // MRP to null so "no MRP" renders as nothing.
+    mrp: p.mrp && Number(p.mrp) > 0 ? Number(p.mrp) : null,
     taxPercent: Number(p.taxPercent),
     stock: typeof p.stock === 'number' ? p.stock : 0,
     imageUrl: p.imageUrl,
