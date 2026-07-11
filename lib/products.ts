@@ -210,6 +210,25 @@ export async function getAllShopProducts(): Promise<PublicProduct[]> {
     parent.description = null;
     parent.faqs = [];
     parent.images = [];
+    // Extra lean-down: the shop grid (ProductCard), search ranker and filters
+    // never read these either, but they were still serialized for every row
+    // (× variants). Null them so each entry only carries what the card + smart
+    // search actually use (name/sku/price/mrp/image/category/subcategory/
+    // metaKeywords/stock/capacity/power/flags). Variants below spread
+    // `...parent`, so they inherit this automatically.
+    parent.leafCategory = null;
+    parent.dimensions = null;
+    parent.weight = null;
+    parent.color = null;
+    parent.hsnCode = null;
+    // metaKeywords (~266 KB across the catalog) was the single biggest chunk of
+    // the shop payload. The on-site smart search only used it as a low-weight
+    // (0.45) secondary signal — name/sku/category/subcategory still match — so
+    // dropping it from the shop payload is a big RAM/parse win for a small
+    // keyword-synonym search tradeoff. NOT deleted from the DB: the PDP SEO
+    // tags and the (server-side) header autocomplete still read it, and Google
+    // never used the keywords meta tag for ranking anyway.
+    parent.metaKeywords = null;
     const variants = (row as any).variants as
       | Array<{
           variantType: string | null;
