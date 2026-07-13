@@ -83,6 +83,8 @@ export interface PublicVariant {
   variantType: string; // "Size" | "Color" | "Capacity" | "Power" | "Multi" | "Variant"
   axisValues: Record<string, string> | string; // string for 1-axis, object for multi-axis
   price: number;
+  /** Per-variant MRP (sticker price). Null → no discount for this variant. */
+  mrp: number | null;
   stock: number;
   /** Per-variant primary image. Null → inherit parent.imageUrl. */
   imageUrl: string | null;
@@ -272,6 +274,8 @@ export async function getAllShopProducts(): Promise<PublicProduct[]> {
           variantValue: string | null;
           skuSuffix: string | null;
           priceModifier: unknown;
+          price: unknown;
+          mrp: unknown;
           stock: number;
           imageUrl: string | null;
         }>
@@ -291,9 +295,17 @@ export async function getAllShopProducts(): Promise<PublicProduct[]> {
 
     for (const v of variants) {
       if (!v.skuSuffix) continue; // skip malformed rows
-      const variantPrice = parentPrice + Number(v.priceModifier ?? 0);
+      // Prefer the variant's own absolute price/mrp; fall back to the legacy
+      // parent-price + modifier (and ratio-scaled mrp) for any variant that
+      // hasn't been given its own values yet.
+      const variantPrice =
+        v.price != null ? Number(v.price) : parentPrice + Number(v.priceModifier ?? 0);
       const variantMrp =
-        mrpRatio > 1 ? Math.round(variantPrice * mrpRatio) : parent.mrp;
+        v.mrp != null
+          ? Number(v.mrp)
+          : mrpRatio > 1
+          ? Math.round(variantPrice * mrpRatio)
+          : parent.mrp;
       const qualifier = (v.variantValue || '').trim();
       const composedName = qualifier
         ? `${parent.name} — ${qualifier}` // em-dash
@@ -598,11 +610,13 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
   if (!p) return null;
 
   const parentPrice = Number(p.price);
-  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; stock: number; imageUrl: string | null; images: unknown }> | undefined)?.map((v) => ({
+  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; imageUrl: string | null; images: unknown }> | undefined)?.map((v) => ({
     sku: v.skuSuffix ?? '',
     variantType: v.variantType ?? 'Variant',
     axisValues: parseAxisValues(v.variantType ?? '', v.variantValue),
-    price: parentPrice + Number(v.priceModifier ?? 0),
+    // Prefer the variant's own absolute price/mrp; fall back to parent+modifier.
+    price: v.price != null ? Number(v.price) : parentPrice + Number(v.priceModifier ?? 0),
+    mrp: v.mrp != null ? Number(v.mrp) : null,
     stock: v.stock,
     imageUrl: v.imageUrl ?? null,
     images: Array.isArray(v.images) ? (v.images as string[]) : [],

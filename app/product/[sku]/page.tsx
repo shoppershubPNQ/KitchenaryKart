@@ -183,8 +183,11 @@ export default async function ProductPage({ params }: Params) {
   // MRP shown on the page should match the variant's price (so the "SAVE %"
   // stays consistent across variants). We scale the parent's MRP by the
   // variant's price ratio; for the parent itself this is a no-op.
-  const mrpRatio = p.mrp && basePrice > 0 ? Number(p.mrp) / basePrice : 0;
-  const displayMrp = mrpRatio > 1 ? Math.round(displayPrice * mrpRatio) : p.mrp;
+  // Per-variant MRP: prefer the shown variant's own mrp (the selected one, or
+  // the variant matching the displayed base price when none is selected); fall
+  // back to the product's own mrp for variant-less products.
+  const shownVariant = selectedVariant ?? p.variants.find((v) => v.price === basePrice);
+  const displayMrp = shownVariant ? shownVariant.mrp : p.mrp;
 
   // Similar products — capped at 12 (was 24) to keep the PDP payload
   // small. The SimilarProducts UI shows 5 by default and "View all"
