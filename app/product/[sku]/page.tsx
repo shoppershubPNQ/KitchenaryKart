@@ -145,7 +145,13 @@ export default async function ProductPage({ params }: Params) {
 
   // Find the currently selected variant (if URL matches a variant SKU)
   const selectedVariant = p.variants.find((v) => v.sku === requestedSku);
-  const displayPrice = selectedVariant?.price ?? p.price;
+  // When the parent's own price is 0, the real price lives on the variants
+  // (effective = parent price + priceModifier). Fall back to the cheapest
+  // variant's price so the parent PDP never shows "₹0" — mirrors the home
+  // card's withVariantDisplay and keeps the Product JSON-LD valid.
+  const variantPrices = p.variants.map((v) => v.price).filter((n) => n > 0);
+  const basePrice = p.price > 0 ? p.price : variantPrices.length ? Math.min(...variantPrices) : p.price;
+  const displayPrice = selectedVariant?.price ?? basePrice;
 
   // Variant-aware gallery resolution:
   //   1. If the variant has its own images[] populated, use that
@@ -177,7 +183,7 @@ export default async function ProductPage({ params }: Params) {
   // MRP shown on the page should match the variant's price (so the "SAVE %"
   // stays consistent across variants). We scale the parent's MRP by the
   // variant's price ratio; for the parent itself this is a no-op.
-  const mrpRatio = p.mrp && p.price > 0 ? Number(p.mrp) / p.price : 0;
+  const mrpRatio = p.mrp && basePrice > 0 ? Number(p.mrp) / basePrice : 0;
   const displayMrp = mrpRatio > 1 ? Math.round(displayPrice * mrpRatio) : p.mrp;
 
   // Similar products — capped at 12 (was 24) to keep the PDP payload
@@ -342,9 +348,9 @@ export default async function ProductPage({ params }: Params) {
           name={p.name}
           images={galleryImages}
           imageUrl={galleryImageUrl}
-          sku={p.sku}
-          price={p.price}
-          mrp={p.mrp}
+          sku={selectedVariant?.sku ?? p.sku}
+          price={displayPrice}
+          mrp={displayMrp}
           category={p.category}
         />
 
@@ -364,7 +370,7 @@ export default async function ProductPage({ params }: Params) {
           </div>
           <div className="flex items-baseline gap-3.5 mb-1.5">
             <span className="font-head text-[2rem] font-bold text-ink">{inr(displayPrice)}</span>
-            {displayMrp && displayMrp > displayPrice && (
+            {(displayMrp ?? 0) > displayPrice && (
               <span className="text-base text-muted line-through">{inr(displayMrp)}</span>
             )}
             {save > 0 && (

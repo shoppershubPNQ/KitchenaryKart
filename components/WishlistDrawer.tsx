@@ -139,7 +139,7 @@ export function WishlistDrawer() {
                   <div className="text-[11.5px] text-muted mt-0.5">{i.sku}</div>
                   <div className="flex items-baseline gap-2 mt-1.5">
                     <span className="font-bold text-[14px] text-ink">{inr(i.price)}</span>
-                    {i.mrp && i.mrp > i.price && (
+                    {(i.mrp ?? 0) > i.price && (
                       <span className="text-[11px] text-muted line-through">{inr(i.mrp)}</span>
                     )}
                   </div>

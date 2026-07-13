@@ -124,7 +124,7 @@ export function WishlistGrid() {
               </Link>
               <div className="flex items-baseline gap-2 mt-2">
                 <span className="font-head font-bold text-ink">{inr(i.price)}</span>
-                {i.mrp && i.mrp > i.price && (
+                {(i.mrp ?? 0) > i.price && (
                   <span className="text-xs text-muted line-through">{inr(i.mrp)}</span>
                 )}
                 {save > 0 && (
