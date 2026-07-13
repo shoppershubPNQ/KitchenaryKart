@@ -122,7 +122,7 @@ export async function GET(_req: NextRequest, { params }: { params: { number: str
         phone: order.customerPhone || order.customer?.phone || undefined,
         billingAddress: order.customer?.billingAddress || order.shippingAddress || undefined,
         shippingAddress: order.shippingAddress || order.customer?.billingAddress || undefined,
-        gstNumber: order.customer?.gstNumber || undefined,
+        gstNumber: order.customerGstin || order.customer?.gstNumber || undefined,
       },
       placeOfSupply,
       isInterState,

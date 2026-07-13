@@ -242,6 +242,11 @@ model Order {
   customerName     String?       @map("customer_name")
   customerEmail    String?       @map("customer_email")
   customerPhone    String?       @map("customer_phone")
+  /// Buyer's GSTIN for B2B orders that want a GST input-credit invoice.
+  /// Captured at checkout when the customer ticks "business". The invoice
+  /// prefers this over the linked customer's stored GSTIN. Managed by admin;
+  /// the storefront only reads it (for the customer-facing invoice download).
+  customerGstin    String?       @map("customer_gstin")
 
   shippingAddress  String?       @map("shipping_address")
   shippingMethod   String?       @map("shipping_method")
