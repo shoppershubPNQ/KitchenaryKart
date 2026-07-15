@@ -535,7 +535,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
         <div className={`${styles.wrap} ${styles.serveLayout}`}>
           <div className={`${styles.reveal} ${styles.imgExpand} ${styles.serveMedia}`}>
             <img
-              src="/asset/about.png"
+              src="/asset/about.webp"
               width={1200}
               height={800}
               loading="lazy"
