@@ -2,7 +2,7 @@ import { QuoteForm } from '@/components/QuoteForm';
 import { DEFAULT_OG_IMAGES } from '@/lib/og';
 
 export const metadata = {
-  title: 'Contact — KitchenaryKart',
+  title: 'Contact',
   description:
     'Get a quote for commercial kitchen equipment. Bulk pricing, spec sheets, and DDP export quotes within 4 business hours.',
   alternates: { canonical: '/contact' },

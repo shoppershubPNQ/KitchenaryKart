@@ -4,7 +4,7 @@ import { getCollections } from '@/lib/collections';
 import { ShopView } from '@/components/ShopView';
 
 export const metadata = {
-  title: 'Shop — KitchenaryKart',
+  title: 'Shop',
   description:
     'Browse 2,000+ commercial kitchen equipment SKUs — filter by category, search by name or SKU, and build your inquiry list.',
   alternates: { canonical: '/shop' },

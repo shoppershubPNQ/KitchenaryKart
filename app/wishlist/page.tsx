@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { WishlistGrid } from './WishlistGrid';
 
 export const metadata: Metadata = {
-  title: 'Your wishlist — KitchenaryKart',
+  title: 'Your wishlist',
   description:
     'Products you have saved on KitchenaryKart. Move them to your cart or share the list with your team.',
   alternates: { canonical: '/wishlist' },

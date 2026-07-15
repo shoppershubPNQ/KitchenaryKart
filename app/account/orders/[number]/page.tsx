@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 // Auth-gated single-order view — never index.
 export const metadata: Metadata = {
-  title: 'Order — KitchenaryKart',
+  title: 'Order',
   robots: { index: false, follow: false },
 };
 

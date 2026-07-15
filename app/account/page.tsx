@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 // Auth-gated, personalised — never index. (robots.txt also disallows
 // /account/; this is the belt-and-suspenders meta for any known URL.)
 export const metadata: Metadata = {
-  title: 'My Account — KitchenaryKart',
+  title: 'My Account',
   robots: { index: false, follow: false },
 };
 

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 // Auth-gated order history — never index.
 export const metadata: Metadata = {
-  title: 'My Orders — KitchenaryKart',
+  title: 'My Orders',
   robots: { index: false, follow: false },
 };
 

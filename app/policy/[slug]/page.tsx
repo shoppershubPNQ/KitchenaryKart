@@ -7,7 +7,7 @@ export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const p = await getPolicyBySlug(params.slug);
-  if (!p) return { title: 'Not found — KitchenaryKart' };
+  if (!p) return { title: 'Not found' };
   // Clamp to ~155 chars at a word boundary (was a hard 160-char slice, which
   // Ahrefs flagged as "meta description too long").
   const clean = p.body.replace(/\s+/g, ' ').trim();

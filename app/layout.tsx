@@ -57,7 +57,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Commercial Kitchen Equipment for Restaurants, Hotels & Cloud Kitchens`,
+    default: `Commercial Kitchen Equipment Supplier — ${SITE_NAME}`,
     template: `%s — ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,

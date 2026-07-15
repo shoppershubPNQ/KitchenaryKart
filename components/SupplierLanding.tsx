@@ -34,7 +34,7 @@ export function supplierMetadata(slug: string): Metadata {
   if (!p) return { title: 'Not found' };
   const canonical = `/${p.slug}`;
   return {
-    title: `${p.title} — KitchenaryKart`,
+    title: { absolute: p.title },
     description: p.metaDescription,
     alternates: { canonical },
     openGraph: {

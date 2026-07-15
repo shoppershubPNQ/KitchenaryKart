@@ -39,7 +39,7 @@ export function generateMetadata({ params, searchParams }: Params): Metadata {
   const canonical = page > 1 ? `/category/${c.slug}?page=${page}` : `/category/${c.slug}`;
   const titleSuffix = page > 1 ? ` — Page ${page}` : '';
   return {
-    title: `${c.title}${titleSuffix} — KitchenaryKart`,
+    title: `${c.title}${titleSuffix}`,
     description: c.metaDescription,
     alternates: { canonical },
     openGraph: {

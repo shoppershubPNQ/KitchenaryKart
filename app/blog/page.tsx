@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
 
 export const metadata: Metadata = {
-  title: 'Buying Guides & Kitchen Equipment Blog — KitchenaryKart',
+  title: 'Buying Guides & Kitchen Equipment Blog',
   description:
     'Practical buying guides and setup checklists for commercial kitchen equipment — bain maries, snowflake machines, cloud-kitchen gear and more, written for Indian restaurants and HORECA businesses.',
   alternates: { canonical: '/blog' },

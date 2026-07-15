@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { TrackForm } from './TrackForm';
 
 export const metadata: Metadata = {
-  title: 'Track your order — KitchenaryKart',
+  title: 'Track your order',
   description:
     'Track your KitchenaryKart order using your order number and the phone number you placed the order with. See order status, shipment tracking and delivery updates.',
   alternates: { canonical: '/track' },
