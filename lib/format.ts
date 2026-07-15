@@ -56,6 +56,20 @@ export function imgSrc(url: string | null | undefined, width = 1600): string {
   return `${CLOUDINARY_HOST}/${transform}/kk/${m[1]}`;
 }
 
+/**
+ * Trim a meta description to <= `max` chars at a word boundary, appending an
+ * ellipsis when cut. Whitespace is collapsed first. Keeps SERP/social snippets
+ * under the audit's "meta description too long" limit (~160). Safe on any
+ * source string (product description, blog excerpt, template fallback).
+ */
+export function clampDescription(text: string | null | undefined, max = 160): string {
+  const clean = (text ?? '').replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max - 1); // leave room for the ellipsis
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–—-]+$/, '') + '…';
+}
+
 /** "20 May 2026" format from an ISO string. Used on order pages. */
 export function dateShortFromIso(iso: string | null | undefined): string {
   if (!iso) return '—';

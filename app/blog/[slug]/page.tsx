@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DEFAULT_OG_IMAGES } from '@/lib/og';
 import { getAllPosts, getPostBySlug } from '@/lib/blog';
+import { clampDescription } from '@/lib/format';
 import { BlogProse } from '@/components/BlogProse';
 import { buildArticleJsonLd, buildCrumbsJsonLd, buildFaqJsonLd } from '@/lib/json-ld';
 
@@ -21,15 +22,20 @@ export function generateMetadata({ params }: Params): Metadata {
   const post = getPostBySlug(params.slug);
   if (!post) return { title: 'Not found' };
   const canonical = `/blog/${post.slug}`;
+  // Article titles are keyword-rich and often already ~55-64 chars; the
+  // " — KitchenaryKart" brand suffix pushed the <title> over 60 (audit
+  // "title too long"). Drop the suffix on blog titles (brand stays in the
+  // domain + OG siteName) via `absolute`. Descriptions clamped to <=160.
+  const metaDescription = clampDescription(post.description);
   return {
-    title: `${post.title} — KitchenaryKart`,
-    description: post.description,
+    title: { absolute: post.title },
+    description: metaDescription,
     alternates: { canonical },
     openGraph: {
       type: 'article',
       url: canonical,
       title: post.title,
-      description: post.description,
+      description: metaDescription,
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
       images: DEFAULT_OG_IMAGES,
@@ -39,7 +45,7 @@ export function generateMetadata({ params }: Params): Metadata {
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.description,
+      description: metaDescription,
     },
   };
 }

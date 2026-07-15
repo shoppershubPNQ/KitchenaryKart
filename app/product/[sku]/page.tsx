@@ -9,7 +9,7 @@ import { MobileBuyBar } from '@/components/MobileBuyBar';
 import { SimilarProducts } from '@/components/SimilarProducts';
 import { VariantSelector } from '@/components/VariantSelector';
 import { pseudoRating, Stars } from '@/lib/rating';
-import { imgSrc, inr, savingsPercent } from '@/lib/format';
+import { imgSrc, inr, savingsPercent, clampDescription } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
 import { getReviewSummary, listReviews } from '@/lib/reviews';
 import { ReviewsSection } from '@/components/ReviewsSection';
@@ -83,17 +83,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // clamped to ~160 chars at a word boundary. Fall back to a concise,
   // accurate template only when the product has no description.
   const fallbackDesc = `${displayName} — commercial-grade ${productCategory}. GST invoice for full Input Tax Credit. Free pan-India delivery above ₹5,000.`;
-  let description = fallbackDesc;
-  if (p.description && p.description.trim()) {
-    const clean = p.description.replace(/\s+/g, ' ').trim();
-    if (clean.length <= 160) {
-      description = clean;
-    } else {
-      const cut = clean.slice(0, 157);
-      const lastSpace = cut.lastIndexOf(' ');
-      description = (lastSpace > 100 ? cut.slice(0, lastSpace) : cut).trim() + '…';
-    }
-  }
+  // Prefer the product's own description; clamp WHATEVER we use (real desc or
+  // the fallback template — a long product name could push the fallback over
+  // 160 too) to keep every PDP under the meta-description length limit.
+  const description = clampDescription(
+    p.description && p.description.trim() ? p.description : fallbackDesc,
+  );
   const canonicalPath = `/product/${encodeURIComponent(requestedSku)}`;
   // Prefer variant image in OG when on a variant URL, so social
   // shares show the right photo.
