@@ -45,7 +45,7 @@ export const revalidate = 300;
  * name itself is over budget, trim it at a word boundary. This stops the
  * "title too long" Ahrefs flags without losing the keyword-first opening.
  */
-const PDP_TITLE_MAX = 65;
+const PDP_TITLE_MAX = 60;
 const PDP_BRAND_SUFFIX = ' — KitchenaryKart';
 
 function pdpSeoTitle(displayName: string): string {
