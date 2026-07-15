@@ -12,6 +12,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { DEFAULT_OG_IMAGES } from '@/lib/og';
 import { getLandingPage } from '@/lib/landing-pages';
 import { getCategoryFeatured } from '@/lib/products';
 import { slugForCategory } from '@/lib/category-content';
@@ -43,6 +44,7 @@ export function supplierMetadata(slug: string): Metadata {
       description: p.metaDescription,
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
+      images: DEFAULT_OG_IMAGES,
     },
     twitter: {
       card: 'summary_large_image',

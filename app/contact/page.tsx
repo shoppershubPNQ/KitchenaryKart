@@ -1,4 +1,5 @@
 import { QuoteForm } from '@/components/QuoteForm';
+import { DEFAULT_OG_IMAGES } from '@/lib/og';
 
 export const metadata = {
   title: 'Contact — KitchenaryKart',
@@ -13,6 +14,7 @@ export const metadata = {
       'Get a quote for commercial kitchen equipment. Bulk pricing and spec sheets within 4 business hours.',
     siteName: 'KitchenaryKart',
     locale: 'en_IN',
+    images: DEFAULT_OG_IMAGES,
   },
 };
 

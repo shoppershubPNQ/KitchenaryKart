@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { DEFAULT_OG_IMAGES } from '@/lib/og';
 import { getAllPosts, getPostBySlug } from '@/lib/blog';
 import { BlogProse } from '@/components/BlogProse';
 import { buildArticleJsonLd, buildCrumbsJsonLd, buildFaqJsonLd } from '@/lib/json-ld';
@@ -31,6 +32,7 @@ export function generateMetadata({ params }: Params): Metadata {
       description: post.description,
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
+      images: DEFAULT_OG_IMAGES,
       publishedTime: post.date,
       modifiedTime: post.updated ?? post.date,
     },

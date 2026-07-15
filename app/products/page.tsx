@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getAllShopProducts } from '@/lib/products';
+import { DEFAULT_OG_IMAGES } from '@/lib/og';
 import { CATEGORY_SHORT } from '@/lib/categories';
 
 // HTML sitemap / browse-all page. Server-rendered list of EVERY product and
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
     description: 'Browse the full commercial kitchen equipment catalogue by category.',
     siteName: 'KitchenaryKart',
     locale: 'en_IN',
+    images: DEFAULT_OG_IMAGES,
   },
 };
 

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPolicyBySlug } from '@/lib/policies';
+import { DEFAULT_OG_IMAGES } from '@/lib/og';
 
 export const revalidate = 300;
 
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { DEFAULT_OG_IMAGES } from '@/lib/og';
 import {
   getCategoryContent,
   getAllCategoryContent,
@@ -48,6 +49,7 @@ export function generateMetadata({ params, searchParams }: Params): Metadata {
       description: c.metaDescription,
       siteName: 'KitchenaryKart',
       locale: 'en_IN',
+      images: DEFAULT_OG_IMAGES,
     },
     twitter: {
       card: 'summary_large_image',
