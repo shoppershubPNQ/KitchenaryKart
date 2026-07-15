@@ -230,7 +230,7 @@ export async function getAllActiveProducts(): Promise<PublicProduct[]> {
  * Machine — 2 Compartment" and "Chocolate Mealting Machine — 3
  * Compartment" — three tiles for one product line.
  */
-export async function getAllShopProducts(): Promise<PublicProduct[]> {
+async function _getAllShopProducts(): Promise<PublicProduct[]> {
   const rows = await prisma.product.findMany({
     where: { status: 'active' },
     orderBy: [{ category: 'asc' }, { name: 'asc' }],
@@ -328,6 +328,21 @@ export async function getAllShopProducts(): Promise<PublicProduct[]> {
 
   return out;
 }
+
+/**
+ * All active products for the /shop grid (variant-expanded). Wrapped in
+ * unstable_cache like its siblings (getCategoryProductsPage, getSearchIndex):
+ * the full findMany + variant-expansion loop over ~1,400 rows was re-running on
+ * EVERY /shop request (the page reads searchParams, so it's dynamic and never
+ * statically cached), giving a 5-7s TTFB in the site audit. A 10-min TTL keyed
+ * on the `products` tag serves it from cache and still busts instantly on any
+ * product edit (revalidateTag('products')).
+ */
+export const getAllShopProducts = unstable_cache(
+  _getAllShopProducts,
+  ['kk:all-shop-products'],
+  { revalidate: 600, tags: ['products'] },
+);
 
 /**
  * A lean product row for the smart-search index. Only the fields the ranker
