@@ -12,6 +12,7 @@
  * the site is verified there — it accelerates discovery of new SKUs.
  */
 import type { MetadataRoute } from 'next';
+import { prisma } from '@/lib/db';
 import { getAllShopProducts } from '@/lib/products';
 import { getActivePolicies } from '@/lib/policies';
 import { getAllPosts } from '@/lib/blog';
@@ -23,12 +24,27 @@ const BASE_URL = 'https://kitchenarykart.com';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Variant-aware list: each variant SKU gets its own sitemap entry
   // so Google can crawl and rank them independently.
-  const [products, policies] = await Promise.all([
+  const [products, policies, modRows] = await Promise.all([
     getAllShopProducts(),
     getActivePolicies(),
+    // Real per-product last-modified dates. Emitting a fresh `now` for every
+    // URL on each build makes Google distrust (and ignore) the whole sitemap's
+    // lastmod; accurate dates let it prioritise crawling only what changed.
+    // Variants have no updatedAt of their own, so they inherit the parent's.
+    prisma.product.findMany({
+      where: { status: 'active' },
+      select: { sku: true, updatedAt: true, variants: { select: { skuSuffix: true } } },
+    }),
   ]);
 
   const now = new Date();
+
+  // sku (parent OR variant skuSuffix) → the product's real updatedAt.
+  const skuLastMod = new Map<string, Date>();
+  for (const r of modRows) {
+    skuLastMod.set(r.sku, r.updatedAt);
+    for (const v of r.variants) if (v.skuSuffix) skuLastMod.set(v.skuSuffix, r.updatedAt);
+  }
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/`, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
@@ -67,7 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const productPages: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${BASE_URL}/product/${encodeURIComponent(p.sku)}`,
-    lastModified: now,
+    lastModified: skuLastMod.get(p.sku) ?? now,
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
