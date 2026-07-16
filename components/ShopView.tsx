@@ -311,7 +311,7 @@ export function ShopView({
         <aside className="hidden md:block md:sticky md:top-[132px] md:self-start md:max-h-[calc(100vh-140px)] md:overflow-y-auto pr-1">
           {filterContent}
         </aside>
-        <main>
+        <section>
           {/* Semantic H1 for SEO + a11y — the shop/catalog page had none.
               Reflects the active category scope; visually hidden. */}
           <h1 className="sr-only">
@@ -495,7 +495,7 @@ export function ShopView({
               </button>
             </div>
           )}
-        </main>
+        </section>
       </div>
     </>
   );

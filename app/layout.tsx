@@ -146,7 +146,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PromoBar />
         <div className="h-1 bg-top-strip" />
         <Header categoryTree={tree} categoryCounts={counts} />
-        <div style={{ minHeight: 'calc(100vh - 600px)' }}>{children}</div>
+        <main style={{ minHeight: 'calc(100vh - 600px)' }}>{children}</main>
         <FooterTrustUpper />
         <Footer />
         <WhatsAppFloat />

@@ -581,7 +581,7 @@ export default function CheckoutPage() {
           </div>
         </aside>
 
-        <main className="p-6 sm:p-8 relative">
+        <div className="p-6 sm:p-8 relative">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-head text-lg font-bold text-ink">Review Order</h2>
             <Link
@@ -873,7 +873,7 @@ export default function CheckoutPage() {
               ✓ Secure payment via Razorpay · KitchenaryKart Trust
             </p>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
