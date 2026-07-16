@@ -13,6 +13,7 @@
  */
 import type { MetadataRoute } from 'next';
 import { prisma } from '@/lib/db';
+import { imgSrc } from '@/lib/format';
 import { getAllShopProducts } from '@/lib/products';
 import { getActivePolicies } from '@/lib/policies';
 import { getAllPosts } from '@/lib/blog';
@@ -86,6 +87,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: skuLastMod.get(p.sku) ?? now,
     changeFrequency: 'weekly',
     priority: 0.8,
+    // Image sitemap: expose each product's image so Google Image Search can
+    // index it — a purchase-intent surface for kitchen equipment. Emits
+    // <image:image><image:loc> per URL. Invisible: sitemap XML only, no page
+    // change. imgSrc returns an absolute (Cloudinary) URL; skip imageless rows.
+    ...(p.imageUrl ? { images: [imgSrc(p.imageUrl)] } : {}),
   }));
 
   // NOTE: we intentionally do NOT emit `/shop?category=…` filter URLs here —
