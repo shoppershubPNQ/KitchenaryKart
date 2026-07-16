@@ -1283,12 +1283,12 @@ export const POSTS: BlogPost[] = [
       { type: 'h2', text: 'Cream charger + dispenser — how to use (step by step)' },
       {
         type: 'p',
-        text: 'The workflow is simple and repeatable: fill the [whipped-cream dispenser](/shop?q=cream+whipper) with cold liquid cream (don\'t overfill — leave headroom), screw on the head, insert a cream charger into the holder and twist until you hear the gas release, shake firmly several times, then dispense upside-down. Keep the charged dispenser refrigerated between uses. A standard 8g charger typically charges roughly half a litre of cream, depending on the dispenser.',
+        text: 'The workflow is simple and repeatable: fill the [whipped-cream dispenser](/product/KKA0059-CWL500) with cold liquid cream (don\'t overfill — leave headroom), screw on the head, insert a cream charger into the holder and twist until you hear the gas release, shake firmly several times, then dispense upside-down. Keep the charged dispenser refrigerated between uses. A standard 8g charger typically charges roughly half a litre of cream, depending on the dispenser.',
       },
       { type: 'h2', text: 'Sizes & specs (8g standard) + how many you need' },
       {
         type: 'p',
-        text: 'The commercial standard is the 8g N2O charger, which fits the vast majority of cream whippers. To estimate volume, count how many litres of cream you whip per day, divide by your dispenser\'s per-charge yield, and add a buffer — a busy café goes through chargers fast, so buying in bulk avoids running out mid-service. Browse [cream chargers in bulk](/shop?q=cream+charger).',
+        text: 'The commercial standard is the 8g N2O charger, which fits the vast majority of cream whippers. To estimate volume, count how many litres of cream you whip per day, divide by your dispenser\'s per-charge yield, and add a buffer — a busy café goes through chargers fast, so buying in bulk avoids running out mid-service. Browse [cream chargers in bulk](/product/KKSP0111-SCW3).',
       },
       { type: 'h2', text: 'Safety & storage (commercial kitchen)' },
       {
@@ -1302,7 +1302,7 @@ export const POSTS: BlogPost[] = [
       },
       {
         type: 'cta',
-        href: '/shop?q=cream+charger',
+        href: '/product/KKSP0111-SCW3',
         label: 'Order Cream Chargers in Bulk',
       },
       {
