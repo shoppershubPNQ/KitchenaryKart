@@ -283,7 +283,7 @@ function AdminBannerSlide({ banner: b, eager = false }: { banner: PublicBanner; 
   const img = (
     <Image
       src={b.imageUrl}
-      alt={b.alt || ''}
+      alt={b.alt || 'KitchenaryKart — commercial kitchen equipment offer'}
       fill
       sizes="(max-width: 768px) 100vw, 1908px"
       priority={eager}

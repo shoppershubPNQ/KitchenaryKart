@@ -119,7 +119,7 @@ export function WishlistDrawer() {
                   {i.imageUrl ? (
                     <Image
                       src={imgSrc(i.imageUrl)}
-                      alt=""
+                      alt={i.name}
                       fill
                       sizes="56px"
                       className="object-contain p-1"
