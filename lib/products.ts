@@ -24,6 +24,9 @@ export interface PublicProduct {
   capacity: string | null;
   weight: string | null;
   color: string | null;
+  /** Kept in the shop payload (unlike dimensions/weight) so the card can show
+   *  "Material …" for non-appliance products that have no capacity/power. */
+  material: string | null;
   hsnCode: string | null;
   price: number;
   mrp: number | null;
@@ -124,6 +127,7 @@ function toPublic(p: any): PublicProduct {
     capacity: p.capacity,
     weight: p.weight,
     color: p.color ?? null,
+    material: p.material ?? null,
     hsnCode: p.hsnCode,
     price: Number(p.price),
     // Prisma Decimal(0) is a truthy object, so `p.mrp ? … : null` would keep a
@@ -188,6 +192,7 @@ const commonSelect = {
   capacity: true,
   weight: true,
   color: true,
+  material: true,
   hsnCode: true,
   price: true,
   mrp: true,
