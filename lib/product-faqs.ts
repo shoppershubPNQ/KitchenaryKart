@@ -10,8 +10,8 @@
  *   1. If the admin has authored custom FAQs on the product, use those
  *      verbatim (already normalised to {q,a} by lib/products.parseFaqs).
  *   2. Otherwise, generate a set of FAQs from the product's real,
- *      verifiable attributes — GST/ITC eligibility, the ₹3,000
- *      free-shipping threshold, 7-day defect returns, payment methods,
+ *      verifiable attributes — GST/ITC eligibility, the free-shipping
+ *      threshold (FREE_SHIP_ABOVE below), 7-day defect returns, payment methods,
  *      bulk pricing, and any populated specs (dimensions / power /
  *      capacity). Nothing here is a claim we can't stand behind.
  *
