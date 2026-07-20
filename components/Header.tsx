@@ -42,24 +42,13 @@ export function Header({ categoryTree, categoryCounts }: Props) {
         className={`${pinned ? 'sticky top-0' : 'relative'} z-[100] bg-white border-b border-line shadow-sm`}
       >
         <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] h-[72px] flex items-center gap-4 md:gap-6">
-          {/* Logo — left on every breakpoint. The wordmark beside it is
-              desktop-only: on mobile the row is already tight (logo · search
-              icon · hamburger) and the extra text would squeeze it. */}
-          <Link href="/" className="inline-flex items-center gap-2.5 shrink-0">
+          {/* Logo — left on every breakpoint */}
+          <Link href="/" className="inline-flex items-center shrink-0">
             <Image src="/logo-original.png" alt="KitchenaryKart" width={52} height={52} priority className="h-[52px] w-auto" />
-            {/* `brand-dark` (#7A1212), not `brand` (#A01818) — the logo's own
-                wordmark is a gradient whose dominant tone is ~#751717, so the
-                lighter brand red reads as mismatched next to it. */}
-            <span className="hidden md:block font-head font-bold text-[19px] leading-tight tracking-tight text-brand-dark whitespace-nowrap">
-              Kitchenary Kart
-            </span>
           </Link>
           {/* Desktop search fills the middle; on mobile this stays empty but
-              its flex-grow still pushes the mobile controls to the right.
-              `justify-center` centres the search box within that middle
-              column (the box itself is hidden below md, so mobile is
-              unaffected). */}
-          <div className="flex-1 min-w-0 flex justify-center">
+              its flex-grow still pushes the mobile controls to the right. */}
+          <div className="flex-1 min-w-0">
             <HeaderSearch />
           </div>
           {/* Right-hand icons kept in one group with a single shared gap so
