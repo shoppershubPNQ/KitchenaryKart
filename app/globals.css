@@ -9,13 +9,24 @@
 .btn-small-outline{@apply bg-transparent text-brand border border-brand/30 hover:border-brand hover:bg-brand/5;}
 .hero-btn{@apply inline-flex items-center gap-2 px-7 py-3.5 bg-brand text-white font-head font-bold text-sm uppercase tracking-wider rounded-full transition hover:bg-brand-dark hover:-translate-y-0.5;}
 .hero-btn-secondary{@apply bg-transparent border-2 border-ink text-ink hover:bg-ink hover:text-white;}
-.product-card{@apply bg-white border border-line rounded-lg overflow-hidden relative flex flex-col transition hover:shadow-md hover:-translate-y-0.5;}
+/* Hover = a vertical lift only. The card's own box never scales (that read as
+   the whole tile "expanding"); the zoom belongs to the image below, which is
+   clipped by .product-img's overflow-hidden so the card's geometry is fixed. */
+.product-card{@apply bg-white border border-line rounded-lg overflow-hidden relative flex flex-col transition-[transform,box-shadow] duration-300 ease-out hover:shadow-lg hover:-translate-y-1;}
 .product-badge{@apply absolute top-2.5 left-0 bg-brand text-white font-head text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-r z-[2];}
 .product-badge-discount{@apply bg-success;}
 .product-img{@apply aspect-square bg-cream grid place-items-center overflow-hidden relative;}
 .product-img-letter{@apply text-5xl font-head font-black text-brand opacity-40;}
 .product-img img{@apply w-full h-full object-contain transition-transform;}
-.product-card:hover .product-img img{@apply scale-[1.03];}
+.product-card:hover .product-img img{@apply scale-[1.08];}
+/* Hover cross-fade to the product's second gallery shot. Both layers keep the
+   transform transition so the existing 1.03 zoom still runs. `kk-img-swap` is
+   only set when a second image actually exists, so single-image cards never
+   fade to nothing. */
+.product-img .kk-img-alt{@apply absolute inset-0 opacity-0;}
+.product-img .kk-img-base,.product-img .kk-img-alt{@apply transition-[opacity,transform] duration-300;}
+.product-card:hover .product-img .kk-img-alt{@apply opacity-100;}
+.product-card:hover .product-img .kk-img-swap{@apply opacity-0;}
 .filter-item{@apply flex items-center justify-between w-full px-2.5 py-1.5 text-sm text-ink-soft rounded transition text-left mb-0.5 hover:bg-bg-soft hover:text-ink;}
 .filter-item.is-active{@apply bg-brand text-white font-semibold;}
 .filter-item.is-active .filter-count{@apply text-white/85;}

@@ -27,6 +27,11 @@ export interface PublicProduct {
   /** Kept in the shop payload (unlike dimensions/weight) so the card can show
    *  "Material …" for non-appliance products that have no capacity/power. */
   material: string | null;
+  /** Second gallery image, shown while hovering the card. Carried as a single
+   *  URL rather than keeping the whole `images` array in the shop payload —
+   *  that array is deliberately emptied below to stay under the crawl/hydration
+   *  budget, and the card only ever needs one alternate shot. */
+  hoverImage: string | null;
   hsnCode: string | null;
   price: number;
   mrp: number | null;
@@ -139,6 +144,11 @@ function toPublic(p: any): PublicProduct {
     stock: typeof p.stock === 'number' ? p.stock : 0,
     imageUrl: p.imageUrl,
     images: Array.isArray(p.images) ? (p.images as string[]) : [],
+    // First gallery shot that isn't the one already on the card. Computed here,
+    // BEFORE the shop lean-down empties `images`, so it survives in the payload.
+    hoverImage: Array.isArray(p.images)
+      ? ((p.images as string[]).find((u) => u && u !== p.imageUrl) ?? null)
+      : null,
     isBestseller: Boolean(p.isBestseller),
     isNewArrival: Boolean(p.isNewArrival),
     metaKeywords: p.metaKeywords ?? null,
@@ -327,6 +337,13 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
         // images stays as parent's gallery — variant.imageUrl is just
         // the primary; the rest of the gallery (specs photos, etc.)
         // are still shared across variants on the PDP.
+        // The variant may show a different primary than the parent, so drop the
+        // inherited hover shot when it IS that primary — hovering would
+        // otherwise "swap" to the identical image.
+        hoverImage:
+          parent.hoverImage && parent.hoverImage !== (v.imageUrl ?? parent.imageUrl)
+            ? parent.hoverImage
+            : null,
       });
     }
   }
