@@ -483,6 +483,35 @@ model Reel {
   @@map("reels")
 }
 
+/// Read-only mirror of the admin `Spotlight` model (rich single-product
+/// feature). The storefront hydrates live price/stock from the linked product
+/// at render time; these columns hold the admin-edited content.
+model Spotlight {
+  id                Int      @id @default(autoincrement())
+  slug              String   @unique
+  productSku        String   @map("product_sku")
+  eyebrow           String?
+  headline          String?
+  videoUrl          String?  @map("video_url")
+  videoPoster       String?  @map("video_poster")
+  keyFeatures       Json     @default("[]") @map("key_features")
+  specifications    Json     @default("[]")
+  packagingIncludes Json     @default("[]") @map("packaging_includes")
+  idealFor          Json     @default("[]") @map("ideal_for")
+  whyBuy            Json     @default("[]") @map("why_buy")
+  comparison        Json     @default("{}")
+  careDisposal      String?  @map("care_disposal")
+  description       String?
+  position          Int      @default(0)
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([position])
+  @@index([isActive])
+  @@map("spotlights")
+}
+
 /// Customer product reviews. Storefront reads + writes; admin moderates.
 /// See admin/prisma/schema.prisma for the full design comment.
 model Review {

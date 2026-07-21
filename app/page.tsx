@@ -8,16 +8,19 @@ import { WatchAndShopLazy } from '@/components/WatchAndShopLazy';
 import { getCategoryTree, getHomePageData } from '@/lib/products';
 import { getActiveBanners } from '@/lib/banners';
 import { getActiveReels } from '@/lib/reels';
+import { getHomeSpotlight } from '@/lib/spotlight';
+import { SpotlightTeaser } from '@/components/SpotlightTeaser';
 
 export const revalidate = 300; // regenerate home at most every 5 min
 
 export default async function HomePage() {
-  const [home, tree, banners, promoSlides, reels] = await Promise.all([
+  const [home, tree, banners, promoSlides, reels, spotlight] = await Promise.all([
     getHomePageData(),
     getCategoryTree(),
     getActiveBanners('hero'),
     getActiveBanners('secondary'),
     getActiveReels(),
+    getHomeSpotlight(),
   ]);
   const { bestsellers, newArrivals, watchShop } = home;
 
@@ -34,6 +37,13 @@ export default async function HomePage() {
       <section className="pt-14 pb-0 mb-14">
         <HomeTabs bestsellers={bestsellers} newArrivals={newArrivals} />
       </section>
+
+      {/* Featured Spotlight — only renders when an active spotlight exists. */}
+      {spotlight && (
+        <section className="mb-14">
+          <SpotlightTeaser data={spotlight} />
+        </section>
+      )}
 
       <TrustStrip />
 

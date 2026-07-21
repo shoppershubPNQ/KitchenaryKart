@@ -22,6 +22,7 @@ const ALLOWED_TAGS = new Set([
   'reels',
   'reviews',
   'social',
+  'spotlight',
 ]);
 
 export async function POST(req: Request) {
