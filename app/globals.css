@@ -51,3 +51,7 @@
    animation always re-triggers on click. */
 @keyframes kk-heart-pop{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
 .kk-heart-pop{animation:kk-heart-pop 280ms ease-out;transform-origin:center;}
+/* Backdrop fade for the PDP image lightbox. */
+@keyframes kk-fade-in{from{opacity:0;}to{opacity:1;}}
+.kk-fade-in{animation:kk-fade-in 150ms ease-out;}
+@media (prefers-reduced-motion:reduce){.kk-fade-in{animation:none;}}
