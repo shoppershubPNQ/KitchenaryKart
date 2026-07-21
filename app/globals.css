@@ -3,7 +3,7 @@
 @layer components{
 .btn{@apply inline-flex items-center justify-center gap-2 px-6 py-3 font-head font-bold text-sm uppercase tracking-wider rounded-md transition border-2 border-transparent cursor-pointer;}
 .btn-primary{@apply bg-brand text-white border-brand hover:bg-brand-dark hover:border-brand-dark hover:text-white;}
-.btn-outline{@apply bg-transparent text-ink border-ink hover:bg-ink hover:text-white;}
+.btn-outline{@apply bg-transparent text-brand border-brand hover:bg-brand hover:text-white;}
 .btn-small{@apply flex-1 whitespace-nowrap px-2 py-2.5 text-[11px] font-head font-bold uppercase tracking-wide rounded-lg text-center transition;}
 .btn-small-primary{@apply bg-brand text-white shadow-sm hover:bg-brand-hover hover:shadow-md;}
 .btn-small-outline{@apply bg-transparent text-brand border border-brand/30 hover:border-brand hover:bg-brand/5;}
