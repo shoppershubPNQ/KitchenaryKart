@@ -41,9 +41,10 @@ export function PrimaryNav({ tree, counts, sticky = false }: Props) {
   );
 
   /** Hover intent: the panel only opens after the cursor rests on a category
-   *  for a full second, so sweeping across the nav on the way to something
-   *  else never flashes a mega-menu. Once a panel is already open, moving to a
-   *  sibling category switches immediately — the menu is committed by then and
+   *  briefly, so sweeping across the nav on the way to something else never
+   *  flashes a mega-menu — but the delay is short enough to feel responsive on
+   *  a deliberate hover. Once a panel is already open, moving to a sibling
+   *  category switches immediately — the menu is committed by then and
    *  re-waiting would feel broken. */
   function enter(cat: string) {
     clearTimeout(closeTimer.current);
@@ -52,7 +53,7 @@ export function PrimaryNav({ tree, counts, sticky = false }: Props) {
       setOpenCat(cat);
       return;
     }
-    openTimer.current = setTimeout(() => setOpenCat(cat), 1000);
+    openTimer.current = setTimeout(() => setOpenCat(cat), 250);
   }
   function leave() {
     clearTimeout(openTimer.current);
