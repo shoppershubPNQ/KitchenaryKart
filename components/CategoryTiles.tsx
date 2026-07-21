@@ -6,7 +6,7 @@ import {CATEGORY_ORDER} from '@/lib/categories';
 import type {CategoryTreeNode} from '@/lib/products';
 interface Sub{category:string;subName:string;count:number;thumb:string|null;}
 interface Props{tree:Record<string,CategoryTreeNode[]>;}
-const VISIBLE_TILES=7;const GAP_PX=20;const SLIDE_STEP=3;const INTERVAL_MS=2500;
+const VISIBLE_TILES=7;const GAP_PX=20;const SLIDE_STEP=3;const INTERVAL_MS=8000;
 function tilePitch(el:HTMLElement):number{const first=el.firstElementChild as HTMLElement|null;if(!first)return 0;return first.getBoundingClientRect().width+GAP_PX;}
 export function CategoryTiles({tree}:Props){
 const subs:Sub[]=[];const orderedCats=[...CATEGORY_ORDER.filter((c)=>tree[c]),...Object.keys(tree).filter((c)=>!CATEGORY_ORDER.includes(c))];
