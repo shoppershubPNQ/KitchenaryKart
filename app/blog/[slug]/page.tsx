@@ -98,27 +98,31 @@ export default function BlogPostPage({ params }: Params) {
         />
       )}
 
-      <article className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-10 md:py-14">
-        <nav className="text-xs text-muted flex items-center gap-2 mb-6 flex-wrap">
-          <Link href="/" className="hover:text-brand">Home</Link>
-          <span className="opacity-60">/</span>
-          <Link href="/blog" className="hover:text-brand">Blog</Link>
-          <span className="opacity-60">/</span>
+      {/* Centred reading column. Previously the article was max-w-site
+          (1600px) while its content was capped at ~68ch with no centring, so
+          on desktop the whole post hugged the left edge with a huge empty
+          gutter on the right. One narrow, centred column fixes that. */}
+      <article className="max-w-[760px] mx-auto px-[6mm] md:px-8 py-10 md:py-14">
+        <nav className="text-xs text-muted flex items-center gap-2 mb-8 flex-wrap">
+          <Link href="/" className="hover:text-brand transition-colors">Home</Link>
+          <span className="opacity-50">/</span>
+          <Link href="/blog" className="hover:text-brand transition-colors">Blog</Link>
+          <span className="opacity-50">/</span>
           <span className="text-ink font-medium line-clamp-1">{post.title}</span>
         </nav>
 
-        <header className="mb-8 max-w-[68ch]">
-          <span className="text-[11px] font-bold uppercase tracking-[1.5px] text-brand">
+        <header className="mb-8 pb-8 border-b border-line">
+          <span className="inline-flex items-center rounded-full bg-brand/10 text-brand text-[11px] font-bold uppercase tracking-[1.5px] px-3 py-1">
             {post.tag}
           </span>
-          <h1 className="font-head text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold text-ink leading-tight mt-3 mb-4">
+          <h1 className="font-head text-[clamp(1.9rem,3.6vw,2.7rem)] font-bold text-ink leading-[1.15] mt-4 mb-5">
             {post.title}
           </h1>
-          <div className="text-xs text-muted flex items-center gap-2">
-            <span>By {post.author}</span>
-            <span className="opacity-50">·</span>
+          <div className="text-[13px] text-muted flex items-center gap-2.5 flex-wrap">
+            <span className="font-medium text-ink-soft">By {post.author}</span>
+            <span className="opacity-40">·</span>
             <span>{fmtDate(post.date)}</span>
-            <span className="opacity-50">·</span>
+            <span className="opacity-40">·</span>
             <span>{post.readMins} min read</span>
           </div>
         </header>
@@ -126,15 +130,15 @@ export default function BlogPostPage({ params }: Params) {
         <BlogProse body={post.body} />
 
         {post.faqs && post.faqs.length > 0 && (
-          <section className="mt-12 max-w-[68ch]">
-            <h2 className="font-head text-[clamp(1.3rem,2.2vw,1.7rem)] font-bold text-ink mb-5">
+          <section className="mt-14">
+            <h2 className="font-head text-[clamp(1.35rem,2.4vw,1.75rem)] font-bold text-ink mb-6">
               Frequently asked questions
             </h2>
-            <dl className="divide-y divide-line">
+            <dl className="space-y-3">
               {post.faqs.map((f, i) => (
-                <div key={i} className="py-4">
-                  <dt className="font-semibold text-ink text-[16px] mb-1.5">{f.q}</dt>
-                  <dd className="text-[16px] leading-relaxed text-ink/85">{f.a}</dd>
+                <div key={i} className="rounded-xl border border-line bg-bg-soft p-5">
+                  <dt className="font-head font-bold text-ink text-[16px] mb-2">{f.q}</dt>
+                  <dd className="text-[15.5px] leading-relaxed text-ink-soft">{f.a}</dd>
                 </div>
               ))}
             </dl>
@@ -142,22 +146,27 @@ export default function BlogPostPage({ params }: Params) {
         )}
 
         {others.length > 0 && (
-          <aside className="mt-14 pt-8 border-t border-line">
-            <h2 className="font-head text-[18px] font-bold text-ink mb-4">
-              More guides
+          <aside className="mt-14 pt-10 border-t border-line">
+            <h2 className="font-head text-[18px] font-bold text-ink mb-5">
+              Keep reading
             </h2>
-            <ul className="space-y-2">
+            <div className="grid sm:grid-cols-2 gap-4">
               {others.map((o) => (
-                <li key={o.slug}>
-                  <Link
-                    href={`/blog/${o.slug}`}
-                    className="text-brand underline underline-offset-2 hover:opacity-80"
-                  >
+                <Link
+                  key={o.slug}
+                  href={`/blog/${o.slug}`}
+                  className="group rounded-xl border border-line p-5 hover:border-brand hover:shadow-sm transition"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-[1.5px] text-brand">
+                    {o.tag}
+                  </span>
+                  <span className="block font-head font-bold text-ink text-[15px] leading-snug mt-1.5 group-hover:text-brand transition-colors">
                     {o.title}
-                  </Link>
-                </li>
+                  </span>
+                  <span className="block text-xs text-muted mt-2">{o.readMins} min read</span>
+                </Link>
               ))}
-            </ul>
+            </div>
           </aside>
         )}
       </article>
