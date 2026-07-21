@@ -41,7 +41,10 @@ export function SpotlightTeaser({ data }: { data: SpotlightWithProduct }) {
 
         {/* Content */}
         <div className="p-6 md:p-10 flex flex-col justify-center">
-          <span className="inline-block w-fit bg-brand text-white text-[11px] font-head font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+          <span className="inline-flex w-fit items-center gap-1.5 bg-brand text-white text-[11px] font-head font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4 shadow-sm">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3" aria-hidden>
+              <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01z" />
+            </svg>
             {c.eyebrow || 'Featured'}
           </span>
           <h2 className="font-head text-2xl md:text-3xl font-bold text-ink leading-tight">
@@ -67,7 +70,10 @@ export function SpotlightTeaser({ data }: { data: SpotlightWithProduct }) {
           )}
 
           <div className="mt-6">
-            <Link href={href} className="btn-primary inline-flex">View details</Link>
+            <Link href={href} className="btn btn-primary">
+              View details
+              <span aria-hidden>→</span>
+            </Link>
           </div>
         </div>
       </div>
