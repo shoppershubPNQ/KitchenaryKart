@@ -23,6 +23,7 @@ export function PrimaryNav({ tree, counts, sticky = false }: Props) {
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeTimer = useRef<any>(null);
+  const openTimer = useRef<any>(null);
 
   useEffect(() => {
     const h = () => setMobileOpen((m) => !m);
@@ -30,11 +31,31 @@ export function PrimaryNav({ tree, counts, sticky = false }: Props) {
     return () => window.removeEventListener('kk:toggle-mobile-nav', h);
   }, []);
 
+  // Don't leave a queued open/close running after the nav unmounts.
+  useEffect(
+    () => () => {
+      clearTimeout(openTimer.current);
+      clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  /** Hover intent: the panel only opens after the cursor rests on a category
+   *  for a full second, so sweeping across the nav on the way to something
+   *  else never flashes a mega-menu. Once a panel is already open, moving to a
+   *  sibling category switches immediately — the menu is committed by then and
+   *  re-waiting would feel broken. */
   function enter(cat: string) {
     clearTimeout(closeTimer.current);
-    setOpenCat(cat);
+    clearTimeout(openTimer.current);
+    if (openCat) {
+      setOpenCat(cat);
+      return;
+    }
+    openTimer.current = setTimeout(() => setOpenCat(cat), 1000);
   }
   function leave() {
+    clearTimeout(openTimer.current);
     clearTimeout(closeTimer.current);
     closeTimer.current = setTimeout(() => setOpenCat(null), 120);
   }
@@ -61,7 +82,12 @@ export function PrimaryNav({ tree, counts, sticky = false }: Props) {
               type="button"
               className={`nav-item ${openCat === c ? 'is-open' : ''}`}
               onMouseEnter={() => enter(c)}
-              onClick={() => setOpenCat((curr) => (curr === c ? null : c))}
+              onClick={() => {
+                // A click is an explicit request — skip the hover delay, and
+                // drop any queued open so it can't re-open what we just closed.
+                clearTimeout(openTimer.current);
+                setOpenCat((curr) => (curr === c ? null : c));
+              }}
             >
               <span>{catLabel(c)}</span>
               {openCat === c && (
