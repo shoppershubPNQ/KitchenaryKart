@@ -98,7 +98,7 @@ export default async function FeaturedPage({ params }: Params) {
         {/* Buy box */}
         <div className="lg:pt-2">
           {c.eyebrow && (
-            <span className="inline-block bg-brand/10 text-brand text-[11px] font-head font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+            <span className="inline-block bg-brand text-white text-[11px] font-head font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
               {c.eyebrow}
             </span>
           )}
@@ -190,7 +190,7 @@ export default async function FeaturedPage({ params }: Params) {
           <Section title="Ideal for">
             <div className="flex flex-wrap gap-2">
               {c.idealFor.map((it, i) => (
-                <span key={i} className="bg-cream text-ink text-sm px-3.5 py-1.5 rounded-full border border-line">{it}</span>
+                <span key={i} className="bg-brand/10 text-brand font-medium text-sm px-3.5 py-1.5 rounded-full border border-brand/20">{it}</span>
               ))}
             </div>
           </Section>

@@ -41,7 +41,7 @@ export function SpotlightTeaser({ data }: { data: SpotlightWithProduct }) {
 
         {/* Content */}
         <div className="p-6 md:p-10 flex flex-col justify-center">
-          <span className="inline-block w-fit bg-brand/10 text-brand text-[11px] font-head font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+          <span className="inline-block w-fit bg-brand text-white text-[11px] font-head font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
             {c.eyebrow || 'Featured'}
           </span>
           <h2 className="font-head text-2xl md:text-3xl font-bold text-ink leading-tight">
