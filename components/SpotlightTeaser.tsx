@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { SpotlightWithProduct } from '@/lib/spotlight';
-import { imgSrc, inr, savingsPercent } from '@/lib/format';
+import { inr, savingsPercent } from '@/lib/format';
+import { SpotlightMedia } from './SpotlightMedia';
 
 /**
  * Home-page teaser for the Featured Spotlight — a compact two-column band that
@@ -19,25 +20,14 @@ export function SpotlightTeaser({ data }: { data: SpotlightWithProduct }) {
   return (
     <section className="max-w-site mx-auto px-[6mm] md:px-[1.5cm]">
       <div className="rounded-2xl border border-line bg-white overflow-hidden grid grid-cols-1 md:grid-cols-2">
-        {/* Media */}
-        <Link href={href} className="relative block bg-cream aspect-[4/3] md:aspect-auto md:min-h-[340px] grid place-items-center overflow-hidden group">
-          {img ? (
-            <img
-              src={imgSrc(img, 900)}
-              alt={name}
-              className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-300"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <span className="text-muted text-sm">Featured</span>
-          )}
-          {c.videoUrl && (
-            <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
-              ▶ Watch video
-            </span>
-          )}
-        </Link>
+        {/* Media — poster still; plays the spotlight video on hover */}
+        <SpotlightMedia
+          href={href}
+          name={name}
+          img={img}
+          videoUrl={c.videoUrl}
+          videoPoster={c.videoPoster}
+        />
 
         {/* Content */}
         <div className="p-6 md:p-10 flex flex-col justify-center">
