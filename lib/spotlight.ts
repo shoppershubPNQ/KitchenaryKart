@@ -22,7 +22,7 @@ export interface SpotlightContent {
   packagingIncludes: string[];
   idealFor: string[];
   whyBuy: SpotlightWhyBuy[];
-  comparison: { rows: SpotlightCmpRow[] };
+  comparison: { kkLabel: string | null; othersLabel: string | null; rows: SpotlightCmpRow[] };
   careDisposal: string | null;
   description: string | null;
 }
@@ -52,12 +52,20 @@ function whyArray(v: unknown): SpotlightWhyBuy[] {
     .map((x: any) => ({ title: String(x?.title ?? '').trim(), text: String(x?.text ?? '').trim() }))
     .filter((x) => x.title || x.text);
 }
-function cmpRows(v: unknown): SpotlightCmpRow[] {
+function parseComparison(v: unknown): { kkLabel: string | null; othersLabel: string | null; rows: SpotlightCmpRow[] } {
   const obj = typeof v === 'string' ? safeJson(v) : v;
   const rows = (obj as any)?.rows;
-  return (Array.isArray(rows) ? rows : [])
-    .map((x: any) => ({ feature: String(x?.feature ?? '').trim(), kk: String(x?.kk ?? '').trim(), others: String(x?.others ?? '').trim() }))
-    .filter((x) => x.feature || x.kk || x.others);
+  const label = (s: unknown) => {
+    const t = String(s ?? '').trim();
+    return t || null;
+  };
+  return {
+    kkLabel: label((obj as any)?.kkLabel),
+    othersLabel: label((obj as any)?.othersLabel),
+    rows: (Array.isArray(rows) ? rows : [])
+      .map((x: any) => ({ feature: String(x?.feature ?? '').trim(), kk: String(x?.kk ?? '').trim(), others: String(x?.others ?? '').trim() }))
+      .filter((x) => x.feature || x.kk || x.others),
+  };
 }
 function safeJson(s: string): unknown {
   try { return JSON.parse(s); } catch { return []; }
@@ -77,7 +85,7 @@ function toContent(row: any): SpotlightContent {
     packagingIncludes: strArray(row.packagingIncludes),
     idealFor: strArray(row.idealFor),
     whyBuy: whyArray(row.whyBuy),
-    comparison: { rows: cmpRows(row.comparison) },
+    comparison: parseComparison(row.comparison),
     careDisposal: row.careDisposal ?? null,
     description: row.description ?? null,
   };

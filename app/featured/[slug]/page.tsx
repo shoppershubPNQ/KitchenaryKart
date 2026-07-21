@@ -283,14 +283,14 @@ export default async function FeaturedPage({ params }: Params) {
         )}
 
         {c.comparison.rows.length > 0 && (
-          <Section title="KitchenaryKart vs Others">
+          <Section title={`${c.comparison.kkLabel || 'KitchenaryKart'} vs ${c.comparison.othersLabel || 'Others'}`}>
             <div className="overflow-x-auto rounded-2xl border border-line bg-white">
               <table className="w-full text-sm min-w-[480px]">
                 <thead>
                   <tr>
                     <th className="px-4 py-3.5 text-left font-head font-bold text-ink bg-bg-soft">Feature</th>
-                    <th className="px-4 py-3.5 text-left font-head font-bold text-white bg-brand">KitchenaryKart</th>
-                    <th className="px-4 py-3.5 text-left font-head font-bold text-muted bg-bg-soft">Others</th>
+                    <th className="px-4 py-3.5 text-left font-head font-bold text-white bg-brand">{c.comparison.kkLabel || 'KitchenaryKart'}</th>
+                    <th className="px-4 py-3.5 text-left font-head font-bold text-muted bg-bg-soft">{c.comparison.othersLabel || 'Others'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
