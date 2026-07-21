@@ -11,6 +11,10 @@ import { toggleWishlist, useIsInWishlist } from '@/lib/wishlist';
 const ZOOM = 2.5;
 const ZOOM_SRC_WIDTH = 2000;
 
+// Sentinel `active` value for the (optional) video slot — kept distinct from
+// any image URL so image-only logic (zoom, lightbox) never fires for it.
+const VIDEO_KEY = '__kk_video__';
+
 interface Props {
   name: string;
   images: string[];
@@ -19,11 +23,19 @@ interface Props {
   price: number;
   mrp?: number | null;
   category: string | null;
+  /** Optional product video — when set, it's listed as the first gallery item
+   *  (poster thumb with a play badge) and plays in the main viewer when picked.
+   *  Undefined on the PDP, so that gallery is unchanged. */
+  videoUrl?: string | null;
+  videoPoster?: string | null;
 }
 
-export function ProductGallery({ name, images, imageUrl, sku, price, mrp, category }: Props) {
+export function ProductGallery({ name, images, imageUrl, sku, price, mrp, category, videoUrl, videoPoster }: Props) {
   const imgs = images.length ? images : imageUrl ? [imageUrl] : [];
-  const [active, setActive] = useState<string | null>(imgs[0] ?? null);
+  const hasVideo = !!videoUrl;
+  // Default to the first image (keeps it the LCP element); the video is the
+  // first thumbnail. Falls back to the video slot if there are no images.
+  const [active, setActive] = useState<string | null>(imgs[0] ?? (hasVideo ? VIDEO_KEY : null));
   const [copied, setCopied] = useState(false);
   const saved = useIsInWishlist(sku);
 
@@ -65,6 +77,11 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
     setZooming(false);
   }, []);
 
+  const pickVideo = useCallback(() => {
+    setActive(VIDEO_KEY);
+    setZooming(false);
+  }, []);
+
   async function share() {
     const url = typeof window !== 'undefined' ? window.location.href : '';
     const data = { title: name, text: `Check out ${name} on KitchenaryKart`, url };
@@ -81,7 +98,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
     } catch { /* clipboard may be blocked — quiet fail */ }
   }
 
-  if (imgs.length === 0) {
+  if (imgs.length === 0 && !hasVideo) {
     return (
       <div className="relative bg-white border border-line rounded-lg aspect-square grid place-items-center">
         <Overlay saved={saved} onSave={() => toggleWishlist({ sku, name, price, mrp, imageUrl, category })} onShare={share} copied={copied} />
@@ -93,6 +110,36 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
   return (
     <div className="flex flex-col-reverse gap-3 md:grid md:grid-cols-[80px_1fr]">
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-col md:max-h-[560px] md:overflow-y-auto md:overflow-x-visible md:pb-0 md:pr-1">
+        {hasVideo && (
+          <button
+            type="button"
+            onClick={pickVideo}
+            aria-label="Play product video"
+            className={`relative w-16 h-16 md:w-[72px] md:h-[72px] bg-black border-2 rounded-md cursor-pointer transition overflow-hidden shrink-0 ${
+              active === VIDEO_KEY ? 'border-brand' : 'border-line hover:border-gold'
+            }`}
+          >
+            {videoPoster ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={videoPoster}
+                alt={`${name} — product video`}
+                width={72}
+                height={72}
+                loading="eager"
+                decoding="async"
+                className="w-full h-full object-cover opacity-90"
+              />
+            ) : (
+              <span className="absolute inset-0 bg-ink" />
+            )}
+            <span className="absolute inset-0 grid place-items-center">
+              <span className="grid place-items-center w-6 h-6 rounded-full bg-white/90 text-brand shadow">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+              </span>
+            </span>
+          </button>
+        )}
         {imgs.map((u, i) => (
           <button
             key={u}
@@ -122,7 +169,19 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
             bubble into the open-lightbox handler; z-[2] keeps them above the
             zoom layer. */}
         <Overlay saved={saved} onSave={() => toggleWishlist({ sku, name, price, mrp, imageUrl, category })} onShare={share} copied={copied} />
-        {active && (
+        {active === VIDEO_KEY && videoUrl && (
+          <div className="w-full h-full bg-black grid place-items-center">
+            <video
+              src={videoUrl}
+              poster={videoPoster || undefined}
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-contain bg-black"
+            />
+          </div>
+        )}
+        {active && active !== VIDEO_KEY && (
           <div
             ref={frameRef}
             role="button"
@@ -192,7 +251,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
         )}
       </div>
 
-      {lightbox && active && (
+      {lightbox && active && active !== VIDEO_KEY && (
         <Lightbox
           name={name}
           imgs={imgs}

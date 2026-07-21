@@ -99,22 +99,10 @@ export default async function FeaturedPage({ params }: Params) {
 
       {/* Hero: media + buy box */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-start">
-        {/* Media column */}
-        <div className="space-y-5 lg:sticky lg:top-24">
-          {c.videoUrl && (
-            <div className="rounded-2xl overflow-hidden bg-black border border-line shadow-md" style={{ aspectRatio: '16 / 9' }}>
-              {/* Native video — spotlight demo. Poster shows before play. */}
-              <video
-                src={c.videoUrl}
-                poster={c.videoPoster || undefined}
-                controls
-                playsInline
-                preload="metadata"
-                className="w-full h-full object-contain bg-black"
-              />
-            </div>
-          )}
-          {p && galleryImages.length > 0 && (
+        {/* Media column — the spotlight video is listed inside the gallery
+            (first thumbnail, plays in the main viewer), not a separate player. */}
+        <div className="lg:sticky lg:top-24">
+          {p && (galleryImages.length > 0 || c.videoUrl) && (
             <div className="rounded-2xl border border-line bg-white p-3 sm:p-4 shadow-sm">
               <ProductGallery
                 name={name}
@@ -124,6 +112,8 @@ export default async function FeaturedPage({ params }: Params) {
                 price={price ?? 0}
                 mrp={mrp}
                 category={p.category}
+                videoUrl={c.videoUrl}
+                videoPoster={c.videoPoster}
               />
             </div>
           )}
