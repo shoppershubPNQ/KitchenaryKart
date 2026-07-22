@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { imgSrc } from '@/lib/format';
 
 /**
- * Home-teaser media for the Featured Spotlight.
+ * Home-teaser media for the Featured Spotlight — a small swipe carousel.
  *
- * The poster/product image fills the frame (object-cover). When the spotlight
- * has a video, a centered play button opens it in a modal popup with real
- * controls (autoplays, Esc / backdrop / ✕ to close). Clicking the image itself
- * still navigates to /featured/<slug>. The `<video>` only mounts once the popup
- * is opened, so no MP4 downloads until the visitor actually asks to watch —
- * keeps it off the Cloudinary bandwidth bill for non-watching visitors.
+ *   Slide 1: the product image, which links to /featured/<slug>.
+ *   Slide 2 (only when the spotlight has a video): the video poster with a
+ *           centered play button that opens the clip in a modal popup with
+ *           real controls (autoplays, Esc / backdrop / ✕ to close).
+ *
+ * Swipe on touch, arrows/dots on desktop. The `<video>` only mounts once the
+ * popup is opened, so no MP4 downloads until the visitor actually asks to
+ * watch — keeps it off the Cloudinary bandwidth bill for non-watching visitors.
  */
 export function SpotlightMedia({
   href,
@@ -28,7 +30,13 @@ export function SpotlightMedia({
   videoPoster: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const poster = img || videoPoster;
+  const [idx, setIdx] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const poster = img || videoPoster; // slide 1 (product image)
+  const videoThumb = videoPoster || img; // slide 2 (video poster)
+  const hasVideo = !!videoUrl;
+  const slideCount = hasVideo ? 2 : 1;
 
   // While the popup is open: close on Esc and lock background scroll.
   useEffect(() => {
@@ -45,37 +53,108 @@ export function SpotlightMedia({
     };
   }, [open]);
 
+  function goTo(i: number) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const clamped = Math.max(0, Math.min(slideCount - 1, i));
+    el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' });
+  }
+
   return (
     <div className="relative bg-cream aspect-[4/3] md:aspect-auto md:min-h-[340px] overflow-hidden group">
-      {/* Image fills the frame and links to the full featured page */}
-      <Link href={href} className="absolute inset-0 block">
-        {poster ? (
-          <img
-            src={imgSrc(poster, 900)}
-            alt={name}
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <span className="absolute inset-0 grid place-items-center text-muted text-sm">
-            Featured
-          </span>
-        )}
-      </Link>
+      {/* Swipe track */}
+      <div
+        ref={scrollRef}
+        onScroll={(e) =>
+          setIdx(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))
+        }
+        className="flex h-full w-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {/* Slide 1 — product image, links to the full featured page */}
+        <Link href={href} className="snap-center shrink-0 w-full h-full block">
+          {poster ? (
+            <img
+              src={imgSrc(poster, 900)}
+              alt={name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span className="w-full h-full grid place-items-center text-muted text-sm">Featured</span>
+          )}
+        </Link>
 
-      {/* Play button — opens the video popup (sits above the image link) */}
-      {videoUrl && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={`Play ${name} video`}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] grid place-items-center w-16 h-16 rounded-full bg-black/55 text-white backdrop-blur-sm shadow-lg transition hover:bg-brand hover:scale-105"
-        >
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden className="ml-0.5">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </button>
+        {/* Slide 2 — video poster with a play button; opens the popup */}
+        {hasVideo && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={`Play ${name} video`}
+            className="relative snap-center shrink-0 w-full h-full block"
+          >
+            {videoThumb ? (
+              <img
+                src={imgSrc(videoThumb, 900)}
+                alt={`${name} — video`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <span className="absolute inset-0 bg-ink" />
+            )}
+            <span className="absolute inset-0 grid place-items-center">
+              <span className="grid place-items-center w-16 h-16 rounded-full bg-black/55 text-white backdrop-blur-sm shadow-lg transition group-hover:bg-brand group-hover:scale-105">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden className="ml-0.5">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Prev / next arrows — desktop only, hidden at the ends */}
+      {hasVideo && (
+        <>
+          <button
+            type="button"
+            onClick={() => goTo(idx - 1)}
+            aria-label="Previous"
+            disabled={idx === 0}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-[2] hidden md:grid w-9 h-9 rounded-full bg-white/85 shadow place-items-center text-ink text-xl hover:bg-white disabled:opacity-0 transition"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => goTo(idx + 1)}
+            aria-label="Next"
+            disabled={idx === slideCount - 1}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-[2] hidden md:grid w-9 h-9 rounded-full bg-white/85 shadow place-items-center text-ink text-xl hover:bg-white disabled:opacity-0 transition"
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      {/* Dots — tappable, also reflect the swipe position */}
+      {hasVideo && (
+        <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 z-[2]">
+          {Array.from({ length: slideCount }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-200 ${
+                i === idx ? 'w-5 bg-brand' : 'w-2 bg-ink/30 hover:bg-ink/50'
+              }`}
+            />
+          ))}
+        </div>
       )}
 
       {/* Video popup / lightbox */}
