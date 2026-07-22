@@ -62,13 +62,17 @@ export function SpotlightMedia({
 
   return (
     <div className="relative bg-cream aspect-[4/3] md:aspect-auto md:min-h-[340px] overflow-hidden group">
-      {/* Swipe track */}
+      {/* Swipe track — absolutely filled so the slides never dictate the card
+          height. The card sizes itself (4/3 on mobile, matches the text column
+          on desktop via the grid); slides just fill it with object-cover. This
+          is why the video's own dimensions are irrelevant here — it only plays
+          in the popup below. */}
       <div
         ref={scrollRef}
         onScroll={(e) =>
           setIdx(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))
         }
-        className="flex h-full w-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
+        className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Slide 1 — product image, links to the full featured page */}
