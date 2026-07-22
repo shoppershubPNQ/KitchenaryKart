@@ -9,7 +9,13 @@
  * same value.
  */
 import { NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, revalidatePath } from 'next/cache';
+
+// Tags whose data is rendered into the statically-cached home page (`/`).
+// For these we ALSO purge the home route's full-route cache, so admin edits
+// (e.g. curating Best Seller / New Arrival products) appear within seconds
+// instead of waiting out the page's 5-minute ISR window.
+const HOME_TAGS = new Set(['collections', 'banners', 'reels', 'spotlight']);
 
 const ALLOWED_TAGS = new Set([
   'banners',
@@ -39,5 +45,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unknown tag' }, { status: 400 });
   }
   revalidateTag(tag);
+  if (HOME_TAGS.has(tag)) revalidatePath('/');
   return NextResponse.json({ revalidated: true, tag });
 }
