@@ -9,6 +9,7 @@ import { PromoBar } from '@/components/PromoBar';
 import { Footer } from '@/components/Footer';
 import { FooterTrustUpper } from '@/components/FooterTrustUpper';
 import { WhatsAppFloat } from '@/components/WhatsAppFloat';
+import { BackToTopButton } from '@/components/BackToTopButton';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 import { getCategoryTree, getCategoryCounts } from '@/lib/products';
 import { getSocialLinks } from '@/lib/social';
@@ -150,6 +151,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <FooterTrustUpper />
         <Footer />
         <WhatsAppFloat />
+        <BackToTopButton />
         <DrawerMount />
         <WishlistDrawer />
         <SlideNav tree={tree} />

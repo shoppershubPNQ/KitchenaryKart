@@ -2,11 +2,9 @@
  * Top chrome: hamburger · logo · search · action icons, then the primary nav
  * with the mega-menu hover panel. Hands category data to `PrimaryNav`.
  *
- * Client component so it can read the current route: the header (and nav) are
- * pinned (`sticky`) only on the product and shop pages; on every other page
- * they sit in normal flow and scroll away. `usePathname()` is correct during
- * SSR, so the initial paint already has the right positioning (no flash /
- * layout shift).
+ * The header (and its category nav) stay pinned (`sticky`) on every page so
+ * search and categories are always within reach — except the checkout /
+ * payment flow, where a focused, chrome-light page converts better.
  */
 'use client';
 
@@ -28,14 +26,9 @@ interface Props {
 
 export function Header({ categoryTree, categoryCounts }: Props) {
   const pathname = usePathname();
-  // Pages where the header + nav stay pinned on scroll. The shop listing
-  // (/shop) and product detail (/product/…) are long, scroll-heavy pages
-  // where keeping search + categories in reach matters; everywhere else the
-  // header scrolls away with the content.
-  const pinned =
-    pathname === '/shop' ||
-    pathname.startsWith('/shop/') ||
-    pathname.startsWith('/product/');
+  // Pinned on every page except the checkout / payment flow, where we keep
+  // the page focused and chrome-light.
+  const pinned = !pathname.startsWith('/checkout');
   return (
     <>
       <header

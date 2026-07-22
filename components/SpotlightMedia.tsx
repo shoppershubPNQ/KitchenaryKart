@@ -12,9 +12,12 @@ import { imgSrc } from '@/lib/format';
  *           centered play button that opens the clip in a modal popup with
  *           real controls (autoplays, Esc / backdrop / ✕ to close).
  *
- * Swipe on touch, arrows/dots on desktop. The `<video>` only mounts once the
- * popup is opened, so no MP4 downloads until the visitor actually asks to
- * watch — keeps it off the Cloudinary bandwidth bill for non-watching visitors.
+ * Swipe on touch, arrows/dots on desktop. When the card first scrolls into
+ * view it auto-swipes once from slide 1 to the video slide to draw attention
+ * to the clip (skipped if the visitor already interacted or prefers reduced
+ * motion). The `<video>` only mounts once the popup is opened, so no MP4
+ * downloads until the visitor actually asks to watch — keeps it off the
+ * Cloudinary bandwidth bill for non-watching visitors.
  */
 export function SpotlightMedia({
   href,
@@ -32,6 +35,8 @@ export function SpotlightMedia({
   const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const didAutoRef = useRef(false); // auto-advance to the video slide fires once
+  const userTouchedRef = useRef(false); // any manual interaction cancels it
 
   const poster = img || videoPoster; // slide 1 (product image)
   const videoThumb = videoPoster || img; // slide 2 (video poster)
@@ -60,8 +65,43 @@ export function SpotlightMedia({
     el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' });
   }
 
+  // One-time: when the spotlight scrolls into view, auto-swipe to the video
+  // slide (slide 2) so visitors notice there's a clip. Bails if the visitor
+  // already interacted, or if they prefer reduced motion.
+  useEffect(() => {
+    if (!hasVideo) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !didAutoRef.current) {
+          didAutoRef.current = true;
+          io.disconnect();
+          timer = setTimeout(() => {
+            if (!userTouchedRef.current) goTo(1);
+          }, 1100);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasVideo]);
+
   return (
-    <div className="relative bg-cream aspect-[4/3] md:aspect-auto md:min-h-[340px] overflow-hidden group">
+    <div
+      onPointerDown={() => {
+        userTouchedRef.current = true;
+      }}
+      className="relative bg-cream aspect-[4/3] md:aspect-auto md:min-h-[340px] overflow-hidden group"
+    >
       {/* Swipe track — absolutely filled so the slides never dictate the card
           height. The card sizes itself (4/3 on mobile, matches the text column
           on desktop via the grid); slides just fill it with object-cover. This
