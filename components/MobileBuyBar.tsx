@@ -66,8 +66,8 @@ export function MobileBuyBar({ cartItem, stock, anchorId = 'pdp-buybox' }: Props
       }`}
       style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom))' }}
     >
-      <div className="flex items-center gap-2.5">
-        <div className="shrink-0 leading-none">
+      <div className="flex items-stretch gap-2.5">
+        <div className="shrink-0 self-center leading-none">
           <div className="text-[10px] text-muted mb-0.5">Price</div>
           <div className="font-head font-bold text-ink text-[16px]">{inr(cartItem.price)}</div>
         </div>
@@ -76,16 +76,19 @@ export function MobileBuyBar({ cartItem, stock, anchorId = 'pdp-buybox' }: Props
             type="button"
             disabled
             aria-disabled="true"
-            className="btn btn-outline flex-1 opacity-60 cursor-not-allowed"
+            className="btn btn-outline flex-1 whitespace-nowrap !px-3 opacity-60 cursor-not-allowed"
           >
             Out of Stock
           </button>
         ) : (
           <>
+            {/* whitespace-nowrap + tighter padding: .btn's px-6 made "ADD TO CART"
+                wrap to two lines on narrow phones, so it was taller than "BUY NOW".
+                items-stretch + nowrap keeps both buttons one line and equal height. */}
             <button
               type="button"
               onClick={() => gated(() => addToCart(cartItem))}
-              className="btn btn-outline flex-1"
+              className="btn btn-outline flex-1 whitespace-nowrap !px-3"
             >
               Add to Cart
             </button>
@@ -97,7 +100,7 @@ export function MobileBuyBar({ cartItem, stock, anchorId = 'pdp-buybox' }: Props
                   router.push('/checkout');
                 })
               }
-              className="btn btn-primary flex-1"
+              className="btn btn-primary flex-1 whitespace-nowrap !px-3"
             >
               Buy Now
             </button>

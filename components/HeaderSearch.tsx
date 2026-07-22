@@ -206,7 +206,10 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
-            className="w-full h-10 px-4 border border-line rounded-full text-sm"
+            /* text-base (16px) is required: iOS Safari auto-zooms the whole page
+               when a focused input's font-size is < 16px, which threw the header
+               off-screen. 16px stops the zoom. */
+            className="w-full h-10 px-4 border border-line rounded-full text-base"
           />
         </form>
         {Dropdown}

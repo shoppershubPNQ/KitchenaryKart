@@ -46,6 +46,9 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
   const [lightbox, setLightbox] = useState(false);
   const frameRef = useRef<HTMLDivElement | null>(null);
+  // Mobile swipe-carousel: active slide index, tracked from scroll position.
+  const [mIdx, setMIdx] = useState(0);
+  const mobileRef = useRef<HTMLDivElement | null>(null);
 
   // Hover-zoom is pointer-precision only. Touch devices report `hover: none`
   // and would otherwise get a zoom layer stuck on after a tap — they get the
@@ -107,8 +110,48 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
     );
   }
 
+  const slideCount = imgs.length + (hasVideo ? 1 : 0);
+
   return (
-    <div className="flex flex-col-reverse gap-3 md:grid md:grid-cols-[80px_1fr]">
+    <>
+      {/* MOBILE: finger-swipe carousel (replaces the thumbnail buttons on phones) */}
+      <div className="md:hidden relative bg-white border border-line rounded-lg overflow-hidden">
+        <Overlay saved={saved} onSave={() => toggleWishlist({ sku, name, price, mrp, imageUrl, category })} onShare={share} copied={copied} />
+        <div
+          ref={mobileRef}
+          onScroll={(e) => setMIdx(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))}
+          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {hasVideo && videoUrl && (
+            <div className="snap-center shrink-0 w-full aspect-square bg-black grid place-items-center">
+              <video src={videoUrl} poster={videoPoster || undefined} controls playsInline preload="none" className="w-full h-full object-contain bg-black" />
+            </div>
+          )}
+          {imgs.map((u, i) => (
+            <button
+              key={u}
+              type="button"
+              onClick={() => { pick(u); setLightbox(true); }}
+              aria-label={`View image ${i + 1} full screen`}
+              className="snap-center shrink-0 w-full aspect-square grid place-items-center"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imgSrc(u)} alt={`${name} — view ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" className="w-full h-full object-contain" />
+            </button>
+          ))}
+        </div>
+        {slideCount > 1 && (
+          <div className="absolute bottom-2.5 inset-x-0 flex justify-center gap-1.5 pointer-events-none">
+            {Array.from({ length: slideCount }).map((_, i) => (
+              <span key={i} className={`h-1.5 rounded-full transition-all duration-200 ${i === mIdx ? 'w-4 bg-brand' : 'w-1.5 bg-ink/25'}`} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP: thumbnail rail + zoom frame */}
+      <div className="hidden md:grid md:grid-cols-[80px_1fr] gap-3">
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-col md:max-h-[560px] md:overflow-y-auto md:overflow-x-visible md:pb-0 md:pr-1">
         {hasVideo && (
           <button
@@ -250,6 +293,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
           </div>
         )}
       </div>
+      </div>
 
       {lightbox && active && active !== VIDEO_KEY && (
         <Lightbox
@@ -260,7 +304,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
           onClose={() => setLightbox(false)}
         />
       )}
-    </div>
+    </>
   );
 }
 

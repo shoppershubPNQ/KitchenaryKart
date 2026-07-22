@@ -79,7 +79,7 @@ export function AddToInquiryButton({ product, cartItem, onlyPrimary, stock }: Pr
       <button
         type="button"
         onClick={() => gated(() => addToCart(payload))}
-        className="btn btn-outline flex-1"
+        className="btn btn-outline flex-1 whitespace-nowrap"
       >
         Add to Cart
       </button>
@@ -93,7 +93,7 @@ export function AddToInquiryButton({ product, cartItem, onlyPrimary, stock }: Pr
             router.push('/checkout');
           })
         }
-        className="btn btn-primary flex-1"
+        className="btn btn-primary flex-1 whitespace-nowrap"
       >
         Buy Now
       </button>
