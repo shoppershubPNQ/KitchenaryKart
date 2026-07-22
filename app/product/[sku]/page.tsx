@@ -341,7 +341,7 @@ export default async function ProductPage({ params }: Params) {
         <span className="text-ink font-medium">{displayName}</span>
       </nav>
 
-      <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-14 grid md:grid-cols-[1.1fr_1fr] grid-cols-1 gap-12">
+      <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-6 md:pb-12 grid md:grid-cols-[1.1fr_1fr] grid-cols-1 gap-6 md:gap-12">
         <ProductGallery
           name={p.name}
           images={galleryImages}
@@ -405,7 +405,7 @@ export default async function ProductPage({ params }: Params) {
             </dl>
           </div>
 
-          <div id="pdp-buybox" className="flex flex-wrap gap-3 mb-6">
+          <div id="pdp-buybox" className="flex flex-wrap gap-3 mb-2">
             <AddToInquiryButton
               product={p}
               stock={selectedVariant?.stock ?? p.stock}
@@ -444,8 +444,8 @@ export default async function ProductPage({ params }: Params) {
           entirely when empty. Specifications live once in the right
           column above — not repeated here. */}
       {p.description && p.description.trim() && (
-        <section className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-14">
-          <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-4">
+        <section className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-6 md:pb-12">
+          <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-3 md:mb-4">
             Product Description
           </h2>
           <div className="max-w-[1100px] text-[15.5px] leading-relaxed text-ink/85 whitespace-pre-line">

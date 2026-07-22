@@ -134,11 +134,14 @@ export function PdpTrustBadges() {
     <div
       role="list"
       aria-label="Buyer protection and benefits"
-      className="grid grid-cols-1 md:grid-cols-5 gap-2 my-5 p-3 bg-bg-soft border border-line rounded-lg"
+      className="grid grid-cols-2 md:grid-cols-5 gap-2 my-4 p-3 bg-bg-soft border border-line rounded-lg"
     >
-      {BADGES.map((b) => {
+      {BADGES.map((b, i) => {
+        // 5 badges in a 2-col mobile grid leaves the last one alone on its
+        // row — let it span both columns so the row reads as intentional.
+        const isLast = i === BADGES.length - 1;
         const wrapClass =
-          'flex items-center gap-2.5 px-2 py-1.5 rounded-md transition';
+          `flex items-center gap-2.5 px-2 py-1.5 rounded-md transition${isLast ? ' max-md:col-span-2' : ''}`;
         if (b.href) {
           return (
             <a
