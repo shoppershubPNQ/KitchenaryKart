@@ -146,6 +146,9 @@ export default async function ProductPage({ params }: Params) {
   const variantPrices = p.variants.map((v) => v.price).filter((n) => n > 0);
   const basePrice = p.price > 0 ? p.price : variantPrices.length ? Math.min(...variantPrices) : p.price;
   const displayPrice = selectedVariant?.price ?? basePrice;
+  // Effective stock of the thing being shown (selected variant, else parent).
+  // Drives both the standalone availability line and the buy box's stock prop.
+  const effectiveStock = selectedVariant?.stock ?? p.stock;
 
   // Variant-aware gallery resolution:
   //   1. If the variant has its own images[] populated, use that
@@ -390,7 +393,42 @@ export default async function ProductPage({ params }: Params) {
             <VariantSelector variants={p.variants} currentSku={requestedSku} />
           )}
 
-          <div className="bg-bg-soft rounded-lg p-5 mb-6">
+          {/* Availability line for single-SKU products (variant products already
+              get their stock from the VariantSelector above). Sits right above
+              the buy box so the column reads pricing → stock → CTA. */}
+          {p.variants.length <= 1 && (
+            <p className="text-sm font-semibold mb-4">
+              {effectiveStock <= 0 ? (
+                <span className="text-red-600">Out of stock</span>
+              ) : effectiveStock <= 5 ? (
+                <span className="text-orange-600">
+                  {effectiveStock === 1 ? 'Only 1 left in stock' : `Only ${effectiveStock} left in stock`}
+                </span>
+              ) : (
+                <span className="text-success">In stock</span>
+              )}
+            </p>
+          )}
+
+          {/* Buy box — moved directly under the pricing + stock/variant info so
+              the CTA sits in the high-conversion zone, above the specs. */}
+          <div id="pdp-buybox" className="flex flex-wrap gap-3 mb-6">
+            <AddToInquiryButton
+              product={p}
+              stock={effectiveStock}
+              cartItem={{
+                sku: requestedSku,
+                name: displayName,
+                price: displayPrice,
+                mrp: displayMrp,
+                taxPercent: p.taxPercent,
+                imageUrl: selectedVariant?.imageUrl ?? p.imageUrl,
+                category: p.category,
+              }}
+            />
+          </div>
+
+          <div className="bg-bg-soft rounded-lg p-5">
             <h3 className="text-[13px] font-bold tracking-wider uppercase text-brand mb-3.5">
               Specifications
             </h3>
@@ -402,22 +440,6 @@ export default async function ProductPage({ params }: Params) {
                 </Fragment>
               ))}
             </dl>
-          </div>
-
-          <div id="pdp-buybox" className="flex flex-wrap gap-3 mb-2">
-            <AddToInquiryButton
-              product={p}
-              stock={selectedVariant?.stock ?? p.stock}
-              cartItem={{
-                sku: requestedSku,
-                name: displayName,
-                price: displayPrice,
-                mrp: displayMrp,
-                taxPercent: p.taxPercent,
-                imageUrl: selectedVariant?.imageUrl ?? p.imageUrl,
-                category: p.category,
-              }}
-            />
           </div>
         </div>
       </div>

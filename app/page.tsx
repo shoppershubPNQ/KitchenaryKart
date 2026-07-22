@@ -34,16 +34,17 @@ export default async function HomePage() {
       <HeroCarousel banners={banners} />
       <CategoryTiles tree={tree} />
 
-      <section className="pt-14 pb-0 mb-14">
-        <HomeTabs bestsellers={bestsellers} newArrivals={newArrivals} />
-      </section>
-
-      {/* Featured Spotlight — only renders when an active spotlight exists. */}
+      {/* Featured Spotlight — sits directly under the categories so the single
+          hero product leads the page. Only renders when an active spotlight exists. */}
       {spotlight && (
-        <section className="mb-14">
+        <section className="pt-10">
           <SpotlightTeaser data={spotlight} />
         </section>
       )}
+
+      <section className="pt-4 pb-0 mb-14">
+        <HomeTabs bestsellers={bestsellers} newArrivals={newArrivals} />
+      </section>
 
       <TrustStrip />
 
