@@ -19,8 +19,12 @@ export default function robots(): MetadataRoute.Robots {
           '/admin-api/',    // proxied admin endpoints
           '/account/',      // personalised, requires sign-in
           '/checkout',      // cart/checkout funnel — no SEO value
-          '/_next/',        // build assets — Google can fetch on demand
           '/_vercel/',      // Vercel telemetry endpoints
+          // NB: /_next/ is intentionally NOT blocked. Google needs to crawl the
+          // CSS/JS under /_next/static/ to RENDER pages for indexing (blocking
+          // them hurts rendering + Core Web Vitals assessment — this is Google's
+          // own guidance). Blocking it also produced the "Indexed, though blocked
+          // by robots.txt" warning in GSC for a discovered .css asset.
         ],
       },
     ],

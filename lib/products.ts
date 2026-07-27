@@ -186,6 +186,12 @@ function withVariantDisplay(
       variants.find((v) => v.imageUrl);
     if (withImg?.imageUrl) pub.imageUrl = withImg.imageUrl;
   }
+  // This card represents a product that HAS variants, so its parent gallery is
+  // a mix of shots across variations. hoverImage (taken from that gallery in
+  // toPublic) could therefore show a DIFFERENT variation on hover — drop it so
+  // the card stays on the one representative image. Variant-less products never
+  // reach here (guarded above), so they keep their same-product hover shot.
+  pub.hoverImage = null;
   return pub;
 }
 
@@ -293,6 +299,7 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
           mrp: unknown;
           stock: number;
           imageUrl: string | null;
+          images: unknown;
         }>
       | undefined;
 
@@ -326,6 +333,19 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
         ? `${parent.name} — ${qualifier}` // em-dash
         : parent.name;
 
+      const variantPrimary = v.imageUrl ?? parent.imageUrl;
+      // Hover shot MUST be from the SAME variation. The parent gallery mixes
+      // shots of ALL variants, so pulling the hover from it can show a
+      // different colour/size on hover. Use the variant's OWN gallery only —
+      // the first shot in it that isn't already the primary. If the variant
+      // has no gallery of its own (empty → inherits the mixed parent gallery),
+      // show a single image instead of risking a wrong-variant hover.
+      const variantImages = Array.isArray((v as any).images)
+        ? ((v as any).images as string[])
+        : [];
+      const variantHover =
+        variantImages.find((u) => u && u !== variantPrimary) ?? null;
+
       out.push({
         ...parent,
         sku: v.skuSuffix,
@@ -333,17 +353,11 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
         price: variantPrice,
         mrp: variantMrp,
         stock: v.stock,
-        imageUrl: v.imageUrl ?? parent.imageUrl,
+        imageUrl: variantPrimary,
         // images stays as parent's gallery — variant.imageUrl is just
         // the primary; the rest of the gallery (specs photos, etc.)
         // are still shared across variants on the PDP.
-        // The variant may show a different primary than the parent, so drop the
-        // inherited hover shot when it IS that primary — hovering would
-        // otherwise "swap" to the identical image.
-        hoverImage:
-          parent.hoverImage && parent.hoverImage !== (v.imageUrl ?? parent.imageUrl)
-            ? parent.hoverImage
-            : null,
+        hoverImage: variantHover,
       });
     }
   }
