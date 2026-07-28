@@ -6,11 +6,11 @@ import {imgSrc,inr,letter,savingsPercent} from '@/lib/format';
 import {addToCart,openDrawer,useCart,increaseQty,decreaseQty} from '@/lib/cart';
 import {openAuth,useAuth} from '@/lib/useAuth';
 import {toggleWishlist,useIsInWishlist} from '@/lib/wishlist';
-import {pseudoRating,Stars} from '@/lib/rating';
+import {Stars} from '@/lib/rating';
 import type {PublicProduct} from '@/lib/products';
 interface Props{product:PublicProduct;badge?:'bestseller'|'new'|null;}
 export function ProductCard({product:p,badge}:Props){
-const save=savingsPercent(p.price,p.mrp);const rating=pseudoRating(p.sku);const{loggedIn}=useAuth();const saved=useIsInWishlist(p.sku);
+const save=savingsPercent(p.price,p.mrp);/* rating comes resolved from the server payload (real review avg/count when the product has reviews, else pseudoRating on the parent sku) so the card matches the PDP exactly */const rating={stars:p.reviewAverage,count:p.reviewCount};const{loggedIn}=useAuth();const saved=useIsInWishlist(p.sku);
 // Tick counter forces the heart svg to remount on every click so the
 // kk-heart-pop CSS keyframe always re-triggers (animations don't
 // replay when the same element + same class stays mounted).

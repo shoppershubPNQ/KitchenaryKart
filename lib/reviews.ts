@@ -19,6 +19,35 @@ export interface ReviewSummary {
   distribution: [number, number, number, number, number];
 }
 
+/**
+ * Real review summaries for EVERY sku that has approved reviews, as a plain
+ * object keyed by productSku. One cheap groupBy, cached under the same `reviews`
+ * tag as the per-SKU summary. Used to give product CARDS the exact same rating
+ * the PDP shows (real when reviews exist), instead of a fabricated pseudoRating.
+ * Skus with no approved reviews are simply absent — the caller keeps its
+ * pseudoRating default for those.
+ */
+export const getAllReviewSummaries = unstable_cache(
+  async (): Promise<Record<string, { count: number; average: number }>> => {
+    const rows = await prisma.review.groupBy({
+      by: ['productSku'],
+      where: { isApproved: true },
+      _count: { _all: true },
+      _avg: { rating: true },
+    });
+    const out: Record<string, { count: number; average: number }> = {};
+    for (const r of rows) {
+      out[r.productSku] = {
+        count: r._count._all,
+        average: Math.round((r._avg.rating ?? 0) * 10) / 10,
+      };
+    }
+    return out;
+  },
+  ['kk-all-review-summaries'],
+  { revalidate: 300, tags: ['reviews'] },
+);
+
 export interface PublicReview {
   id: number;
   customerName: string;

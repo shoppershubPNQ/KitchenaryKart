@@ -8,6 +8,8 @@ import { cache as reactCache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { prisma } from './db';
 import { getCollections } from './collections';
+import { pseudoRating } from './rating';
+import { getAllReviewSummaries } from './reviews';
 
 export interface PublicProduct {
   id: number;
@@ -48,6 +50,15 @@ export interface PublicProduct {
    *  {q,a} array (accepts {question,answer} too). Empty array when the
    *  product has no custom FAQs — the PDP falls back to generated ones. */
   faqs: ProductFaq[];
+  /** The SKU whose reviews drive this card's rating — always the PARENT
+   *  product SKU (what the PDP aggregates on), so a variant card and its PDP
+   *  show the SAME rating. Set in toPublic; variant rows inherit it. */
+  ratingSku: string;
+  /** Rating shown on the card. Defaults to pseudoRating(ratingSku) and is
+   *  overlaid with the REAL review average/count by attachRealRatings when the
+   *  product has approved reviews — so the card matches the PDP exactly. */
+  reviewAverage: number;
+  reviewCount: number;
 }
 
 export interface ProductFaq {
@@ -119,9 +130,18 @@ function parseAxisValues(variantType: string, raw: string | null): Record<string
 }
 
 function toPublic(p: any): PublicProduct {
+  // Default the card rating to the deterministic pseudoRating, keyed on this
+  // (parent) SKU — the same key + fallback the PDP uses when a product has no
+  // real reviews yet. attachRealRatings() overlays real numbers where they
+  // exist. Variant rows in the shop grid spread `...parent`, so they inherit
+  // ratingSku (parent) + this default automatically.
+  const pr = pseudoRating(p.sku);
   return {
     id: p.id,
     sku: p.sku,
+    ratingSku: p.sku,
+    reviewAverage: pr.stars,
+    reviewCount: pr.count,
     name: p.name,
     description: p.description ?? null,
     category: p.category,
@@ -193,6 +213,26 @@ function withVariantDisplay(
   // reach here (guarded above), so they keep their same-product hover shot.
   pub.hoverImage = null;
   return pub;
+}
+
+/**
+ * Overlay REAL review summaries onto a list's card-rating fields, keyed on each
+ * product's ratingSku (the parent SKU the PDP aggregates on). Products with no
+ * approved reviews keep their pseudoRating default — identical to the PDP's
+ * fallback. Mutates + returns the same list. One cached groupBy for the whole
+ * catalog (getAllReviewSummaries), so calling it per list is cheap.
+ */
+async function attachRealRatings<T extends PublicProduct>(list: T[]): Promise<T[]> {
+  if (!list.length) return list;
+  const summaries = await getAllReviewSummaries();
+  for (const p of list) {
+    const s = summaries[p.ratingSku];
+    if (s && s.count > 0) {
+      p.reviewAverage = s.average;
+      p.reviewCount = s.count;
+    }
+  }
+  return list;
 }
 
 const commonSelect = {
@@ -358,11 +398,13 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
         // the primary; the rest of the gallery (specs photos, etc.)
         // are still shared across variants on the PDP.
         hoverImage: variantHover,
+        // ratingSku stays the PARENT sku (inherited via ...parent), so this
+        // variant card shows the same rating its PDP does.
       });
     }
   }
 
-  return out;
+  return attachRealRatings(out);
 }
 
 /**
@@ -632,6 +674,11 @@ export async function getHomePageData(): Promise<{
     }
   }
 
+  await Promise.all([
+    attachRealRatings(bestsellers),
+    attachRealRatings(newArrivals),
+    attachRealRatings(watchShop),
+  ]);
   return { bestsellers, newArrivals, watchShop };
 }
 
@@ -709,7 +756,7 @@ async function _getSimilarProducts(
     take: limit,
     select: commonSelect,
   });
-  return rows.map(toPublic);
+  return attachRealRatings(rows.map(toPublic));
 }
 
 const _getSimilarProductsCached = unstable_cache(
@@ -732,7 +779,7 @@ async function _getCategoryFeatured(category: string, limit = 12): Promise<Publi
     take: limit,
     select: commonSelect,
   });
-  return rows.map(toPublic);
+  return attachRealRatings(rows.map(toPublic));
 }
 
 export const getCategoryFeatured = unstable_cache(
@@ -764,7 +811,7 @@ async function _getCategoryProductsPage(
     }),
     prisma.product.count({ where: { status: 'active', category } }),
   ]);
-  return { products: rows.map(toPublic), total };
+  return { products: await attachRealRatings(rows.map(toPublic)), total };
 }
 
 export const getCategoryProductsPage = unstable_cache(
