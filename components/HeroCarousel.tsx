@@ -238,17 +238,21 @@ export function HeroCarousel({ banners }: { banners?: PublicBanner[] } = {}) {
           type="button"
           onClick={() => go(idx - 1)}
           aria-label="Previous slide"
-          className="hidden md:grid absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 text-ink place-items-center text-2xl shadow-md hover:bg-brand hover:text-white z-[2]"
+          className="hidden md:grid absolute top-1/2 left-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 border border-line text-ink place-items-center shadow-md hover:bg-brand hover:text-white z-[2]"
         >
-          ‹
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
         </button>
         <button
           type="button"
           onClick={() => go(idx + 1)}
           aria-label="Next slide"
-          className="hidden md:grid absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 text-ink place-items-center text-2xl shadow-md hover:bg-brand hover:text-white z-[2]"
+          className="hidden md:grid absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 border border-line text-ink place-items-center shadow-md hover:bg-brand hover:text-white z-[2]"
         >
-          ›
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
         </button>
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-[2]">
           {Array.from({ length: count }).map((_, i) => (

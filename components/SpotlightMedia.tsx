@@ -160,7 +160,9 @@ export function SpotlightMedia({
         )}
       </div>
 
-      {/* Prev / next arrows — desktop only, hidden at the ends */}
+      {/* Prev / next arrows — desktop only, hidden at the ends. Same clean
+          chevron-in-a-bordered-white-circle as the Watch & Shop reels arrows,
+          vertically centred at the edges (not the old thin ‹/› glyph). */}
       {hasVideo && (
         <>
           <button
@@ -168,18 +170,22 @@ export function SpotlightMedia({
             onClick={() => goTo(idx - 1)}
             aria-label="Previous"
             disabled={idx === 0}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-[2] hidden md:grid w-9 h-9 rounded-full bg-white/85 shadow place-items-center text-ink text-xl hover:bg-white disabled:opacity-0 transition"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-[2] hidden md:grid w-11 h-11 rounded-full bg-white/95 border border-line shadow-md place-items-center text-ink hover:bg-brand hover:text-white disabled:opacity-0 transition"
           >
-            ‹
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
           </button>
           <button
             type="button"
             onClick={() => goTo(idx + 1)}
             aria-label="Next"
             disabled={idx === slideCount - 1}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-[2] hidden md:grid w-9 h-9 rounded-full bg-white/85 shadow place-items-center text-ink text-xl hover:bg-white disabled:opacity-0 transition"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-[2] hidden md:grid w-11 h-11 rounded-full bg-white/95 border border-line shadow-md place-items-center text-ink hover:bg-brand hover:text-white disabled:opacity-0 transition"
           >
-            ›
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
           </button>
         </>
       )}
