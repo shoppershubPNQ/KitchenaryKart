@@ -13,7 +13,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { sendRestockRequestAlert } from '@/lib/email';
+import { sendRestockRequestAlert, sendRestockRequestConfirmation } from '@/lib/email';
 import { checkLimit, getClientIp, notifyMeByIp, tooManyRequests } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
@@ -72,8 +72,14 @@ export async function POST(req: NextRequest) {
   // AWAITED on purpose: Vercel can freeze the function the moment the response
   // is returned, so a fire-and-forget send silently never leaves (the same
   // gotcha the order-confirmation email hit). Errors are swallowed — the row is
-  // already saved and the restock cron reads the table, not this email.
-  await sendRestockRequestAlert({ sku, productName, email, waiting }).catch(() => false);
+  // already saved and the restock cron reads the table, not these emails.
+  // Both go out together: the customer gets an immediate "you're on the list"
+  // (the on-page thanks alone left people waiting for a mail that only arrives
+  // on restock), the team gets the demand signal.
+  await Promise.allSettled([
+    sendRestockRequestConfirmation({ to: email, sku, productName }),
+    sendRestockRequestAlert({ sku, productName, email, waiting }),
+  ]);
 
   return NextResponse.json({ ok: true, waiting });
 }
