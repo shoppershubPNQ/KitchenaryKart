@@ -50,13 +50,8 @@ function toAbsoluteImage(url: string | null): string | null {
 }
 
 export async function GET() {
-  const products = await prisma.product.findMany({
-    where: {
-      status: 'active',
-      imageUrl: { not: null },
-      // Meta rejects items with price <= 0
-      price: { gt: 0 },
-    },
+  const rows = await prisma.product.findMany({
+    where: { status: 'active' },
     select: {
       sku: true,
       name: true,
@@ -69,11 +64,71 @@ export async function GET() {
       images: true,
       stock: true,
       hsnCode: true,
+      variants: {
+        select: {
+          skuSuffix: true,
+          variantValue: true,
+          priceModifier: true,
+          price: true,
+          mrp: true,
+          stock: true,
+          imageUrl: true,
+          images: true,
+        },
+      },
     },
     orderBy: { updatedAt: 'desc' },
   });
 
+  // Feed the CHILD (variant) listings, mirroring the storefront + the Google
+  // merchant feed. Advertising the parent row was wrong on both counts: its
+  // stock column can read 0 while the variants are stocked (46 products), so
+  // Meta was told "out of stock" for items customers can actually buy, and the
+  // link pointed at the parent instead of the size being advertised. Variants
+  // are tied together with g:item_group_id so Meta treats them as one family.
+  type Feed = {
+    sku: string; name: string; description: string | null; category: string | null;
+    subcategory: string | null; price: number; mrp: number | null; imageUrl: string | null;
+    images: string[]; stock: number; groupId: string | null;
+  };
+  const products: Feed[] = [];
+  for (const row of rows) {
+    const parentPrice = Number(row.price);
+    const parentMrp = row.mrp ? Number(row.mrp) : null;
+    const parentImages = Array.isArray(row.images) ? (row.images as string[]) : [];
+    const base = {
+      description: row.description, category: row.category, subcategory: row.subcategory,
+    };
+    if (!row.variants.length) {
+      products.push({
+        ...base, sku: row.sku, name: row.name, price: parentPrice, mrp: parentMrp,
+        imageUrl: row.imageUrl, images: parentImages, stock: row.stock, groupId: null,
+      });
+      continue;
+    }
+    const mrpRatio = parentMrp && parentPrice > 0 ? parentMrp / parentPrice : 0;
+    for (const v of row.variants) {
+      if (!v.skuSuffix) continue;
+      const price = v.price != null ? Number(v.price) : parentPrice + Number(v.priceModifier ?? 0);
+      const mrp = v.mrp != null ? Number(v.mrp) : mrpRatio > 1 ? Math.round(price * mrpRatio) : parentMrp;
+      const vImages = Array.isArray(v.images) ? (v.images as string[]) : [];
+      const qualifier = (v.variantValue || '').trim();
+      products.push({
+        ...base,
+        sku: v.skuSuffix,
+        name: qualifier ? `${row.name} — ${qualifier}` : row.name,
+        price, mrp,
+        imageUrl: v.imageUrl ?? row.imageUrl,
+        images: vImages.length ? vImages : parentImages,
+        stock: v.stock,
+        groupId: row.sku,
+      });
+    }
+  }
+
   const items = products
+    // Meta rejects items with no image or price <= 0.
+    .filter((p) => p.imageUrl && p.price > 0)
     .map((p) => {
       const img = toAbsoluteImage(p.imageUrl);
       if (!img) return null;
@@ -110,6 +165,8 @@ export async function GET() {
       }
       <g:brand>${xmlEscape(BRAND)}</g:brand>
       <g:mpn>${xmlEscape(p.sku)}</g:mpn>${
+        p.groupId ? `\n      <g:item_group_id>${xmlEscape(p.groupId)}</g:item_group_id>` : ''
+      }${
         p.category
           ? `\n      <g:product_type>${xmlEscape([p.category, p.subcategory].filter(Boolean).join(' &gt; '))}</g:product_type>`
           : ''
