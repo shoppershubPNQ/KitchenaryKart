@@ -238,16 +238,15 @@ export async function sendRestockRequestConfirmation(args: {
   const name = escapeHtml(args.productName);
   const subject = `We'll tell you when it's back: ${args.productName}`;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222;line-height:1.6;max-width:560px">
-  <h2 style="margin:0 0 10px;font-size:19px;color:#9E2A2B">You're on the list</h2>
-  <p style="margin:0 0 14px">Thanks for your interest in <b>${name}</b>. It's sold out right now — we'll email you as soon as it's back in stock.</p>
-  <p style="margin:0 0 16px;color:#555;font-size:13.5px">No need to check back: this is a one-time alert and you'll hear from us the moment stock arrives.</p>
-  <p style="margin:0 0 18px;font-size:14px">Need it urgently or in bulk? WhatsApp us on <a href="https://wa.me/919890352455" style="color:#9E2A2B;font-weight:bold;text-decoration:none">+91 98903 52455</a> or email <a href="mailto:support@kitchenarykart.com" style="color:#9E2A2B;font-weight:bold;text-decoration:none">support@kitchenarykart.com</a> — we can often source it faster.</p>
+  <p style="margin:0 0 14px">Thank you for your interest in <b>${name}</b>.</p>
+  <p style="margin:0 0 14px">This product is currently out of stock. We&rsquo;ll notify you as soon as it becomes available again.</p>
+  <p style="margin:0 0 20px">Need it urgently or in bulk? WhatsApp us at <a href="https://wa.me/919890352455" style="color:#9E2A2B;font-weight:bold;text-decoration:none">+91 98903 52455</a> or email <a href="mailto:support@kitchenarykart.com" style="color:#9E2A2B;font-weight:bold;text-decoration:none">support@kitchenarykart.com</a>.</p>
   <p style="margin:0 0 20px">
     <a href="${url}" style="background:#9E2A2B;color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;display:inline-block;font-weight:bold">View product</a>
   </p>
   <p style="margin:16px 0 0;color:#777;font-size:12.5px">You requested this alert on kitchenarykart.com.</p>
 </div>`;
-  const text = `You're on the list\n\nThanks for your interest in "${args.productName}". It's sold out right now — we'll email you as soon as it's back in stock.\n\nNo need to check back: this is a one-time alert and you'll hear from us the moment stock arrives.\n\nNeed it urgently or in bulk? WhatsApp us on +91 98903 52455 or email support@kitchenarykart.com — we can often source it faster.\n\nView product: ${url}\n\nYou requested this alert on kitchenarykart.com.`;
+  const text = `Thank you for your interest in ${args.productName}.\n\nThis product is currently out of stock. We'll notify you as soon as it becomes available again.\n\nNeed it urgently or in bulk? WhatsApp us at +91 98903 52455 or email support@kitchenarykart.com.\n\nView product: ${url}\n\nYou requested this alert on kitchenarykart.com.`;
 
   try {
     const result = await resend.emails.send({ from: getFromHeader(), to: args.to, subject, html, text });
