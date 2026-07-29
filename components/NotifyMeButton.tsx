@@ -106,8 +106,9 @@ export function NotifyMeButton({
             aria-label="Notify me when available"
             title="Notify me when available"
             // border matches the outline buttons' box so this row is exactly
-            // the same height as the in-stock [cart][Buy Now] row.
-            className="btn-small btn-small-primary border border-brand !flex-none !py-2 w-11 grid place-items-center"
+            // the same height as the in-stock [cart][Buy Now] row. Narrower on
+            // phones to leave room for the longer "Out of Stock" label.
+            className="btn-small btn-small-primary border border-brand !flex-none !py-2 !px-0 w-9 md:w-11 grid place-items-center"
           >
             <BellIcon />
           </button>
@@ -115,9 +116,15 @@ export function NotifyMeButton({
             type="button"
             disabled
             aria-disabled="true"
-            className="btn-small btn-small-outline !py-2 opacity-60 cursor-not-allowed"
+            // min-w-0 lets this flex item actually shrink, and the tighter
+            // padding/type on phones keeps the nowrap label inside its border —
+            // in a 2-up mobile grid the tile only leaves it ~80px.
+            className="btn-small btn-small-outline !py-2 !px-0.5 md:!px-2 !text-[9.5px] md:!text-[11px] tracking-tight md:tracking-wide min-w-0 opacity-60 cursor-not-allowed"
           >
-            Out of Stock
+            {/* On very narrow phones (<340px) even the tightened label would
+                spill past its border, so shorten it there. */}
+            <span className="max-[339px]:hidden">Out of Stock</span>
+            <span className="hidden max-[339px]:inline">Sold Out</span>
           </button>
         </div>
       );
