@@ -114,6 +114,13 @@ export function ShopView({
         break;
       // 'featured' + an active search keeps rankItems' relevance order.
     }
+    // Out-of-stock ALWAYS sinks to the end — but stays visible (customers can
+    // still open it / use "Notify me"). Runs after the sort above and relies on
+    // Array#sort being stable (ES2019+), so the chosen order — featured, price,
+    // name or search relevance — is preserved WITHIN the in-stock and
+    // out-of-stock groups. Without this, a sold-out item could lead a category
+    // (e.g. the first Polyrattan tile) and stall browsing.
+    list.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
     return list;
   }, [products, cat, sub, q, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
 
