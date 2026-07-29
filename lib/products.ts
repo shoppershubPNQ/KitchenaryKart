@@ -801,17 +801,62 @@ async function _getCategoryProductsPage(
   page: number,
   perPage: number,
 ): Promise<{ products: PublicProduct[]; total: number }> {
-  const [rows, total] = await Promise.all([
-    prisma.product.findMany({
-      where: { status: 'active', category },
-      orderBy: [{ stock: 'desc' }, { name: 'asc' }],
-      skip: Math.max(0, (page - 1) * perPage),
-      take: perPage,
-      select: commonSelect,
-    }),
-    prisma.product.count({ where: { status: 'active', category } }),
-  ]);
-  return { products: await attachRealRatings(rows.map(toPublic)), total };
+  // Rows are CHILD (variant) listings, matching what the shopper sees on /shop:
+  // a parent that has variants is hidden and each variant is its own card with
+  // its OWN stock/price/image. Previously this listed PARENT rows, which meant a
+  // product whose parent row carries stock 0 while its variants are stocked (46
+  // in the catalog) was pushed to the last page and rendered a false
+  // "Out of Stock" — unbuyable, and emitted availability=OutOfStock in the
+  // ItemList JSON-LD. Keeping full fields here (unlike the lean shop payload)
+  // because buildItemListJsonLd reads p.description.
+  const rows = await prisma.product.findMany({
+    where: { status: 'active', category },
+    orderBy: [{ name: 'asc' }],
+    select: { ...commonSelect, variants: true },
+  });
+
+  const all: PublicProduct[] = [];
+  for (const row of rows) {
+    const parent = toPublic(row);
+    const variants = (row as any).variants as
+      | Array<{ variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; imageUrl: string | null; images: unknown }>
+      | undefined;
+    if (!variants || variants.length === 0) {
+      all.push(parent);
+      continue;
+    }
+    // Same derivation as _getAllShopProducts (keep the two in sync).
+    const parentPrice = parent.price;
+    const mrpRatio = parent.mrp && parentPrice > 0 ? Number(parent.mrp) / parentPrice : 0;
+    for (const v of variants) {
+      if (!v.skuSuffix) continue;
+      const variantPrice = v.price != null ? Number(v.price) : parentPrice + Number(v.priceModifier ?? 0);
+      const variantMrp =
+        v.mrp != null ? Number(v.mrp) : mrpRatio > 1 ? Math.round(variantPrice * mrpRatio) : parent.mrp;
+      const qualifier = (v.variantValue || '').trim();
+      const variantPrimary = v.imageUrl ?? parent.imageUrl;
+      const variantImages = Array.isArray(v.images) ? (v.images as string[]) : [];
+      all.push({
+        ...parent,
+        sku: v.skuSuffix,
+        name: qualifier ? `${parent.name} — ${qualifier}` : parent.name,
+        price: variantPrice,
+        mrp: variantMrp,
+        stock: v.stock,
+        imageUrl: variantPrimary,
+        // Hover shot must come from the SAME variation (see ProductCard notes).
+        hoverImage: variantImages.find((u) => u && u !== variantPrimary) ?? null,
+      });
+    }
+  }
+
+  // In-stock first, sold-out last — but still listed (stable sort keeps the
+  // name order within each group), mirroring the /shop grid.
+  all.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
+
+  const start = Math.max(0, (page - 1) * perPage);
+  const products = all.slice(start, start + perPage);
+  return { products: await attachRealRatings(products), total: all.length };
 }
 
 export const getCategoryProductsPage = unstable_cache(
