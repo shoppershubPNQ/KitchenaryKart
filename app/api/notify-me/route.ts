@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const limit = await checkLimit(notifyMeByIp, getClientIp(req));
   if (!limit.ok) return tooManyRequests(limit.retryAfterSec);
 
-  let body: { sku?: unknown; email?: unknown };
+  let body: { sku?: unknown; email?: unknown; phone?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -38,6 +38,20 @@ export async function POST(req: NextRequest) {
   if (!sku) return NextResponse.json({ error: 'Product missing.' }, { status: 400 });
   if (!EMAIL_RE.test(email) || email.length > 200) {
     return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+  }
+
+  // Phone is OPTIONAL — the alert itself goes by email, and demanding a number
+  // would cost us signups. When given it lets the team phone a waiting buyer,
+  // which for bulk HORECA orders converts far better than an email.
+  // Keep digits only and accept a 10-digit Indian mobile with or without 91/0.
+  const phoneRaw = typeof body.phone === 'string' ? body.phone.replace(/\D/g, '') : '';
+  let phone: string | null = null;
+  if (phoneRaw) {
+    const local = phoneRaw.replace(/^(91|0)/, '');
+    if (local.length !== 10) {
+      return NextResponse.json({ error: 'Please enter a valid 10-digit phone number.' }, { status: 400 });
+    }
+    phone = local;
   }
 
   // Resolve the SKU against the catalog so we never store junk, and so the
@@ -61,8 +75,9 @@ export async function POST(req: NextRequest) {
   // duplicating it (the unique key is sku+email).
   await prisma.stockNotification.upsert({
     where: { stock_notify_sku_email_unique: { productSku: sku, email } },
-    create: { productSku: sku, email },
-    update: { notifiedAt: null, createdAt: new Date() },
+    create: { productSku: sku, email, phone },
+    // Keep a previously given number if this repeat request omits one.
+    update: { notifiedAt: null, createdAt: new Date(), ...(phone ? { phone } : {}) },
   });
 
   const waiting = await prisma.stockNotification.count({
@@ -78,7 +93,7 @@ export async function POST(req: NextRequest) {
   // on restock), the team gets the demand signal.
   await Promise.allSettled([
     sendRestockRequestConfirmation({ to: email, sku, productName }),
-    sendRestockRequestAlert({ sku, productName, email, waiting }),
+    sendRestockRequestAlert({ sku, productName, email, phone, waiting }),
   ]);
 
   return NextResponse.json({ ok: true, waiting });

@@ -165,6 +165,8 @@ export async function sendRestockRequestAlert(args: {
   sku: string;
   productName: string;
   email: string;
+  /** 10-digit local number when the customer gave one — null otherwise. */
+  phone?: string | null;
   waiting: number;
 }): Promise<boolean> {
   const resend = getClient();
@@ -189,7 +191,12 @@ export async function sendRestockRequestAlert(args: {
   <h2 style="margin:0 0 12px;font-size:17px">Someone wants a sold-out product</h2>
   <p style="margin:0 0 6px"><b>Product:</b> ${escapeHtml(args.productName)}</p>
   <p style="margin:0 0 6px"><b>SKU:</b> ${escapeHtml(args.sku)}</p>
-  <p style="margin:0 0 6px"><b>Customer:</b> ${escapeHtml(args.email)}</p>
+  <p style="margin:0 0 6px"><b>Customer:</b> <a href="mailto:${escapeHtml(args.email)}">${escapeHtml(args.email)}</a></p>
+  ${
+    args.phone
+      ? `<p style="margin:0 0 6px"><b>Phone:</b> <a href="tel:+91${escapeHtml(args.phone)}" style="font-weight:bold">+91 ${escapeHtml(args.phone)}</a> &nbsp;·&nbsp; <a href="https://wa.me/91${escapeHtml(args.phone)}" style="color:#25D366;font-weight:bold;text-decoration:none">WhatsApp</a></p>`
+      : `<p style="margin:0 0 6px;color:#888"><b>Phone:</b> not given</p>`
+  }
   <p style="margin:0 0 14px"><b>Total waiting for this SKU:</b> ${args.waiting}</p>
   <p style="margin:0 0 6px"><a href="${url}">${url}</a></p>
   <p style="margin:14px 0 0;color:#666;font-size:12.5px">They are emailed automatically once the SKU is back in stock.</p>

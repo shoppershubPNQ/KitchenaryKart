@@ -43,6 +43,7 @@ export function NotifyMeButton({
 }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'done'>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -65,7 +66,7 @@ export function NotifyMeButton({
       const res = await fetch('/api/notify-me', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku, email }),
+        body: JSON.stringify({ sku, email, phone }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -83,7 +84,7 @@ export function NotifyMeButton({
   if (state === 'done') {
     return (
       <div
-        className={`w-full rounded-lg border border-success/40 bg-success/5 text-ink ${
+        className={`w-full basis-full rounded-lg border border-success/40 bg-success/5 text-ink ${
           card ? 'px-2.5 py-2 text-[11.5px] leading-snug' : 'px-4 py-3 text-[13.5px]'
         }`}
       >
@@ -121,21 +122,36 @@ export function NotifyMeButton({
         </div>
       );
     }
+    // PDP: a Fragment, not a wrapper — the buy box is already a flex row, so
+    // these two land side by side exactly like [Add to Cart][Buy Now].
     return (
-      <div className="w-full flex flex-col gap-2">
-        <button type="button" disabled aria-disabled="true" className={soldOutCls}>
+      <>
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="btn btn-outline flex-1 whitespace-nowrap opacity-60 cursor-not-allowed"
+        >
           Out of Stock
         </button>
-        <button type="button" onClick={() => setOpen(true)} className={`${ctaCls} inline-flex items-center justify-center gap-2`}>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="btn btn-primary flex-1 whitespace-nowrap inline-flex items-center justify-center gap-2"
+        >
           <BellIcon />
           Notify me
         </button>
-      </div>
+      </>
     );
   }
 
+  const field = `w-full min-w-0 rounded-lg border border-line px-3 ${
+    // 16px keeps iOS Safari from auto-zooming the page on focus.
+    card ? 'py-1.5 text-[16px]' : 'py-2 text-base'
+  }`;
   return (
-    <form onSubmit={submit} className="w-full flex flex-col gap-2">
+    <form onSubmit={submit} className="w-full basis-full flex flex-col gap-2">
       {!card && (
         <label htmlFor={`notify-${sku}`} className="text-[13px] text-ink-soft">
           We&apos;ll email you the moment it&apos;s back:
@@ -150,10 +166,19 @@ export function NotifyMeButton({
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
         autoComplete="email"
-        // 16px keeps iOS Safari from auto-zooming the page on focus.
-        className={`w-full min-w-0 rounded-lg border border-line px-3 ${
-          card ? 'py-1.5 text-[16px]' : 'py-2 text-base'
-        }`}
+        className={field}
+      />
+      {/* Phone is optional — demanding it would cost signups, but when given it
+          lets the team CALL a waiting buyer, which converts far better than an
+          email on bulk HORECA orders. */}
+      <input
+        type="tel"
+        inputMode="numeric"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder="Phone (optional) — for a faster callback"
+        autoComplete="tel"
+        className={field}
       />
       <button type="submit" disabled={state === 'sending'} className={`${ctaCls} disabled:opacity-60`}>
         {state === 'sending' ? 'Saving…' : 'Notify me'}
