@@ -210,7 +210,10 @@ export function SpotlightMedia({
       {/* Video popup / lightbox */}
       {open && videoUrl && (
         <div
-          className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4"
+          // z-300 = the modal tier (AuthModal / ReviewWriteModal). It was z-100,
+          // tying with the sticky header, so the header could paint over this
+          // full-screen video overlay depending on DOM order.
+          className="fixed inset-0 z-[300] grid place-items-center bg-black/80 p-4"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"

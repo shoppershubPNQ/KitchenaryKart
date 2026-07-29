@@ -197,6 +197,12 @@ export function WatchAndShop({ reels = [], products }: Props) {
         .kk-cf-viewport {
           overflow: hidden;
           padding: 0.5rem 0 1rem;
+          /* Own stacking context so nothing inside this carousel can paint over
+             the sticky header (z-100) or the drawers (z-200+). Without it the
+             prev/next buttons' z-index escaped to the root context and sat on
+             top of the header while scrolling. position:relative alone does NOT
+             create a context — isolation does. */
+          isolation: isolate;
         }
         .kk-cf-stage {
           position: relative;
@@ -299,7 +305,7 @@ export function WatchAndShop({ reels = [], products }: Props) {
                 type="button"
                 aria-label="Previous reel"
                 onClick={() => go(-1)}
-                className="absolute left-1 md:left-3 top-1/2 -translate-y-1/2 z-[200] w-11 h-11 rounded-full bg-white/95 border border-line shadow-md grid place-items-center text-ink hover:bg-brand hover:text-white transition"
+                className="absolute left-1 md:left-3 top-1/2 -translate-y-1/2 z-[2] w-11 h-11 rounded-full bg-white/95 border border-line shadow-md grid place-items-center text-ink hover:bg-brand hover:text-white transition"
               >
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m15 18-6-6 6-6" />
@@ -309,7 +315,7 @@ export function WatchAndShop({ reels = [], products }: Props) {
                 type="button"
                 aria-label="Next reel"
                 onClick={() => go(1)}
-                className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 z-[200] w-11 h-11 rounded-full bg-white/95 border border-line shadow-md grid place-items-center text-ink hover:bg-brand hover:text-white transition"
+                className="absolute right-1 md:right-3 top-1/2 -translate-y-1/2 z-[2] w-11 h-11 rounded-full bg-white/95 border border-line shadow-md grid place-items-center text-ink hover:bg-brand hover:text-white transition"
               >
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m9 18 6-6-6-6" />
