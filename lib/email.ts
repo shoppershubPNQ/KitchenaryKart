@@ -152,3 +152,56 @@ export async function sendOtpEmail({ to, code, customerName, purpose = 'login' }
     return false;
   }
 }
+
+/**
+ * Tell the team someone asked to be notified about a sold-out product.
+ * Fire-and-forget from the /api/notify-me route — a delivery failure must
+ * never fail the customer's request (their row is already saved, and the
+ * restock cron reads the table, not this email).
+ *
+ * Goes to NOTIFY_ALERT_EMAIL, falling back to the Resend from-address.
+ */
+export async function sendRestockRequestAlert(args: {
+  sku: string;
+  productName: string;
+  email: string;
+  waiting: number;
+}): Promise<boolean> {
+  const resend = getClient();
+  if (!resend) return false;
+
+  const to = process.env.NOTIFY_ALERT_EMAIL || process.env.RESEND_FROM_EMAIL || 'noreply@kitchenarykart.com';
+  const url = `https://kitchenarykart.com/product/${encodeURIComponent(args.sku)}`;
+  const subject = `Stock request: ${args.productName} (${args.sku})`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.6">
+  <h2 style="margin:0 0 12px;font-size:17px">Someone wants a sold-out product</h2>
+  <p style="margin:0 0 6px"><b>Product:</b> ${escapeHtml(args.productName)}</p>
+  <p style="margin:0 0 6px"><b>SKU:</b> ${escapeHtml(args.sku)}</p>
+  <p style="margin:0 0 6px"><b>Customer:</b> ${escapeHtml(args.email)}</p>
+  <p style="margin:0 0 14px"><b>Total waiting for this SKU:</b> ${args.waiting}</p>
+  <p style="margin:0 0 6px"><a href="${url}">${url}</a></p>
+  <p style="margin:14px 0 0;color:#666;font-size:12.5px">They are emailed automatically once the SKU is back in stock.</p>
+</div>`;
+  const text = `Stock request\n\nProduct: ${args.productName}\nSKU: ${args.sku}\nCustomer: ${args.email}\nTotal waiting: ${args.waiting}\n${url}\n\nThey are emailed automatically once the SKU is back in stock.`;
+
+  try {
+    const result = await resend.emails.send({ from: getFromHeader(), to, subject, html, text });
+    if (result.error) {
+      console.error('[kk:email] restock-alert Resend error:', result.error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[kk:email] sendRestockRequestAlert threw:', err);
+    return false;
+  }
+}
+
+/** Minimal HTML escape for values interpolated into the emails above. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}

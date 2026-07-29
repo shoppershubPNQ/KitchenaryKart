@@ -54,6 +54,10 @@ export const registerByEmail = makeLimiter('register-email', 1, '1 h');
 // who fat-fingers a few times, tight enough to stop enumeration attacks.
 export const trackLookupByIp = makeLimiter('track-lookup', 20, '10 m');
 
+// Back-in-stock requests — 10 per hour per IP. A real shopper signs up for a
+// handful of sold-out items; this stops the endpoint being used to spray mail.
+export const notifyMeByIp = makeLimiter('notify-me', 10, '1 h');
+
 export function getClientIp(req: Request): string {
   const fwd = req.headers.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();

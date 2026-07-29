@@ -8,6 +8,7 @@
 import { useRouter } from 'next/navigation';
 import { addToCart } from '@/lib/cart';
 import { openAuth, useAuth } from '@/lib/useAuth';
+import { NotifyMeButton } from '@/components/NotifyMeButton';
 import type { PublicProduct } from '@/lib/products';
 
 interface Props {
@@ -49,17 +50,11 @@ export function AddToInquiryButton({ product, cartItem, onlyPrimary, stock }: Pr
 
   // Out of stock — block the purchase entirely (no cart add). The server
   // also re-checks stock at checkout, but this stops it at the source.
+  // Instead of a dead end, offer to email the shopper when it returns: it
+  // keeps the visit useful and gives us the demand signal. Keyed on the
+  // payload's sku so the alert is for the exact variant being viewed.
   if (outOfStock) {
-    return (
-      <button
-        type="button"
-        disabled
-        aria-disabled="true"
-        className="btn btn-outline flex-1 opacity-60 cursor-not-allowed"
-      >
-        Out of Stock
-      </button>
-    );
+    return <NotifyMeButton sku={payload.sku} />;
   }
 
   if (onlyPrimary) {

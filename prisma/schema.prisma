@@ -578,3 +578,18 @@ model CouponRedemption {
   @@index([customerPhone])
   @@map("coupon_redemptions")
 }
+
+/// Back-in-stock requests. Written by the storefront's /api/notify-me; the
+/// admin app owns the restock cron that sends the emails. Mirror of the admin
+/// model — keep the two in sync.
+model StockNotification {
+  id         Int       @id @default(autoincrement())
+  productSku String    @map("product_sku")
+  email      String
+  createdAt  DateTime  @default(now()) @map("created_at")
+  notifiedAt DateTime? @map("notified_at")
+
+  @@unique([productSku, email], name: "stock_notify_sku_email_unique")
+  @@index([notifiedAt])
+  @@map("stock_notifications")
+}
