@@ -2,6 +2,26 @@
 
 import { useState } from 'react';
 
+/** Alert bell — the sold-out counterpart to the card's add-to-cart trolley. */
+function BellIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
 /**
  * "Notify me when available" — shown in place of the buy buttons on a sold-out
  * product. Collects just an email (no account needed) and posts to
@@ -73,12 +93,41 @@ export function NotifyMeButton({
   }
 
   if (!open) {
+    // Card: one line, mirroring the in-stock row's [icon][wide button] shape —
+    // a bell in the icon slot where add-to-cart puts its trolley, next to the
+    // sold-out label.
+    if (card) {
+      return (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Notify me when available"
+            title="Notify me when available"
+            // border matches the outline buttons' box so this row is exactly
+            // the same height as the in-stock [cart][Buy Now] row.
+            className="btn-small btn-small-primary border border-brand !flex-none !py-2 w-11 grid place-items-center"
+          >
+            <BellIcon />
+          </button>
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            className="btn-small btn-small-outline !py-2 opacity-60 cursor-not-allowed"
+          >
+            Out of Stock
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="w-full flex flex-col gap-2">
         <button type="button" disabled aria-disabled="true" className={soldOutCls}>
           Out of Stock
         </button>
-        <button type="button" onClick={() => setOpen(true)} className={ctaCls}>
+        <button type="button" onClick={() => setOpen(true)} className={`${ctaCls} inline-flex items-center justify-center gap-2`}>
+          <BellIcon />
           Notify me
         </button>
       </div>
