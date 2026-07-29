@@ -216,6 +216,62 @@ function withVariantDisplay(
 }
 
 /**
+ * The DESIGN a listing row represents, ignoring which size/colour it is.
+ *
+ * Grouping on the product SKU is not enough: the catalogue lists most sizes as
+ * SEPARATE products (eight "Heavy Oval Shaped Polyrattan Basket with Metal
+ * Wire - 23x17x8cm / 27x15x9cm / …" rows are eight different SKUs but one
+ * design and near-identical photos). So derive the family from the name:
+ * everything before the size/colour qualifier, with dimensions and No.NN
+ * stripped.
+ */
+function designKey(p: PublicProduct): string {
+  let n = (p.name || '').toLowerCase();
+  n = n.split('—')[0];                    // variant qualifier ("… — 12L")
+  n = n.split(' - ')[0];                  // size/colour qualifier ("… - Big")
+  // dimension runs like 23x17x8cm / 37 x 6.5 cm
+  n = n.replace(/\b\d+(\.\d+)?\s*[x×]\s*\d+(\.\d+)?(\s*[x×]\s*\d+(\.\d+)?)?\s*(cm|mm|inch|in|")?\b/g, ' ');
+  n = n.replace(/\bno\.?\s*\d+\b/g, ' '); // "No.32"
+  n = n.replace(/[^a-z0-9]+/g, ' ').trim();
+  return n || p.ratingSku || p.sku;
+}
+
+/**
+ * Spread a variant-flattened list so the opening screen shows DIFFERENT
+ * designs instead of the same one repeated.
+ *
+ * Because each variant is its own card, a product with six sizes produced six
+ * near-identical tiles in a row — the Polyrattan listing opened with the same
+ * boat basket five times, which reads as a dull, repetitive catalogue and
+ * stalls scrolling. Round-robin by parent product (ratingSku, which every
+ * variant inherits): one card from each product first, then each product's
+ * second variant, and so on. So the first N tiles are N different designs,
+ * while the relative order of products — and of sizes within a product — is
+ * untouched. Deterministic, so the cached/SSR order stays stable.
+ */
+function interleaveByProduct<T extends PublicProduct>(list: T[]): T[] {
+  const groups = new Map<string, T[]>();
+  for (const p of list) {
+    const key = designKey(p);
+    const g = groups.get(key);
+    if (g) g.push(p);
+    else groups.set(key, [p]);
+  }
+  // Nothing to spread when every design already appears once.
+  if (groups.size === list.length) return list;
+
+  const buckets = [...groups.values()];
+  const deepest = Math.max(...buckets.map((g) => g.length));
+  const out: T[] = [];
+  for (let round = 0; round < deepest; round++) {
+    for (const g of buckets) {
+      if (round < g.length) out.push(g[round]);
+    }
+  }
+  return out;
+}
+
+/**
  * Overlay REAL review summaries onto a list's card-rating fields, keyed on each
  * product's ratingSku (the parent SKU the PDP aggregates on). Products with no
  * approved reviews keep their pseudoRating default — identical to the PDP's
@@ -404,7 +460,10 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
     }
   }
 
-  return attachRealRatings(out);
+  // Spread sizes of the same product apart so the grid opens with variety.
+  // ShopView's sold-out-last pass is a STABLE sort, so it keeps this order
+  // within the in-stock and out-of-stock groups.
+  return attachRealRatings(interleaveByProduct(out));
 }
 
 /**
@@ -850,12 +909,13 @@ async function _getCategoryProductsPage(
     }
   }
 
-  // In-stock first, sold-out last — but still listed (stable sort keeps the
-  // name order within each group), mirroring the /shop grid.
-  all.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
+  // Spread sizes of the same product apart (variety on page 1), THEN sink the
+  // sold-out ones. Both passes are stable, so each preserves the other's work.
+  const spread = interleaveByProduct(all);
+  spread.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
 
   const start = Math.max(0, (page - 1) * perPage);
-  const products = all.slice(start, start + perPage);
+  const products = spread.slice(start, start + perPage);
   return { products: await attachRealRatings(products), total: all.length };
 }
 
