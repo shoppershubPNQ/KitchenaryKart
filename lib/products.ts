@@ -104,6 +104,9 @@ export interface PublicVariant {
   price: number;
   /** Per-variant MRP (sticker price). Null → no discount for this variant. */
   mrp: number | null;
+  /** Per-variant weight ("360g"). Null → inherit the parent product weight.
+   *  Sizes of one product really do differ, and this feeds the shipping quote. */
+  weight: string | null;
   stock: number;
   /** Per-variant primary image. Null → inherit parent.imageUrl. */
   imageUrl: string | null;
@@ -767,7 +770,7 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
   if (!p) return null;
 
   const parentPrice = Number(p.price);
-  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; imageUrl: string | null; images: unknown }> | undefined)?.map((v) => ({
+  const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; weight: string | null; imageUrl: string | null; images: unknown }> | undefined)?.map((v) => ({
     sku: v.skuSuffix ?? '',
     variantType: v.variantType ?? 'Variant',
     axisValues: parseAxisValues(v.variantType ?? '', v.variantValue),
@@ -775,6 +778,7 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
     price: v.price != null ? Number(v.price) : parentPrice + Number(v.priceModifier ?? 0),
     mrp: v.mrp != null ? Number(v.mrp) : null,
     stock: v.stock,
+    weight: (v as any).weight ?? null,
     imageUrl: v.imageUrl ?? null,
     images: Array.isArray(v.images) ? (v.images as string[]) : [],
   })) ?? [];
@@ -878,7 +882,7 @@ async function _getCategoryProductsPage(
   for (const row of rows) {
     const parent = toPublic(row);
     const variants = (row as any).variants as
-      | Array<{ variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; imageUrl: string | null; images: unknown }>
+      | Array<{ variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; weight: string | null; imageUrl: string | null; images: unknown }>
       | undefined;
     if (!variants || variants.length === 0) {
       all.push(parent);

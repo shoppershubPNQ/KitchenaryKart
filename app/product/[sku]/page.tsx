@@ -249,7 +249,9 @@ export default async function ProductPage({ params }: Params) {
     ['Dimensions', p.dimensions],
     ['Power', p.power],
     ['Capacity', p.capacity],
-    ['Weight', p.weight],
+    // Sizes of one product really do differ (10" whisk 174g vs 24" 360g), so
+    // show the SELECTED variant's weight and fall back to the parent's.
+    ['Weight', selectedVariant?.weight ?? p.weight],
     ['HSN code', p.hsnCode],
     ['GST', `${p.taxPercent}%`],
   ];
