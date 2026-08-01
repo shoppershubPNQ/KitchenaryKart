@@ -9,6 +9,19 @@
 .btn-small-outline{@apply bg-transparent text-brand border border-brand/30 hover:border-brand hover:bg-brand/5;}
 .hero-btn{@apply inline-flex items-center gap-2 px-7 py-3.5 bg-brand text-white font-head font-bold text-sm uppercase tracking-wider rounded-full transition hover:bg-brand-dark hover:-translate-y-0.5;}
 .hero-btn-secondary{@apply bg-transparent border-2 border-ink text-ink hover:bg-ink hover:text-white;}
+/* Shop grid columns. These MUST live in the stylesheet, not in a <style jsx>
+   block inside ShopView: styled-jsx injects its CSS from JavaScript after
+   hydration, so the first paint had only the bare `grid` class — one column,
+   each card stretched to the full page width with a huge image — and the
+   layout then snapped to the real columns. That flash was the page's whole
+   cumulative layout shift. Shipped in the render-blocking CSS, the grid is
+   correct from the very first frame. */
+.kk-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0.75rem;}
+@media (min-width:768px){.kk-shop-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem;}}
+/* Same story for the home page tabs grid and the PDP's similar-products grid —
+   all three used to inject their columns from JS. */
+.kk-home-grid,.kk-similar-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0.75rem;}
+@media (min-width:768px){.kk-home-grid,.kk-similar-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.25rem;}}
 /* Hover = a vertical lift only. The card's own box never scales (that read as
    the whole tile "expanding"); the zoom belongs to the image below, which is
    clipped by .product-img's overflow-hidden so the card's geometry is fixed. */

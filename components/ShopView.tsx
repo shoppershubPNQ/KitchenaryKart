@@ -472,18 +472,10 @@ export function ShopView({
             </div>
           ) : (
             <>
-              <style jsx>{`
-                .kk-shop-grid {
-                  grid-template-columns: repeat(2, minmax(0, 1fr));
-                  gap: 0.75rem;
-                }
-                @media (min-width: 768px) {
-                  .kk-shop-grid {
-                    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-                    gap: 1rem;
-                  }
-                }
-              `}</style>
+              {/* Columns live in globals.css, NOT in a <style jsx> here —
+                  styled-jsx injects from JS after hydration, so the first paint
+                  showed a single full-width column of giant cards before
+                  snapping into place. */}
               <div className="kk-shop-grid grid">
                 {shown.map((p) => (
                   <ProductCard key={p.sku} product={p} />
