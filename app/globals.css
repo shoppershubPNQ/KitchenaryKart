@@ -76,3 +76,20 @@
 @keyframes kk-fade-in{from{opacity:0;}to{opacity:1;}}
 .kk-fade-in{animation:kk-fade-in 150ms ease-out;}
 @media (prefers-reduced-motion:reduce){.kk-fade-in{animation:none;}}
+/* Watch & Shop coverflow carousel. Same reason as the product grids above:
+   these rules decide LAYOUT (the stage's height, the card's width and absolute
+   positioning), and styled-jsx injects its CSS from JavaScript after hydration.
+   Left in a <style jsx> block the first paint had an unsized stage with every
+   card stacked at its natural width, then the carousel snapped into place.
+   Shipped here in the render-blocking stylesheet it is correct from frame one. */
+@keyframes kk-kenburns{0%{transform:scale(1.04) translate(0%,0%);}25%{transform:scale(1.12) translate(-2%,-1.5%);}50%{transform:scale(1.18) translate(1%,1.5%);}75%{transform:scale(1.1) translate(2%,-1%);}100%{transform:scale(1.04) translate(0%,0%);}}
+.kk-reel-img{animation:kk-kenburns 9s ease-in-out infinite;transform-origin:center;will-change:transform;}
+/* Own stacking context so nothing inside this carousel can paint over the
+   sticky header (z-100) or the drawers (z-200+). Without it the prev/next
+   buttons' z-index escaped to the root context and sat on top of the header
+   while scrolling. position:relative alone does NOT create a context —
+   isolation does. */
+.kk-cf-viewport{overflow:hidden;padding:0.5rem 0 1rem;isolation:isolate;}
+.kk-cf-stage{position:relative;height:604px;perspective:1600px;margin:0 auto;}
+.kk-cf-card{position:absolute;top:0;left:50%;width:300px;margin-left:-150px;transform-style:preserve-3d;transition:transform 0.55s cubic-bezier(0.2,0.7,0.2,1),opacity 0.55s ease;will-change:transform,opacity;}
+@media (max-width:767px){.kk-cf-stage{height:470px;}.kk-cf-card{width:230px;margin-left:-115px;}}

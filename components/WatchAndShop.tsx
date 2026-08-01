@@ -181,58 +181,11 @@ export function WatchAndShop({ reels = [], products }: Props) {
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
-      <style jsx>{`
-        @keyframes kk-kenburns {
-          0% { transform: scale(1.04) translate(0%, 0%); }
-          25% { transform: scale(1.12) translate(-2%, -1.5%); }
-          50% { transform: scale(1.18) translate(1%, 1.5%); }
-          75% { transform: scale(1.1) translate(2%, -1%); }
-          100% { transform: scale(1.04) translate(0%, 0%); }
-        }
-        .kk-reel-img {
-          animation: kk-kenburns 9s ease-in-out infinite;
-          transform-origin: center;
-          will-change: transform;
-        }
-        .kk-cf-viewport {
-          overflow: hidden;
-          padding: 0.5rem 0 1rem;
-          /* Own stacking context so nothing inside this carousel can paint over
-             the sticky header (z-100) or the drawers (z-200+). Without it the
-             prev/next buttons' z-index escaped to the root context and sat on
-             top of the header while scrolling. position:relative alone does NOT
-             create a context — isolation does. */
-          isolation: isolate;
-        }
-        .kk-cf-stage {
-          position: relative;
-          height: 604px;
-          perspective: 1600px;
-          margin: 0 auto;
-        }
-        .kk-cf-card {
-          position: absolute;
-          top: 0;
-          left: 50%;
-          width: 300px;
-          margin-left: -150px;
-          transform-style: preserve-3d;
-          transition:
-            transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1),
-            opacity 0.55s ease;
-          will-change: transform, opacity;
-        }
-        @media (max-width: 767px) {
-          .kk-cf-stage {
-            height: 470px;
-          }
-          .kk-cf-card {
-            width: 230px;
-            margin-left: -115px;
-          }
-        }
-      `}</style>
-
+      {/* The carousel's CSS (.kk-cf-viewport / -stage / -card, .kk-reel-img and
+          the ken-burns keyframes) lives in globals.css, NOT in a <style jsx>
+          block here — styled-jsx injects from JavaScript after hydration, so
+          layout rules kept in the component are missing from the first paint
+          and the section visibly snaps into place. */}
       <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm]">
         <h2 className="text-center font-head text-[clamp(1.6rem,2.4vw,2.2rem)] text-brand mb-9">
           Watch &amp; Shop
