@@ -428,7 +428,7 @@ model Collection {
 
 /// Business-facing groupings ("Pizza Equipment", "Cafe Setup") that cross-cut
 /// the product taxonomy. See admin schema for full doc — the two must stay in
-/// sync. Membership = subcategory rule + manual SKUs - excluded SKUs.
+/// sync. Membership is a fully curated `productSkus` list, in display order.
 model BusinessCategory {
   id          Int     @id @default(autoincrement())
   slug        String  @unique
@@ -436,9 +436,7 @@ model BusinessCategory {
   description String?
   imageUrl    String? @map("image_url")
 
-  subcategories Json @default("[]")
-  productSkus   Json @default("[]") @map("product_skus")
-  excludeSkus   Json @default("[]") @map("exclude_skus")
+  productSkus Json @default("[]") @map("product_skus")
 
   metaTitle       String? @map("meta_title")
   metaDescription String? @map("meta_description")

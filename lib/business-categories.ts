@@ -1,23 +1,25 @@
 /**
  * Business categories on the storefront — "Pizza Equipment", "Cafe Equipment".
  *
- * These cross-cut the product taxonomy, so membership is a RULE evaluated at
- * read time rather than a column on the product:
- *
- *     (products whose subcategory is in `subcategories`)
- *   + (products whose sku — or PARENT sku — is in `productSkus`)
- *   - (products whose sku or parent sku is in `excludeSkus`)
+ * These cross-cut the product taxonomy, so membership can never be a column on
+ * the product: one deep fryer belongs to Pizza, Burger and Cafe at once.
+ * Instead each category holds a CURATED `productSkus` list, arranged by the
+ * owner in the admin.
  *
  * Products are taken from `getAllShopProducts`, the same flattened list the
- * shop grid uses, so a business category inherits every listing rule already
- * agreed: child variant rows (not parents), sold-out items last, and REAL
- * review ratings on the cards. Re-deriving the list here would have quietly
- * dropped all three.
+ * shop grid uses, so a business category inherits the listing rules already
+ * agreed: child variant rows (not parents) and REAL review ratings on the
+ * cards. Re-deriving the list here would have quietly dropped both.
  *
- * Manual SKUs are matched against `ratingSku` as well as `sku` because the
- * curator picks from the admin product list, which holds PARENT skus, while
- * the shop list is expanded into variant rows. Matching only `sku` would make
- * every manual pick on a variant-bearing product silently do nothing.
+ * Ordering: the curator's order wins, with sold-out items pushed to the end.
+ * Both passes are stable, so the arrangement inside each group is preserved —
+ * the same property that lets the shop's sold-out-last and variety sorts
+ * compose without undoing each other.
+ *
+ * A picked SKU is matched against `ratingSku` (the PARENT sku) as well as
+ * `sku`, because the admin picker lists PARENT products while the shop list is
+ * expanded into variant rows. Matching only `sku` would make every pick on a
+ * variant-bearing product silently show nothing.
  */
 import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
@@ -33,12 +35,12 @@ export interface BusinessCategoryMeta {
   sortOrder: number;
 }
 
-function asList(v: unknown): string[] {
+function asSkuList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '') : [];
 }
 
 async function _getBusinessCategories(): Promise<BusinessCategoryMeta[]> {
-  const rows = await prisma.businessCategory.findMany({
+  return prisma.businessCategory.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     select: {
@@ -46,7 +48,6 @@ async function _getBusinessCategories(): Promise<BusinessCategoryMeta[]> {
       metaTitle: true, metaDescription: true, sortOrder: true,
     },
   });
-  return rows;
 }
 
 export const getBusinessCategories = unstable_cache(
@@ -58,21 +59,23 @@ export const getBusinessCategories = unstable_cache(
 async function _getBusinessCategory(slug: string): Promise<
   (BusinessCategoryMeta & { products: PublicProduct[] }) | null
 > {
-  const row = await prisma.businessCategory.findFirst({
-    where: { slug, isActive: true },
-  });
+  const row = await prisma.businessCategory.findFirst({ where: { slug, isActive: true } });
   if (!row) return null;
 
-  const subs = new Set(asList(row.subcategories));
-  const include = new Set(asList(row.productSkus));
-  const exclude = new Set(asList(row.excludeSkus));
+  const picked = asSkuList(row.productSkus);
+  const rank = new Map<string, number>();
+  picked.forEach((s, i) => { if (!rank.has(s)) rank.set(s, i); });
 
   const all = await getAllShopProducts();
-  const products = all.filter((p) => {
-    if (exclude.has(p.sku) || exclude.has(p.ratingSku)) return false;
-    if (include.has(p.sku) || include.has(p.ratingSku)) return true;
-    return !!p.subcategory && subs.has(p.subcategory);
-  });
+  const chosen = all.filter((p) => rank.has(p.sku) || rank.has(p.ratingSku));
+
+  const orderOf = (p: PublicProduct) =>
+    rank.get(p.sku) ?? rank.get(p.ratingSku) ?? Number.MAX_SAFE_INTEGER;
+
+  const products = chosen
+    .slice()
+    .sort((a, b) => orderOf(a) - orderOf(b))
+    .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0));
 
   return {
     slug: row.slug,
