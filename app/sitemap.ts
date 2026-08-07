@@ -17,6 +17,7 @@ import { getAllShopProducts } from '@/lib/products';
 import { getActivePolicies } from '@/lib/policies';
 import { getAllPosts } from '@/lib/blog';
 import { getAllCategoryContent } from '@/lib/category-content';
+import { getBusinessCategories } from '@/lib/business-categories';
 import { getAllLandingPages } from '@/lib/landing-pages';
 
 const BASE_URL = 'https://kitchenarykart.com';
@@ -64,6 +65,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Business-facing landing pages ("Pizza Equipment", "Cafe Equipment").
+  // High buying intent — someone searching "pizza equipment" is opening a
+  // pizzeria — so these rank above a taxonomy category page.
+  const businessPages: MetadataRoute.Sitemap = (await getBusinessCategories()).map((c) => ({
+    url: `${BASE_URL}/business/${c.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
   // Supplier/intent landing pages + the Pune local page — high-intent
   // role/role+location URLs.
   const landingPages: MetadataRoute.Sitemap = getAllLandingPages().map((p) => ({
@@ -104,6 +115,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPages,
     ...landingPages,
     ...categoryLandingPages,
+    ...businessPages,
     ...blogPages,
     ...productPages,
     ...policyPages,
