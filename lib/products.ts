@@ -405,6 +405,10 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
           stock: number;
           imageUrl: string | null;
           images: unknown;
+          weight: string | null;
+          capacity: string | null;
+          power: string | null;
+          dimensions: string | null;
         }>
       | undefined;
 
@@ -463,6 +467,15 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
         // the primary; the rest of the gallery (specs photos, etc.)
         // are still shared across variants on the PDP.
         hoverImage: variantHover,
+        // Specs must come from the VARIANT when it has its own, or `...parent`
+        // above silently gives every size the parent's numbers — which is how
+        // the Big/Large/Medium grinder cards all advertised "Cap 400g,
+        // 1880W". Null on the variant still inherits the parent, so
+        // single-spec products are unaffected.
+        weight: v.weight ?? parent.weight,
+        capacity: v.capacity ?? parent.capacity,
+        power: v.power ?? parent.power,
+        dimensions: v.dimensions ?? parent.dimensions,
         // ratingSku stays the PARENT sku (inherited via ...parent), so this
         // variant card shows the same rating its PDP does.
       });
@@ -918,6 +931,12 @@ async function _getCategoryProductsPage(
         imageUrl: variantPrimary,
         // Hover shot must come from the SAME variation (see ProductCard notes).
         hoverImage: variantImages.find((u) => u && u !== variantPrimary) ?? null,
+        // Same reason as the shop grid: without these, `...parent` gives every
+        // size the parent's specs.
+        weight: (v as any).weight ?? parent.weight,
+        capacity: (v as any).capacity ?? parent.capacity,
+        power: (v as any).power ?? parent.power,
+        dimensions: (v as any).dimensions ?? parent.dimensions,
       });
     }
   }
