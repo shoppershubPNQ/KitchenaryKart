@@ -107,6 +107,12 @@ export interface PublicVariant {
   /** Per-variant weight ("360g"). Null → inherit the parent product weight.
    *  Sizes of one product really do differ, and this feeds the shipping quote. */
   weight: string | null;
+  /** Per-variant specs, same null-inherits-parent rule as `weight`. Sizes of
+   *  one machine genuinely differ (400g grinder 1880W, 2500g one 3200W), and
+   *  reading only the parent made every size advertise the smallest one's. */
+  capacity: string | null;
+  power: string | null;
+  dimensions: string | null;
   stock: number;
   /** Per-variant primary image. Null → inherit parent.imageUrl. */
   imageUrl: string | null;
@@ -779,6 +785,9 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
     mrp: v.mrp != null ? Number(v.mrp) : null,
     stock: v.stock,
     weight: (v as any).weight ?? null,
+    capacity: (v as any).capacity ?? null,
+    power: (v as any).power ?? null,
+    dimensions: (v as any).dimensions ?? null,
     imageUrl: v.imageUrl ?? null,
     images: Array.isArray(v.images) ? (v.images as string[]) : [],
   })) ?? [];

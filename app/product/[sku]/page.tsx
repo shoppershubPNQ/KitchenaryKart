@@ -246,11 +246,14 @@ export default async function ProductPage({ params }: Params) {
   const specs: Array<[string, string | null]> = [
     ['SKU', requestedSku],
     ['Category', p.subcategory || p.category || null],
-    ['Dimensions', p.dimensions],
-    ['Power', p.power],
-    ['Capacity', p.capacity],
-    // Sizes of one product really do differ (10" whisk 174g vs 24" 360g), so
-    // show the SELECTED variant's weight and fall back to the parent's.
+    // Sizes of one product really do differ — a 10" whisk is 174g and a 24" is
+    // 360g; the 400g masala grinder is 1880W while the 2500g one is 3200W — so
+    // every spec shows the SELECTED variant's value and falls back to the
+    // parent's. Reading only the parent made every size on the page advertise
+    // the smallest one's specs.
+    ['Dimensions', selectedVariant?.dimensions ?? p.dimensions],
+    ['Power', selectedVariant?.power ?? p.power],
+    ['Capacity', selectedVariant?.capacity ?? p.capacity],
     ['Weight', selectedVariant?.weight ?? p.weight],
     ['HSN code', p.hsnCode],
     ['GST', `${p.taxPercent}%`],

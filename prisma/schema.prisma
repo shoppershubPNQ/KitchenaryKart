@@ -169,6 +169,12 @@ model ProductVariant {
   /// quote, so a big size is not charged as if it were the small one.
   weight        String?
 
+  /// Per-variant specs — same null-inherits-parent rule as `weight`. See admin
+  /// schema for full doc; the two must stay in sync.
+  capacity   String?
+  power      String?
+  dimensions String?
+
 
   /// Per-variant primary image. Storefront reads only.
   imageUrl      String?  @map("image_url")
