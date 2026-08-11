@@ -275,6 +275,11 @@ model Order {
   paymentReference String?       @map("payment_reference")
   razorpayOrderId  String?       @map("razorpay_order_id")
 
+  /// Hosted Razorpay payment link for an order raised by the shop on a
+  /// customer's behalf. See admin schema for full doc — the two must stay in sync.
+  paymentLinkId  String? @map("payment_link_id")
+  paymentLinkUrl String? @map("payment_link_url")
+
   /// GST invoice serial (e.g. 1) + financial year ("2026-27"), allocated
   /// by admin/lib/invoice-serial.ts when an invoice PDF is first
   /// downloaded. Storefront only reads these.
