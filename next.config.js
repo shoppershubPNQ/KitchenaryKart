@@ -38,6 +38,32 @@ const nextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/ddvay7jt0/**' },
     ],
   },
+  async headers() {
+    return [
+      {
+        // Unlisted supplier/compliance documents shared by direct link only
+        // (couriers, freight forwarders, marketplace compliance teams).
+        //
+        // X-Robots-Tag is what actually keeps these out of search — it works on
+        // a PDF, which cannot carry a <meta name="robots"> tag. robots.txt
+        // CANNOT do this job: it is a public file, so naming a path there
+        // advertises it, and a disallowed URL can still be indexed if anyone
+        // links to it.
+        //
+        // /docs/ is deliberately NOT disallowed in app/robots.ts: a Disallow
+        // would block the crawl and therefore stop Google ever READING this
+        // header, which is the one thing that actually prevents indexing.
+        // Blocking and noindex are mutually exclusive — this is Google's own
+        // guidance. Secrecy here comes from the unguessable path, not robots.txt.
+        //
+        // None of this is access control. Anyone holding the URL can open it.
+        source: '/docs/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, nosnippet' },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     // Forward /api/public/* to the admin app so the public-facing inquiry/orders API
     // is still centralised in admin. Products can also be fetched directly from the DB
