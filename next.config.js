@@ -123,7 +123,31 @@ const nextConfig = {
       { source: '/product', destination: '/shop', permanent: true },
     ];
 
-    return [...policyRedirects, ...legacyRedirects];
+    // Legacy WooCommerce PAGE urls (not category/tag/product patterns) that
+    // Search Console still reports as "Not found (404)". Verified live against
+    // the site on 2026-08-13: everything else in that report — /about-us,
+    // /track-your-order, /compare, /category/83, /product/180, /product-category/*,
+    // /product-tag/*, /shop/page/N, ?add-to-cart=* — ALREADY redirects correctly.
+    // GSC was showing pre-fix crawls (the redirects went live 2026-07-04), so the
+    // count is stale rather than 116 genuinely broken pages. These were the only
+    // ones actually still returning 404.
+    const legacyPageRedirects = [
+      // Confirmed in the GSC 404 report
+      { source: '/contact-us', destination: '/contact', permanent: true },
+      { source: '/all-products2', destination: '/products', permanent: true },
+      { source: '/user-registration', destination: '/account', permanent: true },
+      { source: '/shipping-and-delivery-policy', destination: '/policy/shipping-policy', permanent: true },
+      // WooCommerce's own default page slugs — these existed on the old site by
+      // definition, so they are worth catching even though the report's sample
+      // did not happen to include them.
+      { source: '/my-account', destination: '/account', permanent: true },
+      { source: '/my-account/:path*', destination: '/account', permanent: true },
+      { source: '/cart', destination: '/shop', permanent: true },
+      { source: '/refund_returns', destination: '/policy/refund-policy', permanent: true },
+      { source: '/all-products', destination: '/products', permanent: true },
+    ];
+
+    return [...policyRedirects, ...legacyRedirects, ...legacyPageRedirects];
   },
 };
 
