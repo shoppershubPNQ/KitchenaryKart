@@ -770,7 +770,7 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
   // Try parent SKU first
   let p = await prisma.product.findUnique({
     where: { sku },
-    select: { ...commonSelect, variants: true },
+    select: { ...commonSelect, status: true, variants: true },
   });
 
   // Fallback: maybe this is a variant SKU pointing at a parent
@@ -782,11 +782,17 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
     if (variant) {
       p = await prisma.product.findUnique({
         where: { id: variant.productId },
-        select: { ...commonSelect, variants: true },
+        select: { ...commonSelect, status: true, variants: true },
       });
     }
   }
   if (!p) return null;
+  // Only products on sale have a public page. Without this a draft was
+  // reachable by URL: Google crawled the draft chafing dishes and GN pans into
+  // Merchant Center ("Missing product price"), and a customer could land on
+  // one. The admin already treats drafts as having no public page — its
+  // "View on site" button is disabled for them — so the site now agrees.
+  if (p.status !== 'active') return null;
 
   const parentPrice = Number(p.price);
   const variants: PublicVariant[] = (p.variants as Array<{ variantType: string | null; variantValue: string | null; skuSuffix: string | null; priceModifier: unknown; price: unknown; mrp: unknown; stock: number; weight: string | null; imageUrl: string | null; images: unknown }> | undefined)?.map((v) => ({
@@ -814,7 +820,7 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
 // for 5 min. Admin mutations call /api/revalidate?tag=products to bust it.
 const _getProductBySkuCached = unstable_cache(
   _getProductBySku,
-  ['kk:product-by-sku-v2'],
+  ['kk:product-by-sku-v3'],
   { revalidate: 300, tags: ['products'] },
 );
 

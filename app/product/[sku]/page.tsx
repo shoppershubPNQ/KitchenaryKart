@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { permanentRedirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getProductBySku, getSimilarProducts } from '@/lib/products';
 import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
@@ -121,6 +121,13 @@ export default async function ProductPage({ params }: Params) {
   const requestedSku = decodeURIComponent(params.sku);
   const p = await getProductBySku(requestedSku);
   if (!p) {
+    // One of OUR skus that no longer resolves — deleted, renamed, or not on
+    // sale. That is a 404, not a search: redirecting it to /shop?q=<sku> gave
+    // Google a live page with no product on it, so the URL never dropped out
+    // and sat in Merchant Center as "Missing product price". Descriptive
+    // WooCommerce slugs (below) still get the search redirect.
+    if (/^kk[a-z]*-?[0-9]{3,}/i.test(requestedSku)) notFound();
+
     // Old WooCommerce product URLs used descriptive slugs (e.g.
     // /product/heavy-duty-ss-rice-strainer-...), not SKUs, so they 404'd after
     // the migration. Rather than a dead end, send the visitor (and the old link
