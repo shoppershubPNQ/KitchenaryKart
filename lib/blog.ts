@@ -1264,6 +1264,11 @@ export const POSTS: BlogPost[] = [
         type: 'p',
         text: 'Cream chargers are one of the highest-turnover consumables in a modern café or dessert kitchen — a small cartridge that turns liquid cream into stable, professional whipped cream in seconds, and unlocks espuma, foams and cold-foam coffee besides. This guide covers what they are, what you can make, how to use them, the standard size, safe storage, and how to buy them in bulk with a GST invoice.',
       },
+      {
+        type: 'cta',
+        href: '/featured/vama-cream-chargers-8g',
+        label: 'Shop VAMA 8g N₂O Cream Chargers — FSSAI certified, box of 10',
+      },
       { type: 'h2', text: 'What is a cream charger & how does it work?' },
       {
         type: 'p',

@@ -6,6 +6,9 @@ import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
 import { pseudoRating, Stars } from '@/lib/rating';
 import { inr, savingsPercent } from '@/lib/format';
+import { getReviewSummary } from '@/lib/reviews';
+import { buildProductJsonLd } from '@/lib/json-ld';
+import { landingTitle } from '@/lib/seo-title';
 
 type Params = { params: { slug: string } };
 
@@ -19,10 +22,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     data.content.description?.slice(0, 160) ||
     `${name} — a KitchenaryKart best-seller. Commercial-grade, GST invoice, pan-India delivery.`;
   return {
-    // Bare name — the root layout's title.template appends "— KitchenaryKart"
-    // once. Adding it here too produces the "… — KitchenaryKart — KitchenaryKart"
-    // double-brand bug.
-    title: name,
+    // Absolute and brand-free, like product pages: the full headline plus the
+    // layout's "— KitchenaryKart" ran to ~89 chars and Google cut it
+    // mid-phrase. landingTitle keeps whole " | " segments within 60.
+    title: { absolute: landingTitle(name) },
     description: desc,
     alternates: { canonical: `/featured/${params.slug}` },
     openGraph: {
@@ -79,6 +82,29 @@ export default async function FeaturedPage({ params }: Params) {
   const outOfStock = !!p && p.stock <= 0;
   const galleryImages = p?.images?.length ? p.images : p?.imageUrl ? [p.imageUrl] : [];
 
+  // Product markup so Google can show price and stock for this page. Ratings
+  // come from the same review store the PDP uses — never the on-screen
+  // pseudoRating above, which is a display fallback, not real reviews.
+  const reviewSummary = p ? await getReviewSummary(p.sku) : null;
+  const productLd = p
+    ? buildProductJsonLd({
+        sku: p.sku,
+        name,
+        description: c.description ?? p.description,
+        category: p.category,
+        subcategory: p.subcategory,
+        hsnCode: p.hsnCode,
+        price: p.price,
+        mrp: p.mrp,
+        imageUrl: p.imageUrl,
+        images: galleryImages,
+        stock: p.stock,
+        reviewCount: reviewSummary?.count ?? 0,
+        reviewAverage: reviewSummary?.average ?? 0,
+        pagePath: `/featured/${c.slug}`,
+      })
+    : null;
+
   const trust = [
     'GST Invoice',
     'Pan-India Delivery',
@@ -88,6 +114,13 @@ export default async function FeaturedPage({ params }: Params) {
 
   return (
     <div className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] py-6 md:py-10">
+      {productLd && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }}
+        />
+      )}
       {/* Breadcrumb */}
       <nav className="text-xs text-muted mb-6 flex items-center gap-1.5">
         <Link href="/" className="hover:text-brand">Home</Link>
@@ -136,6 +169,13 @@ export default async function FeaturedPage({ params }: Params) {
               <span className="text-sm text-muted">({rating.count})</span>
             </div>
             {p && <code className="text-xs text-muted bg-bg-soft border border-line rounded px-2 py-0.5">SKU {p.sku}</code>}
+            {/* The featured page never linked the product page it features, so
+                the two competed for the same searches with no signal between them. */}
+            {p && (
+              <Link href={`/product/${encodeURIComponent(p.sku)}`} className="text-xs text-brand hover:underline">
+                Full product page →
+              </Link>
+            )}
           </div>
 
           {/* Price card — the anchor of the buy box */}

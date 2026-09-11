@@ -128,3 +128,21 @@ export function pdpSeoTitle(name: string, variant = ''): string {
   // No variant, or a variant so long the name would be unreadable: cut the whole string.
   return cutAtWord(`${withKeyword}${tail}`, PDP_TITLE_MAX);
 }
+
+/**
+ * <title> for a featured landing page (/featured/<slug>). The admin headline is
+ * written for the page ("VAMA SS 8g N₂O Cream Chargers | 99.6% Pure | FSSAI
+ * Certified | Box of 10") and ran to ~89 chars with the brand, so Google cut
+ * it mid-phrase. Keep whole " | " segments while they fit, so the title ends
+ * on a complete phrase. No brand suffix, matching product pages.
+ */
+export function landingTitle(headline: string): string {
+  const parts = headline.split(' | ').map((s) => s.trim()).filter(Boolean);
+  let out = '';
+  for (const part of parts) {
+    const next = out ? `${out} | ${part}` : part;
+    if (next.length > PDP_TITLE_MAX) break;
+    out = next;
+  }
+  return out || cutAtWord(headline.trim(), PDP_TITLE_MAX);
+}

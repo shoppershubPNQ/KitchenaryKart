@@ -111,11 +111,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.3,
   }));
 
+  // Featured spotlight landing pages (/featured/<slug>). They were missing, so
+  // Google could only find them through links — the cream-charger one already
+  // ranked ~6 with no sitemap entry (2026-09-11).
+  const spotlights = await prisma.spotlight.findMany({
+    where: { isActive: true },
+    select: { slug: true, updatedAt: true },
+  });
+  const featuredPages: MetadataRoute.Sitemap = spotlights.map((s) => ({
+    url: `${BASE_URL}/featured/${s.slug}`,
+    lastModified: s.updatedAt,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }));
+
   return [
     ...staticPages,
     ...landingPages,
     ...categoryLandingPages,
     ...businessPages,
+    ...featuredPages,
     ...blogPages,
     ...productPages,
     ...policyPages,

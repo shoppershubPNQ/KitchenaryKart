@@ -91,6 +91,10 @@ export interface ProductJsonLdInput {
   /** Real reviews only — pass count=0 to omit the AggregateRating. */
   reviewCount: number;
   reviewAverage: number;
+  /** Site-relative path of the page carrying this markup (default: the PDP,
+   *  /product/<sku>). The featured landing page passes its own path so its
+   *  Product/Offer url points at itself rather than at another page. */
+  pagePath?: string;
 }
 
 /**
@@ -130,7 +134,7 @@ const SHIPPING_DETAILS = {
 export function buildProductJsonLd(p: ProductJsonLdInput): Record<string, unknown> | null {
   if (!p.name || p.price <= 0) return null;
 
-  const pdpUrl = `${SITE_URL}/product/${encodeURIComponent(p.sku)}`;
+  const pdpUrl = `${SITE_URL}${p.pagePath ?? `/product/${encodeURIComponent(p.sku)}`}`;
   const absoluteImages = [p.imageUrl, ...(p.images ?? [])]
     .filter((u): u is string => !!u)
     .map((u) => toAbsoluteUrl(u))
