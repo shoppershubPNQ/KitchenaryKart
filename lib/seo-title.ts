@@ -8,22 +8,24 @@
  * restaurant/hotel buyers search — "Commercial" — so it is prepended unless
  * the name already has it. The clean product name stays the on-page H1.
  *
- * Length: Google truncates titles past ~60–65 chars. In order of preference:
- *   1. "Commercial <name> — <variant> — KitchenaryKart" when it all fits;
- *   2. drop the brand suffix (the brand is still in OG siteName + the domain);
- *   3. still too long, on a VARIANT page: keep the variant and shorten the
- *      name. The variant is the only thing that tells two sizes of one product
- *      apart — the old rule cut the whole string at 60, which dropped it from
- *      483 of 909 variant pages (2026-09-11), so every size carried the same
- *      <title>. The name is shortened at a descriptor separator first
- *      ("… Table Mats - (Quantity: 6pcs)"), then by dropping the added
- *      "Commercial", and only then at a word — cutting words off the end
- *      removes the product noun ("Bread Mould" -> "Bread"), which is the
- *      part a buyer actually searches;
- *   4. a page without a variant keeps the original rule: cut at a word.
+ * No brand suffix. It used to be appended when the whole title fitted (only
+ * ~12% of pages), so some product titles ended "— KitchenaryKart" and most
+ * did not; the owner asked for it off (2026-09-11). The brand is still in the
+ * OG siteName and the domain, and Google shows the site name separately.
+ *
+ * Length: Google truncates titles past ~60–65 chars. When a title is over
+ * budget:
+ *   - on a VARIANT page, keep the variant and shorten the name. The variant is
+ *     the only thing that tells two sizes of one product apart — the old rule
+ *     cut the whole string at 60, which dropped it from 493 of 963 variant
+ *     pages (2026-09-11), so every size carried the same <title>. The name is
+ *     shortened at a descriptor separator first ("… Table Mats - (Quantity:
+ *     6pcs)"), then by dropping the added "Commercial", and only then at a
+ *     word — cutting words off the end removes the product noun ("Bread
+ *     Mould" -> "Bread"), which is the part a buyer actually searches;
+ *   - a page without a variant is cut at a word.
  */
 export const PDP_TITLE_MAX = 60;
-export const PDP_BRAND_SUFFIX = ' — KitchenaryKart';
 
 /** Shorter than this, a shortened name stops being readable. */
 const MIN_NAME = 20;
@@ -119,15 +121,10 @@ export function pdpSeoTitle(name: string, variant = ''): string {
   }
   const tail = v ? ` — ${v}` : '';
 
-  if (withKeyword.length + tail.length + PDP_BRAND_SUFFIX.length <= PDP_TITLE_MAX) {
-    return `${withKeyword}${tail}${PDP_BRAND_SUFFIX}`;
-  }
   if (withKeyword.length + tail.length <= PDP_TITLE_MAX) return `${withKeyword}${tail}`;
 
   const room = PDP_TITLE_MAX - tail.length;
-  if (tail && room >= MIN_NAME) {
-    return `${shortenName(withKeyword, base, room) ?? cutAtWord(withKeyword, room)}${tail}`;
-  }
+  if (tail && room >= MIN_NAME) return `${shortenName(withKeyword, base, room)}${tail}`;
   // No variant, or a variant so long the name would be unreadable: cut the whole string.
   return cutAtWord(`${withKeyword}${tail}`, PDP_TITLE_MAX);
 }
