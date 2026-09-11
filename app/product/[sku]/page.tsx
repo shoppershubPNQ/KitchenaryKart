@@ -18,6 +18,7 @@ import { ScrollToTopOnMount } from '@/components/ScrollToTopOnMount';
 import { PdpTrustBadges } from '@/components/PdpTrustBadges';
 import { ProductFaqSection } from '@/components/ProductFaq';
 import { resolveProductFaqs } from '@/lib/product-faqs';
+import { pdpSeoTitle } from '@/lib/seo-title';
 
 interface Params {
   params: { sku: string };
@@ -27,37 +28,9 @@ interface Params {
 // via /api/revalidate?tag=products, so users still see fresh data after edits.
 export const revalidate = 300;
 
-/**
- * PDP <title> with the primary buyer keyword.
- *
- * Most product names already carry the product type ("Electric UFO Burger
- * Machine", "Bain Marie with Glass"), but the one high-intent modifier they
- * all lack is "Commercial" — the term restaurant/hotel buyers actually
- * search. We prepend it (unless the name already has it) so every PDP title
- * targets "commercial <product>", and keep the clean product name as the
- * on-page H1. Uses an absolute title so the layout's "%s — KitchenaryKart"
- * template doesn't double the brand.
- *
- * Length: Google truncates titles past ~60–65 chars. We keep the brand
- * suffix only when the whole title fits; for long product names we drop
- * the suffix (the brand is still in OG siteName + the domain) and, if the
- * name itself is over budget, trim it at a word boundary. This stops the
- * "title too long" Ahrefs flags without losing the keyword-first opening.
- */
-const PDP_TITLE_MAX = 60;
-const PDP_BRAND_SUFFIX = ' — KitchenaryKart';
-
-function pdpSeoTitle(displayName: string): string {
-  const name = displayName.trim();
-  const withKeyword = /\bcommercial\b/i.test(name) ? name : `Commercial ${name}`;
-  if (withKeyword.length + PDP_BRAND_SUFFIX.length <= PDP_TITLE_MAX) {
-    return `${withKeyword}${PDP_BRAND_SUFFIX}`;
-  }
-  if (withKeyword.length <= PDP_TITLE_MAX) return withKeyword;
-  const cut = withKeyword.slice(0, PDP_TITLE_MAX);
-  const lastSpace = cut.lastIndexOf(' ');
-  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).replace(/[\s–—-]+$/, '').trim();
-}
+// The <title> rules (keyword, length, which part gets shortened) live in
+// lib/seo-title.ts. It is an absolute title so the layout's
+// "%s — KitchenaryKart" template doesn't double the brand.
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const requestedSku = decodeURIComponent(params.sku);
@@ -76,7 +49,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
         : ''}`
     : p.name;
   const productCategory = p.subcategory || p.category || 'kitchen equipment';
-  const seoTitle = pdpSeoTitle(displayName);
+  // Name and variant go in separately: when the title is too long, the name
+  // is shortened and the variant kept — it is what tells sizes apart.
+  // A multi-axis variant ({Size, Capacity}) used to get no label at all, so its
+  // title matched the parent's — show its values ("65mm Depth / 5.6L") instead.
+  const axes = selectedVariant?.axisValues;
+  const variantLabel =
+    typeof axes === 'string'
+      ? axes
+      : axes && typeof axes === 'object'
+        ? [...new Set(Object.values(axes).map((x) => String(x).trim()).filter(Boolean))].join(' / ')
+        : '';
+  const seoTitle = pdpSeoTitle(p.name, variantLabel);
   // Prefer the product's real description for the meta tag — unique per
   // product (better for SEO than a repeated template), cleaned and
   // clamped to ~160 chars at a word boundary. Fall back to a concise,
