@@ -8,7 +8,7 @@ import { AddToInquiryButton } from '@/components/AddToInquiryButton';
 import { SimilarProducts } from '@/components/SimilarProducts';
 import { VariantSelector } from '@/components/VariantSelector';
 import { pseudoRating, Stars } from '@/lib/rating';
-import { imgSrc, inr, savingsPercent, clampDescription } from '@/lib/format';
+import { imgSrc, inr, savingsPercent, clampDescription, imgSrcSet, PDP_IMG_SIZES } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
 import { getReviewSummary, listReviews } from '@/lib/reviews';
 import { ReviewsSection } from '@/components/ReviewsSection';
@@ -297,9 +297,10 @@ export default async function ProductPage({ params }: Params) {
           rel="preload"
           as="image"
           href={imgSrc(galleryImageUrl)}
-          // fetchpriority hints the network layer to send it first
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore -- fetchpriority is valid but TS DOM types lag
+          // Same srcset + sizes as the <img> in ProductGallery, so the browser
+          // preloads the width it will actually use instead of the 1600px one.
+          imageSrcSet={imgSrcSet(galleryImageUrl)}
+          imageSizes={PDP_IMG_SIZES}
           fetchPriority="high"
         />
       )}

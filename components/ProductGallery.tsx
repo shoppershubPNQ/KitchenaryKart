@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { imgSrc, letter } from '@/lib/format';
+import { imgSrc, letter, imgSrcSet, PDP_IMG_SIZES } from '@/lib/format';
 import { toggleWishlist, useIsInWishlist } from '@/lib/wishlist';
 
 // Magnification for the desktop hover-zoom, and the source width we pull for
@@ -136,8 +136,12 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
               aria-label={`View image ${i + 1} full screen`}
               className="snap-center shrink-0 w-full aspect-square grid place-items-center"
             >
+              {/* The mobile LCP image. Same srcset + sizes as the desktop main image
+                  below: that one is display:none on phones but still downloads
+                  (it is eager), so the two must resolve to the SAME URL or a phone
+                  fetches the picture twice. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imgSrc(u)} alt={`${name} — view ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" className="w-full h-full object-contain" />
+              <img src={imgSrc(u)} srcSet={imgSrcSet(u)} sizes={PDP_IMG_SIZES} fetchPriority={i === 0 ? 'high' : undefined} alt={`${name} — view ${i + 1}`} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" className="w-full h-full object-contain" />
             </button>
           ))}
         </div>
@@ -249,12 +253,13 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
                 the body parser even gets here. */}
             <img
               src={imgSrc(active)}
+              srcSet={imgSrcSet(active)}
+              sizes={PDP_IMG_SIZES}
               alt={name}
               width={600}
               height={600}
               // eslint-disable-next-line @next/next/no-img-element
-              // @ts-expect-error -- fetchpriority is valid HTML but TS DOM types lag
-              fetchpriority="high"
+              fetchPriority="high"
               decoding="sync"
               className="w-full h-full object-contain"
             />
