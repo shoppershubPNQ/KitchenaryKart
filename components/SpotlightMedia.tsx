@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { imgSrc } from '@/lib/format';
+import { imgSrc, imgSrcSet } from '@/lib/format';
 
 /**
  * Home-teaser media for the Featured Spotlight — a small swipe carousel.
@@ -120,9 +120,17 @@ export function SpotlightMedia({
           {poster ? (
             <img
               src={imgSrc(poster, 900)}
+              // Capped at 900 - the width it has always been served at - so no
+              // phone downloads more than before; small screens now get less.
+              srcSet={imgSrcSet(poster, [480, 800, 900])}
+              sizes="(max-width: 768px) 100vw, 50vw"
               alt={name}
               className="w-full h-full object-cover"
-              loading="lazy"
+              // The first large thing a phone sees under the hero, so Lighthouse
+              // takes it as the home page's LCP element. Lazy-loading it held
+              // LCP at 4.9s (2026-09-11) — it must load eagerly, first.
+              loading="eager"
+              fetchPriority="high"
               decoding="async"
             />
           ) : (

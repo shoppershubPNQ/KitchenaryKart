@@ -79,3 +79,25 @@ export function dateShortFromIso(iso: string | null | undefined): string {
     year: 'numeric',
   });
 }
+
+/**
+ * Responsive `srcset` for a Cloudinary image: one URL per width, each built by
+ * imgSrc so every candidate carries the same f_auto/q_auto transform. Without
+ * it a phone downloaded the 1600px PDP image for a ~400px screen (Lighthouse,
+ * 2026-09-11: PDP LCP 3.2s). Returns undefined for anything imgSrc cannot
+ * resize — a non-Cloudinary file or an already-transformed URL — where every
+ * width would be the same bytes.
+ */
+export function imgSrcSet(
+  url: string | null | undefined,
+  widths: number[] = [480, 800, 1200, 1600],
+): string | undefined {
+  if (!url || !url.includes('/image/upload/')) return undefined;
+  if (imgSrc(url, widths[0]) === url) return undefined;
+  return widths.map((w) => `${imgSrc(url, w)} ${w}w`).join(', ');
+}
+
+/** `sizes` for the PDP main image: full width on phones, the ~600px gallery
+ *  column on desktop. Shared by the <img> and its <link rel="preload"> — the
+ *  two must match exactly or the browser downloads the image twice. */
+export const PDP_IMG_SIZES = '(max-width: 768px) 100vw, 600px';
