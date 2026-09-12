@@ -36,17 +36,49 @@ export function buildOrganizationJsonLd(sameAs: string[] = []): Record<string, u
     logo: `${SITE_URL}/logo.png`,
     description:
       'D2C supplier of commercial kitchen equipment — bain maries, fryers, snowflake ice machines, mixers and HORECA essentials — with GST invoicing and pan-India delivery.',
+    email: 'support@kitchenarykart.com',
+    // Same NAP as the Pune Store schema and the Google Business Profile —
+    // lets search engines and AI assistants tie the brand to a real place.
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'A2/103, Parshwanagar, Opp. Swami Vivekanand Garden, Kondhwa Budruk',
+      addressLocality: 'Pune',
+      addressRegion: 'Maharashtra',
+      postalCode: '411048',
+      addressCountry: 'IN',
+    },
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+91-98903-52455',
+      email: 'support@kitchenarykart.com',
       contactType: 'customer service',
       areaServed: 'IN',
       availableLanguage: ['en', 'hi'],
     },
   };
-  const clean = sameAs.filter((u) => !!u && /^https?:/i.test(u));
+  const clean = [...new Set(sameAs.map(cleanProfileUrl).filter((u): u is string => !!u))];
   if (clean.length > 0) out.sameAs = clean;
   return out;
+}
+
+/**
+ * Profile URLs pasted from a phone's "share" sheet carry tracking bits
+ * (`?igsh=…`, `?si=…`). sameAs should name the profile itself, so the query
+ * and hash are dropped. Non-http values are rejected.
+ */
+function cleanProfileUrl(u: string | null | undefined): string | null {
+  if (!u) return null;
+  try {
+    const url = new URL(u.trim());
+    if (!/^https?:$/.test(url.protocol)) return null;
+    // facebook.com/profile.php identifies the page BY its query (?id=…).
+    const id = url.pathname === '/profile.php' ? url.searchParams.get('id') : null;
+    url.search = id ? `?id=${id}` : '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 /**
