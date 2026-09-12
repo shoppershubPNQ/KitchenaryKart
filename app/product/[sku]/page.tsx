@@ -19,6 +19,7 @@ import { PdpTrustBadges } from '@/components/PdpTrustBadges';
 import { ProductFaqSection } from '@/components/ProductFaq';
 import { resolveProductFaqs } from '@/lib/product-faqs';
 import { pdpSeoTitle } from '@/lib/seo-title';
+import { getSpareFitLinks } from '@/lib/spare-fits';
 
 interface Params {
   params: { sku: string };
@@ -182,11 +183,14 @@ export default async function ProductPage({ params }: Params) {
   // expands the rest, so 12 is plenty for the carousel without
   // shipping a long JSON list + 12 product images down on every PDP
   // request. Bigger lists were noticeably slowing the page on mobile.
-  const [similar, reviewSummary, reviews] = await Promise.all([
+  const [similar, reviewSummary, reviews, spareLinks] = await Promise.all([
     p.category ? getSimilarProducts(p.category, p.sku, 12) : Promise.resolve([]),
     getReviewSummary(p.sku),
     listReviews(p.sku),
+    // Spare page -> the machines it fits; machine page -> its spare parts.
+    getSpareFitLinks([requestedSku, p.sku, ...p.variants.map((v) => v.sku)]),
   ]);
+  const { fitsMachines, spareParts } = spareLinks;
 
   const save = savingsPercent(displayPrice, displayMrp);
   // Show real review averages when at least one approved review exists.
@@ -229,6 +233,16 @@ export default async function ProductPage({ params }: Params) {
     reviewCount: reviewSummary.count,
     reviewAverage: reviewSummary.average,
   });
+  // schema.org's own property for "this is a spare part of…" — tells search
+  // engines (and AI answers) which machine the part belongs to.
+  if (productLd && fitsMachines.length > 0) {
+    productLd.isAccessoryOrSparePartFor = fitsMachines.map((m) => ({
+      '@type': 'Product',
+      name: m.name,
+      sku: m.sku,
+      url: `https://kitchenarykart.com/product/${encodeURIComponent(m.sku)}`,
+    }));
+  }
   const breadcrumbLd = buildBreadcrumbJsonLd({
     category: p.category,
     productName: displayName,
@@ -425,6 +439,29 @@ export default async function ProductPage({ params }: Params) {
             />
           </div>
 
+          {/* Plain text links right under the buy box — the strongest place
+              for a spare page (Google page 1) to pass ranking to its machine. */}
+          {fitsMachines.length > 0 && (
+            <p className="text-[13.5px] text-ink mb-5 leading-relaxed">
+              <span className="font-bold">Fits:</span>{' '}
+              {fitsMachines.map((m, i) => (
+                <Fragment key={m.sku}>
+                  {i > 0 && ', '}
+                  <Link href={`/product/${encodeURIComponent(m.sku)}`} className="text-brand underline underline-offset-2 hover:text-ink">
+                    {m.name}
+                  </Link>
+                </Fragment>
+              ))}
+            </p>
+          )}
+          {spareParts.length > 0 && (
+            <p className="text-[13.5px] text-ink mb-5">
+              <a href="#spare-parts" className="text-brand underline underline-offset-2 hover:text-ink">
+                Genuine spare parts for this machine ({spareParts.length})
+              </a>
+            </p>
+          )}
+
           <div className="bg-bg-soft rounded-lg p-5">
             <h3 className="text-[13px] font-bold tracking-wider uppercase text-brand mb-3.5">
               Specifications
@@ -460,6 +497,20 @@ export default async function ProductPage({ params }: Params) {
       {/* Section order: Similar Products first (encourages cross-sell while
           the buyer is still in browse mode), then Customer Reviews (read
           before final decision). Matches Amazon / Flipkart PDP convention. */}
+      <SimilarProducts
+        products={fitsMachines}
+        eyebrow="Genuine spare part"
+        title="This part fits these machines"
+        noun="machine"
+      />
+      <SimilarProducts
+        id="spare-parts"
+        products={spareParts}
+        eyebrow="Keep it running"
+        title="Spare parts for this machine"
+        noun="spare part"
+      />
+
       <SimilarProducts products={similar} />
 
       <ReviewsSection
