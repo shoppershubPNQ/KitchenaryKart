@@ -20,6 +20,7 @@ import { ProductFaqSection } from '@/components/ProductFaq';
 import { resolveProductFaqs } from '@/lib/product-faqs';
 import { pdpSeoTitle } from '@/lib/seo-title';
 import { getSpareFitLinks } from '@/lib/spare-fits';
+import { productBrand, STORE_BRAND } from '@/lib/brand';
 
 interface Params {
   params: { sku: string };
@@ -212,6 +213,8 @@ export default async function ProductPage({ params }: Params) {
   const displayName = variantQualifier
     ? `${p.name} — ${variantQualifier}`
     : p.name;
+  // VAMA / Veratti (own brands) or Kitchenary Kart — same rule as the JSON-LD.
+  const brand = productBrand(p.name);
 
   // Structured data — Product + BreadcrumbList. Google parses these
   // and shows the price, stock, and (real) review stars as a rich
@@ -249,6 +252,8 @@ export default async function ProductPage({ params }: Params) {
     productSku: requestedSku,
   });
   const specs: Array<[string, string | null]> = [
+    // Only own brands get a row — "Brand: Kitchenary Kart" on every page adds nothing.
+    ['Brand', brand !== STORE_BRAND ? brand : null],
     ['SKU', requestedSku],
     ['Category', p.subcategory || p.category || null],
     // Sizes of one product really do differ — a 10" whisk is 174g and a 24" is
@@ -367,7 +372,7 @@ export default async function ProductPage({ params }: Params) {
 
         <div>
           <div className="text-[11px] font-bold uppercase tracking-[2px] text-brand mb-3">
-            Kitchenary Kart
+            {brand}
           </div>
           <h1 className="text-[clamp(1.5rem,2.4vw,2rem)] mb-3.5">{displayName}</h1>
                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-5 pb-5 border-b border-line">

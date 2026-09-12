@@ -17,6 +17,7 @@
  */
 import { CATEGORY_SHORT } from './categories';
 import { imgSrc } from './format';
+import { productBrand } from './brand';
 
 const SITE_URL = 'https://kitchenarykart.com';
 
@@ -186,7 +187,8 @@ export function buildProductJsonLd(p: ProductJsonLdInput): Record<string, unknow
     sku: p.sku,
     mpn: p.sku,
     url: pdpUrl,
-    brand: { '@type': 'Brand', name: 'Kitchenary Kart' },
+    // Own brands (VAMA, Veratti) by name; everything else is Kitchenary Kart.
+    brand: { '@type': 'Brand', name: productBrand(p.name) },
     category: p.subcategory || p.category || undefined,
     description:
       p.description ||
@@ -429,7 +431,7 @@ export function buildItemListJsonLd(
           sku: p.sku,
           url: pdpUrl,
           image: p.imageUrl ? toAbsoluteUrl(p.imageUrl) : `${SITE_URL}/logo.png`,
-          brand: { '@type': 'Brand', name: 'Kitchenary Kart' },
+          brand: { '@type': 'Brand', name: productBrand(p.name) },
           description:
             p.description || `${p.name} — commercial-grade kitchen equipment. GST-invoiced, pan-India delivery.`,
           offers: {
