@@ -19,6 +19,7 @@ import { clearCart, useCart } from '@/lib/cart';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import { imgSrc, inr, letter } from '@/lib/format';
 import { trackPurchase } from '@/lib/analytics';
+import { track } from '@/lib/track';
 import { computeOrderSummary } from '@/lib/order-summary';
 
 interface Address {
@@ -373,6 +374,10 @@ export default function CheckoutPage() {
       if (!res.ok) throw new Error(data?.error || 'Could not create order');
 
       saveAddress(address);
+      track('checkout_submitted', {
+        order: data.orderNumber,
+        d: { total: typeof data.amount === 'number' ? data.amount / 100 : undefined, items: items.length },
+      });
 
       // 2. Open Razorpay Checkout popup.
       const rzp = new window.Razorpay({
@@ -443,6 +448,7 @@ export default function CheckoutPage() {
         },
         modal: {
           ondismiss: () => {
+            track('payment_dismissed', { order: data.orderNumber });
             setSubmitting(false);
             setError('Payment cancelled. You can try again.');
             // We intentionally LEAVE the order as pending/unpaid instead of
@@ -454,6 +460,17 @@ export default function CheckoutPage() {
           },
         },
       });
+      // Analytics only — Razorpay still shows its own failure screen + retry.
+      rzp.on?.('payment.failed', (resp: any) => {
+        track('payment_failed', {
+          order: data.orderNumber,
+          d: {
+            reason: String(resp?.error?.description || resp?.error?.reason || 'failed').slice(0, 200),
+            code: String(resp?.error?.code || '').slice(0, 40) || undefined,
+          },
+        });
+      });
+      track('payment_opened', { order: data.orderNumber });
       rzp.open();
     } catch (e: any) {
       setError(e?.message || 'Could not place order');

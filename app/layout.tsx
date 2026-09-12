@@ -11,6 +11,8 @@ import { FooterTrustUpper } from '@/components/FooterTrustUpper';
 import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { BackToTopButton } from '@/components/BackToTopButton';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
+import { PageTracker } from '@/components/PageTracker';
+import { Suspense } from 'react';
 import { getCategoryTree, getCategoryCounts } from '@/lib/products';
 import { getSocialLinks } from '@/lib/social';
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/json-ld';
@@ -159,6 +161,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AnalyticsWithBotFilter />
         <SpeedInsights />
         <AnalyticsScripts />
+        {/* First-party visitor analytics (admin → Analytics). Suspense because
+            it reads useSearchParams, which must not block rendering. */}
+        <Suspense fallback={null}>
+          <PageTracker />
+        </Suspense>
       </body>
     </html>
   );

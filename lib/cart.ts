@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { trackAddToCart } from './analytics';
+import { track } from './track';
 
 export const STORE_KEY = 'kk_inquiry_cart';
 export const CART_EVT = 'kk:cart-changed';
@@ -81,6 +82,7 @@ export function addToCart(p: {
 
 export function removeFromCart(sku: string) {
   write(read().filter((i) => i.sku !== sku));
+  track('remove_from_cart', { sku });
 }
 
 export function setQty(sku: string, qty: number) {

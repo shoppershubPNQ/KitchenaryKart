@@ -19,6 +19,8 @@
  * bundle leaner.
  */
 
+import { flush, track } from './track';
+
 declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
@@ -49,6 +51,7 @@ interface ProductPayload {
 /** ViewContent — fires on every PDP load (called from a client effect). */
 export function trackViewContent(p: ProductPayload) {
   if (typeof window === 'undefined') return;
+  track('product_view', { sku: p.sku, d: { name: p.name, price: p.price, cat: p.category ?? undefined } });
 
   if (window.fbq) {
     window.fbq('track', 'ViewContent', {
@@ -82,6 +85,7 @@ export function trackViewContent(p: ProductPayload) {
 export function trackAddToCart(p: ProductPayload) {
   if (typeof window === 'undefined') return;
   const qty = p.quantity ?? 1;
+  track('add_to_cart', { sku: p.sku, d: { name: p.name, price: p.price, qty } });
 
   if (window.fbq) {
     window.fbq('track', 'AddToCart', {
@@ -118,6 +122,7 @@ interface CartPayload {
 /** InitiateCheckout — fires when the user clicks "Checkout". */
 export function trackInitiateCheckout(c: CartPayload) {
   if (typeof window === 'undefined') return;
+  track('begin_checkout', { d: { total: c.total, items: c.items.length, skus: c.items.map((i) => i.sku) } });
 
   if (window.fbq) {
     window.fbq('track', 'InitiateCheckout', {
@@ -160,6 +165,8 @@ interface PurchasePayload {
 /** Purchase — fires after Razorpay verifies payment. */
 export function trackPurchase(p: PurchasePayload) {
   if (typeof window === 'undefined') return;
+  track('purchase', { order: p.orderNumber, d: { total: p.total, skus: p.items.map((i) => i.sku) } });
+  flush();
 
   if (window.fbq) {
     window.fbq('track', 'Purchase', {
