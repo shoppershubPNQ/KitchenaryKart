@@ -462,7 +462,7 @@ export default async function ProductPage({ params }: Params) {
           {spareParts.length > 0 && (
             <p className="text-[13.5px] text-ink mb-5">
               <a href="#spare-parts" className="text-brand underline underline-offset-2 hover:text-ink">
-                Genuine spare parts for this machine ({spareParts.length})
+                <strong>Spare parts</strong> for this machine ({spareParts.length})
               </a>
             </p>
           )}
@@ -504,7 +504,7 @@ export default async function ProductPage({ params }: Params) {
           before final decision). Matches Amazon / Flipkart PDP convention. */}
       <SimilarProducts
         products={fitsMachines}
-        eyebrow="Genuine spare part"
+        eyebrow="Spare part"
         title="This part fits these machines"
         noun="machine"
       />
