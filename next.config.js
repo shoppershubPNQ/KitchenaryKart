@@ -41,6 +41,24 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Build assets are not documents. Vercel appends a ?dpl=<deploy-id>
+        // cache-buster, so EVERY deploy mints a brand-new URL for the same
+        // file — Search Console was filling up with entries like
+        //   /_next/static/css/38d7bc11cc1a5af6.css?dpl=dpl_8hHrMohy...
+        //   /_next/static/css/38d7bc11cc1a5af6.css?dpl=dpl_GHkZ4j3E...
+        // half of the "Crawled - currently not indexed" sample. Each one is
+        // crawl budget spent on a stylesheet instead of a product page, which
+        // this site cannot spare with 2,000+ products and no domain authority.
+        //
+        // noindex, NOT a robots.txt Disallow: Google must still be able to
+        // fetch CSS/JS to RENDER pages for indexing (blocking it hurts
+        // rendering and Core Web Vitals assessment — see app/robots.ts).
+        // Rendering fetches resources regardless of this header; noindex only
+        // stops the asset being queued as an indexable document of its own.
+        source: '/_next/static/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
+      },
+      {
         // Unlisted supplier/compliance documents shared by direct link only
         // (couriers, freight forwarders, marketplace compliance teams).
         //
