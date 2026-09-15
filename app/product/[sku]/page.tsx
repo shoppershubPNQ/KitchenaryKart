@@ -226,6 +226,11 @@ export default async function ProductPage({ params }: Params) {
   // Sizes of one product have different features, so a variant can carry its
   // own description; blank falls back to the product's.
   const pageDescription = selectedVariant?.description || p.description;
+  // Client components (size picker, cart button) get every variant, but have
+  // no use for their descriptions — sending them would ship every size's text
+  // in each page's payload. Server-rendered text above is unaffected.
+  const clientVariants = p.variants.map((v) => ({ ...v, description: null }));
+  const clientProduct = { ...p, variants: clientVariants };
 
   const productLd = buildProductJsonLd({
     sku: requestedSku, // variant SKU when on a variant URL — Google attributes the snippet to the right product
@@ -412,7 +417,7 @@ export default async function ProductPage({ params }: Params) {
           <PdpTrustBadges />
 
           {p.variants.length > 1 && (
-            <VariantSelector variants={p.variants} currentSku={requestedSku} />
+            <VariantSelector variants={clientVariants} currentSku={requestedSku} />
           )}
 
           {/* Availability line for single-SKU products (variant products already
@@ -436,7 +441,7 @@ export default async function ProductPage({ params }: Params) {
               the CTA sits in the high-conversion zone, above the specs. */}
           <div id="pdp-buybox" className="flex flex-wrap gap-3 mb-6">
             <AddToInquiryButton
-              product={p}
+              product={clientProduct}
               stock={effectiveStock}
               cartItem={{
                 sku: requestedSku,
