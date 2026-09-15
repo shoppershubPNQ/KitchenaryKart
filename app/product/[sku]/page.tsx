@@ -191,7 +191,10 @@ export default async function ProductPage({ params }: Params) {
     getReviewSummary(p.sku),
     listReviews(p.sku),
     // Spare page -> the machines it fits; machine page -> its spare parts.
-    getSpareFitLinks([requestedSku, p.sku, ...p.variants.map((v) => v.sku)]),
+    // On a SIZE's page only that size counts: the parent's SKU is often the
+    // smallest size's (KKKBE0005-B7 = 7L), so adding it put the 7L mixer's
+    // parts on the 10L/20L/30L pages. Without a selected size, use them all.
+    getSpareFitLinks(selectedVariant ? [requestedSku] : [p.sku, ...p.variants.map((v) => v.sku)]),
   ]);
   const { fitsMachines, spareParts } = spareLinks;
   const fitsGroups = groupMachines(fitsMachines);
