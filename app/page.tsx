@@ -10,17 +10,21 @@ import { getActiveBanners } from '@/lib/banners';
 import { getActiveReels } from '@/lib/reels';
 import { getHomeSpotlight } from '@/lib/spotlight';
 import { SpotlightTeaser } from '@/components/SpotlightTeaser';
+import { OfferTicker } from '@/components/OfferTicker';
+import { MarketplaceStrip } from '@/components/MarketplaceStrip';
+import { getOfferTicker } from '@/lib/offer-ticker';
 
 export const revalidate = 300; // regenerate home at most every 5 min
 
 export default async function HomePage() {
-  const [home, tree, banners, promoSlides, reels, spotlight] = await Promise.all([
+  const [home, tree, banners, promoSlides, reels, spotlight, ticker] = await Promise.all([
     getHomePageData(),
     getCategoryTree(),
     getActiveBanners('hero'),
     getActiveBanners('secondary'),
     getActiveReels(),
     getHomeSpotlight(),
+    getOfferTicker(),
   ]);
   const { bestsellers, newArrivals, watchShop } = home;
 
@@ -32,6 +36,8 @@ export default async function HomePage() {
         KitchenaryKart — Commercial Kitchen Equipment Supplier in India
       </h1>
       <HeroCarousel banners={banners} />
+      {/* Scrolling offer line — admin: Content → Offer ticker. Hidden when off. */}
+      {ticker && <OfferTicker ticker={ticker} />}
       <CategoryTiles tree={tree} />
 
       {/* Featured Spotlight — sits directly under the categories so the single
@@ -47,6 +53,9 @@ export default async function HomePage() {
       </section>
 
       <TrustStrip />
+
+      {/* "Also on Amazon & Flipkart" — static trust note, no links. */}
+      <MarketplaceStrip />
 
       <PromoCarousel slides={promoSlides} />
 

@@ -15,7 +15,7 @@ import { revalidateTag, revalidatePath } from 'next/cache';
 // For these we ALSO purge the home route's full-route cache, so admin edits
 // (e.g. curating Best Seller / New Arrival products) appear within seconds
 // instead of waiting out the page's 5-minute ISR window.
-const HOME_TAGS = new Set(['collections', 'banners', 'reels', 'spotlight']);
+const HOME_TAGS = new Set(['collections', 'banners', 'reels', 'spotlight', 'offer-ticker']);
 
 const ALLOWED_TAGS = new Set([
   'banners',
@@ -29,6 +29,7 @@ const ALLOWED_TAGS = new Set([
   'reviews',
   'social',
   'spotlight',
+  'offer-ticker',
 ]);
 
 export async function POST(req: Request) {
