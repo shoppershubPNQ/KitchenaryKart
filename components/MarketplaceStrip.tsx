@@ -63,7 +63,7 @@ export function MarketplaceStrip() {
             {MARKETPLACES.map((m) => (
               <li
                 key={m.name}
-                className="kk-mkt-tile relative flex flex-col items-center justify-center rounded-xl border border-ink/[0.08] bg-white px-4 py-8 md:px-6 md:py-11"
+                className="kk-mkt-tile relative flex items-center justify-center rounded-xl border border-ink/[0.08] bg-white px-4 py-10 md:px-6 md:py-14"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- tiny static logo, no optimisation needed */}
                 <img
@@ -73,11 +73,8 @@ export function MarketplaceStrip() {
                   height={m.height}
                   loading="lazy"
                   decoding="async"
-                  className="relative h-8 w-auto max-w-full object-contain md:h-10"
+                  className="relative h-9 w-auto max-w-full object-contain md:h-12"
                 />
-                <span className="relative mt-5 text-[10.5px] font-bold uppercase tracking-[1.8px] text-muted">
-                  Listed on {m.name}
-                </span>
               </li>
             ))}
           </ul>
