@@ -231,7 +231,9 @@ export default async function ProductPage({ params }: Params) {
   // no use for their descriptions — sending them would ship every size's text
   // in each page's payload. Server-rendered text above is unaffected.
   const clientVariants = p.variants.map((v) => ({ ...v, description: null }));
-  const clientProduct = { ...p, variants: clientVariants };
+  // The cart button never reads the description either; leaving the parent's in
+  // put a size-specific page's OLD text into its HTML payload.
+  const clientProduct = { ...p, description: null, variants: clientVariants };
 
   const productLd = buildProductJsonLd({
     sku: requestedSku, // variant SKU when on a variant URL — Google attributes the snippet to the right product
