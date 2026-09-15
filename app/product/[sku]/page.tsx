@@ -19,7 +19,7 @@ import { PdpTrustBadges } from '@/components/PdpTrustBadges';
 import { ProductFaqSection } from '@/components/ProductFaq';
 import { resolveProductFaqs } from '@/lib/product-faqs';
 import { pdpSeoTitle } from '@/lib/seo-title';
-import { getSpareFitLinks } from '@/lib/spare-fits';
+import { getSpareFitLinks, groupMachines } from '@/lib/spare-fits';
 import { productBrand, STORE_BRAND } from '@/lib/brand';
 
 interface Params {
@@ -194,6 +194,7 @@ export default async function ProductPage({ params }: Params) {
     getSpareFitLinks([requestedSku, p.sku, ...p.variants.map((v) => v.sku)]),
   ]);
   const { fitsMachines, spareParts } = spareLinks;
+  const fitsGroups = groupMachines(fitsMachines);
 
   const save = savingsPercent(displayPrice, displayMrp);
   // Show real review averages when at least one approved review exists.
@@ -457,18 +458,30 @@ export default async function ProductPage({ params }: Params) {
 
           {/* Plain text links right under the buy box — the strongest place
               for a spare page (Google page 1) to pass ranking to its machine. */}
-          {fitsMachines.length > 0 && (
-            <p className="text-[13.5px] text-ink mb-5 leading-relaxed">
-              <span className="font-bold">Fits:</span>{' '}
-              {fitsMachines.map((m, i) => (
-                <Fragment key={m.sku}>
-                  {i > 0 && ', '}
-                  <Link href={`/product/${encodeURIComponent(m.sku)}`} className="text-brand underline underline-offset-2 hover:text-ink">
-                    {m.name}
-                  </Link>
-                </Fragment>
-              ))}
-            </p>
+          {fitsGroups.length > 0 && (
+            <div className="mb-5 rounded-lg border border-line p-3.5">
+              <div className="text-[11px] font-bold uppercase tracking-[1.5px] text-brand mb-2">
+                Fits these machines
+              </div>
+              <ul className="space-y-2.5">
+                {fitsGroups.map((g) => (
+                  <li key={g.name}>
+                    <div className="text-[13.5px] font-semibold text-ink">{g.name}</div>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {g.items.map((it) => (
+                        <Link
+                          key={it.sku}
+                          href={`/product/${encodeURIComponent(it.sku)}`}
+                          className="px-2.5 py-1 rounded-full border border-brand/40 text-brand text-[12.5px] font-medium hover:bg-brand hover:text-white transition"
+                        >
+                          {it.label || 'View machine'}
+                        </Link>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
           {spareParts.length > 0 && (
             <p className="text-[13.5px] text-ink mb-5">

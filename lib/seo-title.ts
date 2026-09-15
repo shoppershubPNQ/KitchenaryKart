@@ -84,7 +84,7 @@ function shortenName(withKeyword: string, base: string, room: number): string {
  * is not "Multi" (e.g. {"Size":"40L","Capacity":"40 litre"}), which put raw
  * JSON in the title. Show the values instead: "40L / 40 litre".
  */
-function readableVariant(raw: string): string {
+export function readableVariant(raw: string): string {
   const s = raw.trim();
   if (!s.startsWith('{')) return s;
   try {

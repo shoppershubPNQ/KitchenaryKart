@@ -10,6 +10,7 @@ import { prisma } from './db';
 import { getCollections } from './collections';
 import { pseudoRating } from './rating';
 import { getAllReviewSummaries } from './reviews';
+import { readableVariant } from './seo-title';
 
 export interface PublicProduct {
   id: number;
@@ -440,7 +441,9 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
           : mrpRatio > 1
           ? Math.round(variantPrice * mrpRatio)
           : parent.mrp;
-      const qualifier = (v.variantValue || '').trim();
+      // Multi-axis variants store JSON ({"Capacity":"…","Power":"600W"}); show
+      // the values, not the raw JSON, in every composed listing name.
+      const qualifier = readableVariant(v.variantValue || '');
       const composedName = qualifier
         ? `${parent.name} — ${qualifier}` // em-dash
         : parent.name;
@@ -568,7 +571,9 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
     }
     for (const v of variants) {
       if (!v.skuSuffix) continue; // skip malformed rows
-      const qualifier = (v.variantValue || '').trim();
+      // Multi-axis variants store JSON ({"Capacity":"…","Power":"600W"}); show
+      // the values, not the raw JSON, in every composed listing name.
+      const qualifier = readableVariant(v.variantValue || '');
       out.push({
         ...base,
         sku: v.skuSuffix,
@@ -929,7 +934,9 @@ async function _getCategoryProductsPage(
       const variantPrice = v.price != null ? Number(v.price) : parentPrice + Number(v.priceModifier ?? 0);
       const variantMrp =
         v.mrp != null ? Number(v.mrp) : mrpRatio > 1 ? Math.round(variantPrice * mrpRatio) : parent.mrp;
-      const qualifier = (v.variantValue || '').trim();
+      // Multi-axis variants store JSON ({"Capacity":"…","Power":"600W"}); show
+      // the values, not the raw JSON, in every composed listing name.
+      const qualifier = readableVariant(v.variantValue || '');
       const variantPrimary = v.imageUrl ?? parent.imageUrl;
       const variantImages = Array.isArray(v.images) ? (v.images as string[]) : [];
       all.push({

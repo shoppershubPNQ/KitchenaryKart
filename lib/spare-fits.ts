@@ -23,6 +23,54 @@ for (const [spare, machines] of Object.entries(FITS)) {
   for (const m of machines) (SPARES_FOR[m] ||= []).push(spare);
 }
 
+/** Separators where a long product name moves from "what it is" to detail. */
+const NAME_CUTS = [' with ', ' - ', ' | ', ' – ', ' (', ', '];
+
+/** "Electric Planetary Mixer with 3 Whisk Attachments & …" -> "Electric Planetary Mixer". */
+function shortMachineName(name: string): string {
+  let cut = name.length;
+  for (const sep of NAME_CUTS) {
+    const i = name.indexOf(sep);
+    if (i >= 12 && i < cut) cut = i;
+  }
+  return name.slice(0, cut).trim();
+}
+
+/** "Bowl Capacity: 7L | Dough Capacity: 1.25kg/Batch / 600W" -> "7L · 600W". */
+function shortSizeLabel(label: string): string {
+  return label
+    .split(' / ')
+    .map((part) => part.split(' | ')[0].replace(/^[^:]{1,30}:\s*/, '').trim())
+    .filter(Boolean)
+    .join(' · ');
+}
+
+export interface FitsGroup {
+  /** Short machine name, shown once. */
+  name: string;
+  /** One chip per size of that machine that this part fits. */
+  items: Array<{ sku: string; label: string }>;
+}
+
+/**
+ * The "Fits:" block, grouped by machine: the name once, then a chip per size
+ * ("Electric Planetary Mixer" — 7L · 600W, 10L · 800W). A flat list of full
+ * listing names ran every size's long name and spec text together.
+ */
+export function groupMachines(machines: PublicProduct[]): FitsGroup[] {
+  const groups = new Map<string, FitsGroup>();
+  for (const m of machines) {
+    const at = m.name.lastIndexOf(' — ');
+    const base = at > 0 ? m.name.slice(0, at) : m.name;
+    const label = at > 0 ? shortSizeLabel(m.name.slice(at + 3)) : '';
+    const name = shortMachineName(base);
+    const g = groups.get(name) ?? { name, items: [] };
+    g.items.push({ sku: m.sku, label });
+    groups.set(name, g);
+  }
+  return [...groups.values()];
+}
+
 /** How many spare cards a machine page shows (the grid shows 5, then "View all"). */
 const MAX_SPARES = 24;
 
