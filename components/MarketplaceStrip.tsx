@@ -8,14 +8,17 @@
  * raised card; the marketplace tiles lift with a red accent on hover (styles:
  * .kk-mkt-* in globals.css; hover motion is off for reduced-motion users).
  *
- * Logos (owner approved the download, 2026-09-15): public/marketplaces/
- * amazon.svg (Wikimedia Commons "Amazon logo.svg") and flipkart.png
- * ("Flipkart Logo as of 2025.png"). They are Amazon's and Flipkart's
- * trademarks, used only to say where else the products are listed.
+ * Logos (owner approved the downloads, 2026-09-15): public/marketplaces/
+ * amazon.svg (Wikimedia Commons "Amazon logo.svg") and flipkart-logo.png —
+ * the full wordmark + bag from "Flipkart logo (2026).svg", trimmed and
+ * rendered at 500x132 (11 KB) instead of shipping the 135 KB SVG. (The
+ * earlier "Flipkart Logo as of 2025.png" was the bag icon only and read as a
+ * bare yellow box.) Both are Amazon's / Flipkart's trademarks, used only to
+ * say where else the products are listed.
  */
 const MARKETPLACES = [
   { name: 'Amazon', logo: '/marketplaces/amazon.svg', width: 603, height: 182 },
-  { name: 'Flipkart', logo: '/marketplaces/flipkart.png', width: 573, height: 143 },
+  { name: 'Flipkart', logo: '/marketplaces/flipkart-logo.png', width: 500, height: 132 },
 ];
 
 const DIRECT_PERKS = ['GST invoice on direct orders', 'Bulk & HORECA pricing direct'];
@@ -41,17 +44,9 @@ export function MarketplaceStrip() {
           <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-dark via-brand to-brand-hover" />
 
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/[0.06] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[2px] text-brand">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brand" />
-              Also available on
-            </span>
-            <h2 id="kk-mkt-title" className="mt-4 font-head text-[clamp(1.55rem,2.7vw,2.35rem)] font-extrabold leading-[1.15] text-ink">
-              Shop Kitchenary Kart on <span className="kk-mkt-mark">India&apos;s top marketplaces</span>
+            <h2 id="kk-mkt-title" className="font-head text-[clamp(1.55rem,2.7vw,2.35rem)] font-extrabold leading-[1.15] text-ink">
+              We are available on <span className="kk-mkt-mark">these platforms</span>
             </h2>
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted">
-              Prefer your usual marketplace? You&apos;ll find our products on Amazon and Flipkart too — or order right
-              here, directly from us.
-            </p>
             <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2.5">
               {DIRECT_PERKS.map((p) => (
                 <li key={p} className="flex items-center gap-2 text-[13.5px] font-medium text-ink/80">
