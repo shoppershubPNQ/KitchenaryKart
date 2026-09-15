@@ -71,8 +71,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Prefer the product's own description; clamp WHATEVER we use (real desc or
   // the fallback template — a long product name could push the fallback over
   // 160 too) to keep every PDP under the meta-description length limit.
+  // A size with its own description (its features differ) uses that.
+  const ownDescription = selectedVariant?.description || p.description;
   const description = clampDescription(
-    p.description && p.description.trim() ? p.description : fallbackDesc,
+    ownDescription && ownDescription.trim() ? ownDescription : fallbackDesc,
   );
   const canonicalPath = `/product/${encodeURIComponent(requestedSku)}`;
   // Prefer variant image in OG when on a variant URL, so social
@@ -221,10 +223,14 @@ export default async function ProductPage({ params }: Params) {
   // snippet under the search result. We pass the verified review
   // count/average (NOT the pseudo rating) into buildProductJsonLd so
   // we never expose fake stars to Google.
+  // Sizes of one product have different features, so a variant can carry its
+  // own description; blank falls back to the product's.
+  const pageDescription = selectedVariant?.description || p.description;
+
   const productLd = buildProductJsonLd({
     sku: requestedSku, // variant SKU when on a variant URL — Google attributes the snippet to the right product
     name: displayName,
-    description: p.description,
+    description: pageDescription,
     category: p.category,
     subcategory: p.subcategory,
     hsnCode: p.hsnCode,
@@ -488,13 +494,13 @@ export default async function ProductPage({ params }: Params) {
           mobile and gives the page indexable body content. Skipped
           entirely when empty. Specifications live once in the right
           column above — not repeated here. */}
-      {p.description && p.description.trim() && (
+      {pageDescription && pageDescription.trim() && (
         <section className="max-w-site mx-auto px-[6mm] md:px-[1.5cm] pb-6 md:pb-12">
           <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-3 md:mb-4">
             Product Description
           </h2>
           <div className="max-w-[1100px] text-[15.5px] leading-relaxed text-ink/85 whitespace-pre-line">
-            {p.description.trim()}
+            {pageDescription.trim()}
           </div>
         </section>
       )}

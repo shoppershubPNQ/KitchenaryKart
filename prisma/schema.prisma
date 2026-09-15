@@ -180,6 +180,10 @@ model ProductVariant {
   power      String?
   dimensions String?
 
+  /// Per-variant description; null = show the parent's. Sizes of one product
+  /// have different features. Column added by raw SQL 2026-09-15 — keep in
+  /// sync with the admin schema.
+  description String?
 
   /// Per-variant primary image. Storefront reads only.
   imageUrl      String?  @map("image_url")

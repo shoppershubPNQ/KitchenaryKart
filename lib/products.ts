@@ -113,6 +113,9 @@ export interface PublicVariant {
   capacity: string | null;
   power: string | null;
   dimensions: string | null;
+  /** Per-variant description. Sizes have different features, so each can
+   *  carry its own text. Null → show the parent's description. */
+  description: string | null;
   stock: number;
   /** Per-variant primary image. Null → inherit parent.imageUrl. */
   imageUrl: string | null;
@@ -807,6 +810,7 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
     capacity: (v as any).capacity ?? null,
     power: (v as any).power ?? null,
     dimensions: (v as any).dimensions ?? null,
+    description: ((v as any).description as string | null)?.trim() || null,
     imageUrl: v.imageUrl ?? null,
     images: Array.isArray(v.images) ? (v.images as string[]) : [],
   })) ?? [];
@@ -820,7 +824,8 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
 // for 5 min. Admin mutations call /api/revalidate?tag=products to bust it.
 const _getProductBySkuCached = unstable_cache(
   _getProductBySku,
-  ['kk:product-by-sku-v3'],
+  // v4: variants now carry their own description.
+  ['kk:product-by-sku-v4'],
   { revalidate: 300, tags: ['products'] },
 );
 
