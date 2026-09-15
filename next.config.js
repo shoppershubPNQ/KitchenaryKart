@@ -165,7 +165,15 @@ const nextConfig = {
       { source: '/all-products', destination: '/products', permanent: true },
     ];
 
-    return [...policyRedirects, ...legacyRedirects, ...legacyPageRedirects];
+    // Duplicate listings taken off sale, pointed at the listing that stays so
+    // old links and Google's copy land on a live product instead of a 404.
+    // KK-GEN-009 was the same 40cm 4-layer electric momo steamer as
+    // KKHE0068-CMRS4.40 (owner, 2026-09-15).
+    const retiredDuplicates = [
+      { source: '/product/KK-GEN-009', destination: '/product/KKHE0068-CMRS4.40', permanent: true },
+    ];
+
+    return [...policyRedirects, ...legacyRedirects, ...legacyPageRedirects, ...retiredDuplicates];
   },
 };
 
