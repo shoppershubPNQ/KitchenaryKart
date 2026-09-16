@@ -46,6 +46,13 @@ export interface PublicProduct {
   isBestseller: boolean;
   isNewArrival: boolean;
   metaKeywords: string | null;
+  /** Hand-written Google result title, set in admin. Null = the PDP generates
+   *  one from the name (web/lib/seo-title.ts). Only honoured on the PARENT
+   *  url — a variant keeps its size-specific title. */
+  metaTitle: string | null;
+  /** Hand-written Google snippet, set in admin. Null = the PDP clamps the
+   *  product description instead. */
+  metaDescription: string | null;
   /** Per-product FAQ pairs, stored as JSON in the DB. Normalised to a
    *  {q,a} array (accepts {question,answer} too). Empty array when the
    *  product has no custom FAQs — the PDP falls back to generated ones. */
@@ -185,6 +192,8 @@ function toPublic(p: any): PublicProduct {
     isBestseller: Boolean(p.isBestseller),
     isNewArrival: Boolean(p.isNewArrival),
     metaKeywords: p.metaKeywords ?? null,
+    metaTitle: p.metaTitle ?? null,
+    metaDescription: p.metaDescription ?? null,
     faqs: parseFaqs(p.faqs),
   };
 }
@@ -328,6 +337,8 @@ const commonSelect = {
   isBestseller: true,
   isNewArrival: true,
   metaKeywords: true,
+  metaTitle: true,
+  metaDescription: true,
   faqs: true,
 } as const;
 
@@ -398,6 +409,11 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
     // tags and the (server-side) header autocomplete still read it, and Google
     // never used the keywords meta tag for ranking anyway.
     parent.metaKeywords = null;
+    // Meta title/description are only ever read by the PDP's generateMetadata,
+    // which fetches the product on its own. Shipping them in the shop payload
+    // would repeat two more strings per card for nothing.
+    parent.metaTitle = null;
+    parent.metaDescription = null;
     const variants = (row as any).variants as
       | Array<{
           variantType: string | null;
@@ -829,8 +845,10 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
 // for 5 min. Admin mutations call /api/revalidate?tag=products to bust it.
 const _getProductBySkuCached = unstable_cache(
   _getProductBySku,
-  // v4: variants now carry their own description.
-  ['kk:product-by-sku-v4'],
+  // v5: payload now carries metaTitle/metaDescription. Bumping the key matters —
+  // a cached v4 entry has neither field, so an override written in admin would
+  // sit unused until the entry expired.
+  ['kk:product-by-sku-v5'],
   { revalidate: 300, tags: ['products'] },
 );
 

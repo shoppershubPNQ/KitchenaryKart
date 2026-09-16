@@ -62,7 +62,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       : axes && typeof axes === 'object'
         ? [...new Set(Object.values(axes).map((x) => String(x).trim()).filter(Boolean))].join(' / ')
         : '';
-  const seoTitle = pdpSeoTitle(p.name, variantLabel);
+  // A title written by hand in admin wins — but ONLY on the parent url. The
+  // override lives on the parent row, so honouring it on a sibling url would
+  // give every size the same title, which is the exact problem seo-title.ts
+  // was built to fix (493 identical titles -> 0).
+  //
+  // The test is "is this the parent's own SKU", NOT "did we match a variant":
+  // in this catalogue a product's FIRST variant usually carries the parent's
+  // own SKU, so `selectedVariant` is set even on the parent url and a
+  // variant-based test would lock those products out of the override entirely.
+  const isParentUrl = requestedSku === p.sku;
+  const seoTitle =
+    isParentUrl && p.metaTitle?.trim()
+      ? p.metaTitle.trim()
+      : pdpSeoTitle(p.name, variantLabel);
   // Prefer the product's real description for the meta tag — unique per
   // product (better for SEO than a repeated template), cleaned and
   // clamped to ~160 chars at a word boundary. Fall back to a concise,
@@ -72,7 +85,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // the fallback template — a long product name could push the fallback over
   // 160 too) to keep every PDP under the meta-description length limit.
   // A size with its own description (its features differ) uses that.
-  const ownDescription = selectedVariant?.description || p.description;
+  // Same rule as the title: a hand-written snippet applies to the parent url
+  // only, so a size keeps its own description. Whatever wins is still clamped.
+  const metaDescOverride = isParentUrl ? p.metaDescription?.trim() || null : null;
+  const ownDescription = metaDescOverride || selectedVariant?.description || p.description;
   const description = clampDescription(
     ownDescription && ownDescription.trim() ? ownDescription : fallbackDesc,
   );
