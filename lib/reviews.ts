@@ -13,7 +13,7 @@ import { prisma } from './db';
 
 export interface ReviewSummary {
   count: number;
-  /** 0 if count = 0 — caller can fall back to pseudoRating for display. */
+  /** 0 if count = 0 — callers render no stars at all in that case. */
   average: number;
   /** Counts per star (1-5). Always 5 entries, even with 0 reviews. */
   distribution: [number, number, number, number, number];
@@ -23,9 +23,8 @@ export interface ReviewSummary {
  * Real review summaries for EVERY sku that has approved reviews, as a plain
  * object keyed by productSku. One cheap groupBy, cached under the same `reviews`
  * tag as the per-SKU summary. Used to give product CARDS the exact same rating
- * the PDP shows (real when reviews exist), instead of a fabricated pseudoRating.
- * Skus with no approved reviews are simply absent — the caller keeps its
- * pseudoRating default for those.
+ * the PDP shows. Skus with no approved reviews are simply absent — the caller
+ * keeps its 0/0 default and shows no stars for those.
  */
 export const getAllReviewSummaries = unstable_cache(
   async (): Promise<Record<string, { count: number; average: number }>> => {

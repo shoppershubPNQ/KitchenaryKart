@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getSpotlightBySlug } from '@/lib/spotlight';
 import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
-import { pseudoRating, Stars } from '@/lib/rating';
+import { Stars } from '@/lib/rating';
 import { inr, savingsPercent } from '@/lib/format';
 import { getReviewSummary } from '@/lib/reviews';
 import { buildProductJsonLd } from '@/lib/json-ld';
@@ -75,7 +75,6 @@ export default async function FeaturedPage({ params }: Params) {
   const { content: c, product: p } = data;
 
   const name = c.headline || p?.name || 'Featured product';
-  const rating = pseudoRating(p?.sku || c.slug);
   const price = p ? p.price : null;
   const mrp = p?.mrp ?? null;
   const save = price != null ? savingsPercent(price, mrp) : 0;
@@ -163,11 +162,14 @@ export default async function FeaturedPage({ params }: Params) {
           <h1 className="font-head text-2xl md:text-[2rem] font-extrabold text-ink leading-[1.15]">{name}</h1>
 
           <div className="flex items-center gap-2.5 mt-3.5 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <Stars value={rating.stars} />
-              <span className="text-sm text-ink font-semibold">{rating.stars.toFixed(1)}</span>
-              <span className="text-sm text-muted">({rating.count})</span>
-            </div>
+            {/* Real reviews only — no invented stars (owner, 2026-09-16). */}
+            {reviewSummary && reviewSummary.count > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Stars value={reviewSummary.average} />
+                <span className="text-sm text-ink font-semibold">{reviewSummary.average.toFixed(1)}</span>
+                <span className="text-sm text-muted">({reviewSummary.count})</span>
+              </div>
+            )}
             {p && <code className="text-xs text-muted bg-bg-soft border border-line rounded px-2 py-0.5">SKU {p.sku}</code>}
             {/* The featured page never linked the product page it features, so
                 the two competed for the same searches with no signal between them. */}

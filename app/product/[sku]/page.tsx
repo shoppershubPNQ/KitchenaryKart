@@ -7,7 +7,7 @@ import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
 import { SimilarProducts } from '@/components/SimilarProducts';
 import { VariantSelector } from '@/components/VariantSelector';
-import { pseudoRating, Stars } from '@/lib/rating';
+import { Stars } from '@/lib/rating';
 import { imgSrc, inr, savingsPercent, clampDescription, imgSrcSet, PDP_IMG_SIZES } from '@/lib/format';
 import { CATEGORY_SHORT } from '@/lib/categories';
 import { getReviewSummary, listReviews } from '@/lib/reviews';
@@ -200,14 +200,11 @@ export default async function ProductPage({ params }: Params) {
   const fitsGroups = groupMachines(fitsMachines);
 
   const save = savingsPercent(displayPrice, displayMrp);
-  // Show real review averages when at least one approved review exists.
-  // Fall back to pseudoRating only when the product has no real reviews
-  // yet — keeps cold-start products from looking like they have zero
-  // social proof.
-  const pseudo = pseudoRating(p.sku);
-  const rating = reviewSummary.count > 0
-    ? { stars: reviewSummary.average, count: reviewSummary.count }
-    : pseudo;
+  // Real reviews only. There used to be a pseudoRating fallback here, so a
+  // product with no reviews showed invented stars at the top while its own
+  // review section below said "No reviews yet" — the owner asked for the two
+  // to agree (2026-09-16). Zero count = no stars rendered.
+  const rating = { stars: reviewSummary.average, count: reviewSummary.count };
 
   // Variant-aware display name for h1 + breadcrumb + JSON-LD title.
   // When the URL is a variant SKU, "<parent> — <variant value>" so
@@ -393,13 +390,19 @@ export default async function ProductPage({ params }: Params) {
           </div>
           <h1 className="text-[clamp(1.5rem,2.4vw,2rem)] mb-3.5">{displayName}</h1>
                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-5 pb-5 border-b border-line">
-            <Stars value={rating.stars} size="lg" />
-            <span className="text-[14px] text-ink font-medium whitespace-nowrap">
-              {rating.stars.toFixed(1)} ({rating.count})
-            </span>
-            <span className="text-muted text-xs">
-              · Verified commercial-kitchen grade
-            </span>
+            {rating.count > 0 ? (
+              <>
+                <Stars value={rating.stars} size="lg" />
+                <span className="text-[14px] text-ink font-medium whitespace-nowrap">
+                  {rating.stars.toFixed(1)} ({rating.count})
+                </span>
+                <span className="text-muted text-xs">· Verified commercial-kitchen grade</span>
+              </>
+            ) : (
+              <span className="text-muted text-xs">
+                Verified commercial-kitchen grade · No reviews yet
+              </span>
+            )}
           </div>
           <div className="flex items-baseline gap-3.5 mb-1.5">
             <span className="font-head text-[2rem] font-bold text-ink">{inr(displayPrice)}</span>

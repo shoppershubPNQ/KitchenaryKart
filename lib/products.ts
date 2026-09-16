@@ -8,7 +8,6 @@ import { cache as reactCache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { prisma } from './db';
 import { getCollections } from './collections';
-import { pseudoRating } from './rating';
 import { getAllReviewSummaries } from './reviews';
 import { readableVariant } from './seo-title';
 
@@ -55,9 +54,9 @@ export interface PublicProduct {
    *  product SKU (what the PDP aggregates on), so a variant card and its PDP
    *  show the SAME rating. Set in toPublic; variant rows inherit it. */
   ratingSku: string;
-  /** Rating shown on the card. Defaults to pseudoRating(ratingSku) and is
-   *  overlaid with the REAL review average/count by attachRealRatings when the
-   *  product has approved reviews — so the card matches the PDP exactly. */
+  /** Rating shown on the card. 0/0 means "no reviews yet" and the card hides
+   *  its stars; attachRealRatings overlays the REAL review average/count when
+   *  the product has approved reviews — so the card matches the PDP exactly. */
   reviewAverage: number;
   reviewCount: number;
 }
@@ -143,18 +142,19 @@ function parseAxisValues(variantType: string, raw: string | null): Record<string
 }
 
 function toPublic(p: any): PublicProduct {
-  // Default the card rating to the deterministic pseudoRating, keyed on this
-  // (parent) SKU — the same key + fallback the PDP uses when a product has no
-  // real reviews yet. attachRealRatings() overlays real numbers where they
-  // exist. Variant rows in the shop grid spread `...parent`, so they inherit
-  // ratingSku (parent) + this default automatically.
-  const pr = pseudoRating(p.sku);
+  // Cards start with NO rating: zero means "no reviews yet" and the card hides
+  // its stars. attachRealRatings() overlays the real average/count where
+  // approved reviews exist. We used to default to a deterministic
+  // pseudoRating here, which put invented stars ("4.3 (17)") on products whose
+  // own review section said "No reviews yet" — owner asked for one truth
+  // (2026-09-16). Variant rows spread `...parent`, so they inherit ratingSku
+  // (parent) + this default automatically.
   return {
     id: p.id,
     sku: p.sku,
     ratingSku: p.sku,
-    reviewAverage: pr.stars,
-    reviewCount: pr.count,
+    reviewAverage: 0,
+    reviewCount: 0,
     name: p.name,
     description: p.description ?? null,
     category: p.category,
@@ -287,8 +287,8 @@ function interleaveByProduct<T extends PublicProduct>(list: T[]): T[] {
 /**
  * Overlay REAL review summaries onto a list's card-rating fields, keyed on each
  * product's ratingSku (the parent SKU the PDP aggregates on). Products with no
- * approved reviews keep their pseudoRating default — identical to the PDP's
- * fallback. Mutates + returns the same list. One cached groupBy for the whole
+ * approved reviews keep the 0/0 default and show no stars — identical to the
+ * PDP. Mutates + returns the same list. One cached groupBy for the whole
  * catalog (getAllReviewSummaries), so calling it per list is cheap.
  */
 async function attachRealRatings<T extends PublicProduct>(list: T[]): Promise<T[]> {
