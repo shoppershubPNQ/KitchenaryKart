@@ -8,8 +8,9 @@
  * the right-hand half of the offer bar under the header (see OfferBar), so it
  * is seen immediately without pushing the hero banner below the fold.
  *
- * The logos sit on white plates because Amazon's wordmark is black and would
- * disappear against the red bar.
+ * It sits in a red block inside the otherwise white offer bar (owner,
+ * 2026-09-17). The logos keep their white chips because Amazon's wordmark is
+ * black and would disappear against red.
  *
  * Logos (owner approved the downloads, 2026-09-15): public/marketplaces/
  * amazon.svg (Wikimedia Commons "Amazon logo.svg") and flipkart-logo.png —
@@ -27,14 +28,15 @@ const MARKETPLACES = [
 export function MarketplaceInline() {
   return (
     <div className="flex items-center justify-center gap-3 md:gap-4">
-      <span className="whitespace-nowrap font-head text-[11px] font-semibold uppercase tracking-[0.07em] text-white/85 md:text-[12px]">
+      {/* Same treatment as the category row: 12px bold uppercase, wide tracking. */}
+      <span className="whitespace-nowrap font-head text-[11px] font-bold uppercase tracking-[0.05em] text-white/90 md:text-[12px]">
         Also available on
       </span>
-      <ul className="flex items-center gap-2 md:gap-2.5">
+      <ul className="flex items-center gap-2 md:gap-3">
         {MARKETPLACES.map((m) => (
           <li
             key={m.name}
-            className="kk-mkt-plate flex items-center justify-center rounded-[6px] bg-white px-2.5 py-1.5 md:px-3"
+            className="kk-mkt-plate flex items-center justify-center rounded-md bg-white px-3 py-1.5 md:px-3.5"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny static logo, no optimisation needed */}
             <img
@@ -44,7 +46,8 @@ export function MarketplaceInline() {
               height={m.height}
               loading="lazy"
               decoding="async"
-              className="h-[14px] w-auto object-contain md:h-[16px]"
+              // Was 14/16px — too small to read at a glance (owner, 2026-09-17).
+              className="h-[18px] w-auto object-contain md:h-[22px]"
             />
           </li>
         ))}

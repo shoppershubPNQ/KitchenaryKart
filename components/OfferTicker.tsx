@@ -41,14 +41,14 @@ export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
               <Link
                 href={it.href}
                 tabIndex={focusable ? undefined : -1}
-                className="underline-offset-4 decoration-gold/70 hover:underline focus-visible:underline"
+                className="underline-offset-4 decoration-brand/50 hover:underline focus-visible:underline"
               >
                 {it.text}
               </Link>
             ) : (
               <span>{it.text}</span>
             )}
-            <span className="mx-6 md:mx-8 text-gold text-[11px]" aria-hidden="true">
+            <span className="mx-6 md:mx-8 text-brand/40 text-[11px]" aria-hidden="true">
               ✦
             </span>
           </li>
@@ -58,12 +58,14 @@ export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
   );
 
   return (
-    <div className="kk-ticker-viewport overflow-hidden py-2.5">
+    <div className="kk-ticker-viewport overflow-hidden py-3">
       <div
         // Text shows exactly as written in admin — no forced capitals (owner,
         // 2026-09-17: "EMI" capital, the rest normal). Tracking dropped too:
         // wide letter-spacing suits all-caps and looks gappy in mixed case.
-        className="kk-ticker-track flex w-max font-head font-semibold tracking-[0.01em] text-[12.5px] md:text-[14px]"
+        // Bold at 15px so it carries the same weight as the 12px uppercase
+        // bold category row above (measured live) — owner asked for that size.
+        className="kk-ticker-track flex w-max font-head font-bold tracking-[0.01em] text-[13px] md:text-[15px]"
         style={{ animationDuration: `${seconds}s` }}
       >
         {list(0)}
