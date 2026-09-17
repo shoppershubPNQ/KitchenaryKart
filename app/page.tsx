@@ -35,9 +35,15 @@ export default async function HomePage() {
       <h1 className="sr-only">
         KitchenaryKart — Commercial Kitchen Equipment Supplier in India
       </h1>
-      <HeroCarousel banners={banners} />
+      {/* Offer ticker, then the marketplace note, BOTH above the hero and
+          directly under the header (owner's call, 2026-09-17). The ticker reads
+          as an announcement bar there, and the marketplace line lands as the
+          first thing a new visitor sees rather than a footnote near the end. */}
       {/* Scrolling offer line — admin: Content → Offer ticker. Hidden when off. */}
       {ticker && <OfferTicker ticker={ticker} />}
+      {/* "Also on Amazon & Flipkart" — static trust note, no links. */}
+      <MarketplaceStrip />
+      <HeroCarousel banners={banners} />
       <CategoryTiles tree={tree} />
 
       {/* Featured Spotlight — sits directly under the categories so the single
@@ -53,9 +59,6 @@ export default async function HomePage() {
       </section>
 
       <TrustStrip />
-
-      {/* "Also on Amazon & Flipkart" — static trust note, no links. */}
-      <MarketplaceStrip />
 
       <PromoCarousel slides={promoSlides} />
 
