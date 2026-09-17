@@ -21,6 +21,7 @@ import { resolveProductFaqs } from '@/lib/product-faqs';
 import { pdpSeoTitle } from '@/lib/seo-title';
 import { getSpareFitLinks, groupMachines } from '@/lib/spare-fits';
 import { productBrand, STORE_BRAND } from '@/lib/brand';
+import { ProductDescription } from '@/components/ProductDescription';
 
 interface Params {
   params: { sku: string };
@@ -541,9 +542,7 @@ export default async function ProductPage({ params }: Params) {
           <h2 className="font-head text-[clamp(1.25rem,2vw,1.6rem)] font-bold text-ink mb-3 md:mb-4">
             Product Description
           </h2>
-          <div className="max-w-[1100px] text-[15.5px] leading-relaxed text-ink/85 whitespace-pre-line">
-            {pageDescription.trim()}
-          </div>
+          <ProductDescription text={pageDescription.trim()} />
         </section>
       )}
 
