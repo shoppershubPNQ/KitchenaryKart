@@ -7,6 +7,10 @@
  * be delivered, so the env var must be set on Vercel.
  */
 import { Resend } from 'resend';
+import {
+  BRAND, button, emailShell, esc, paragraph, spacer, textBody, textFooter,
+  WHATSAPP_LINK, WHATSAPP_NUMBER,
+} from './email-layout';
 
 let client: Resend | null = null;
 
@@ -53,7 +57,7 @@ interface SendOtpEmailArgs {
  * Build the branded HTML/text email for an OTP. Same template for login
  * and registration verification — only the subject and intro line differ.
  */
-function buildOtpEmail(code: string, customerName: string | null | undefined, purpose: 'login' | 'register') {
+export function buildOtpEmail(code: string, customerName: string | null | undefined, purpose: 'login' | 'register') {
   const firstName = customerName ? customerName.split(' ')[0] : null;
   const greeting = purpose === 'register'
     ? (firstName ? `Welcome to KitchenaryKart, ${firstName}!` : 'Welcome to KitchenaryKart!')
@@ -71,52 +75,43 @@ function buildOtpEmail(code: string, customerName: string | null | undefined, pu
     ? "If you didn't sign up for KitchenaryKart, you can safely ignore this email."
     : "If you didn't request this code, you can safely ignore this email — someone may have entered your phone number by mistake.";
 
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>${subject}</title>
-</head>
-<body style="margin:0;padding:0;background:#f5f1ea;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f1ea;padding:40px 16px;">
+  // The code is the whole point of this email, so it gets the largest type in
+  // the set and generous letter-spacing — it is usually read off a phone held
+  // in one hand while the other types it into the site.
+  const codeBlock = `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background:${BRAND.ink};border-radius:10px;">
     <tr>
-      <td align="center">
-        <table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border-radius:8px;border:1px solid #e8e2d4;max-width:520px;width:100%;">
-          <tr>
-            <td style="padding:32px 32px 16px 32px;text-align:center;">
-              <div style="font-family:Georgia,serif;font-size:24px;font-weight:700;color:#1a1a1a;letter-spacing:0.5px;">KitchenaryKart</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:8px 32px 24px 32px;color:#1a1a1a;font-size:15px;line-height:1.55;">
-              <p style="margin:0 0 12px 0;">${greeting}</p>
-              <p style="margin:0 0 24px 0;">${intro}</p>
-              <div style="background:#1a1a1a;color:#efe3d0;font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;padding:18px 0;border-radius:6px;font-family:'Courier New',monospace;">${code}</div>
-              <p style="margin:24px 0 0 0;color:#777;font-size:13px;line-height:1.5;">${ignoreNote}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:16px 32px 28px 32px;border-top:1px solid #f0ebde;color:#999;font-size:12px;text-align:center;">
-              <div>KitchenaryKart · Commercial kitchen equipment</div>
-              <div style="margin-top:4px;">This is an automated message — replies aren't monitored.</div>
-            </td>
-          </tr>
-        </table>
+      <td align="center" style="padding:22px 12px;">
+        <div style="color:#EFE3D0;font-size:34px;line-height:1.1;font-weight:700;letter-spacing:10px;font-family:'Courier New',Courier,monospace;">${esc(code)}</div>
       </td>
     </tr>
-  </table>
-</body>
-</html>`;
+  </table>`;
 
-  const text = `${greeting}
+  const html = emailShell({
+    subject,
+    preheader: `${code} is your code. It expires in 5 minutes.`,
+    eyebrow: purpose === 'register' ? 'Verify your email' : 'Sign in',
+    heading: greeting,
+    quiet: true,
+    body: [
+      paragraph(intro),
+      spacer(8),
+      codeBlock,
+      spacer(20),
+      paragraph(ignoreNote, { muted: true, size: 13 }),
+    ].join(''),
+  });
 
-${intro}
-
-  ${code}
-
-${ignoreNote}
-
-— KitchenaryKart`;
+  const text = textBody([
+    greeting,
+    '',
+    intro,
+    '',
+    `    ${code}`,
+    '',
+    ignoreNote,
+  ]) + textFooter();
 
   return { subject, html, text };
 }
@@ -242,23 +237,41 @@ export async function sendRestockRequestConfirmation(args: {
   if (!resend) return false;
 
   const url = `https://kitchenarykart.com/product/${encodeURIComponent(args.sku)}`;
-  const name = escapeHtml(args.productName);
   const subject = `We'll tell you when it's back: ${args.productName}`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#222;line-height:1.6;max-width:560px">
-  <p style="margin:0 0 14px">Thank you for your interest in <b>${name}</b>.</p>
-  <p style="margin:0 0 14px">This product is currently out of stock. We&rsquo;ll notify you as soon as it becomes available again.</p>
-  <p style="margin:0 0 12px">Need it urgently or in bulk? Talk to us directly:</p>
-  <p style="margin:0 0 18px">
-    <a href="https://wa.me/919890352455" style="background:#25D366;color:#fff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:bold;margin:0 8px 8px 0">WhatsApp us</a>
-    <a href="tel:+919890352455" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:bold;margin:0 8px 8px 0">Call +91 98903 52455</a>
-  </p>
-  <p style="margin:0 0 18px;font-size:14px">Or email <a href="mailto:support@kitchenarykart.com" style="color:#9E2A2B;font-weight:bold;text-decoration:none">support@kitchenarykart.com</a>.</p>
-  <p style="margin:0 0 20px">
-    <a href="${url}" style="background:#9E2A2B;color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;display:inline-block;font-weight:bold">View product</a>
-  </p>
-  <p style="margin:16px 0 0;color:#777;font-size:12.5px">You requested this alert on kitchenarykart.com.</p>
-</div>`;
-  const text = `Thank you for your interest in ${args.productName}.\n\nThis product is currently out of stock. We'll notify you as soon as it becomes available again.\n\nNeed it urgently or in bulk? Talk to us directly:\nWhatsApp: https://wa.me/919890352455\nCall: +91 98903 52455\nEmail: support@kitchenarykart.com\n\nView product: ${url}\n\nYou requested this alert on kitchenarykart.com.`;
+
+  const html = emailShell({
+    subject,
+    preheader: `We will email you the moment ${args.productName} is available again.`,
+    eyebrow: 'Alert set',
+    heading: "We'll tell you the moment it's back.",
+    body: [
+      paragraph(
+        `Thank you for your interest in <strong>${esc(args.productName)}</strong>. It is out of stock right now, ` +
+          `and you are on the list — we will email you as soon as it returns.`,
+      ),
+      spacer(10),
+      button('View the product', url),
+      spacer(20),
+      paragraph(
+        `Need it urgently, or in bulk? <a href="${WHATSAPP_LINK}" style="color:${BRAND.red};">WhatsApp ${WHATSAPP_NUMBER}</a> — ` +
+          `we can often source a sold-out item faster than the website shows.`,
+        { size: 14 },
+      ),
+    ].join(''),
+    footerNote: 'You requested this alert on kitchenarykart.com. We will email you once, when it is back.',
+  });
+
+  const text = textBody([
+    `Thank you for your interest in ${args.productName}.`,
+    '',
+    'It is out of stock right now, and you are on the list — we will email you as soon as it returns.',
+    '',
+    `View the product: ${url}`,
+    '',
+    `Need it urgently or in bulk? WhatsApp ${WHATSAPP_NUMBER} — we can often source a sold-out item faster than the website shows.`,
+    '',
+    'You requested this alert on kitchenarykart.com. We will email you once, when it is back.',
+  ]) + textFooter();
 
   try {
     const result = await resend.emails.send({ from: getFromHeader(), to: args.to, subject, html, text });
