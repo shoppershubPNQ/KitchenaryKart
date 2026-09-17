@@ -15,10 +15,13 @@ import Link from 'next/link';
 import type { OfferTickerData } from '@/lib/offer-ticker';
 
 const PX_PER_SEC = { slow: 40, normal: 60, fast: 90 } as const;
-/** Rough rendered width of one character at this size, for timing only. */
-const PX_PER_CHAR = 9;
-/** One copy of the row must outrun wide screens (~2000px). */
-const MIN_ROW_CHARS = 220;
+/** Rough rendered width of one character at this size, for timing. Mixed
+ *  case is narrower than the all-caps this was first tuned for (was 9). */
+const PX_PER_CHAR = 7.5;
+/** One copy of the row must outrun wide screens (~2000px), or a gap shows in
+ *  the loop. Raised from 220 when the text stopped being forced to capitals:
+ *  220 narrower characters no longer reliably clear a 1920px screen. */
+const MIN_ROW_CHARS = 280;
 
 export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
   const chars = ticker.items.reduce((n, i) => n + i.text.length + 6, 0) || 1;
@@ -57,7 +60,10 @@ export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
   return (
     <div className="kk-ticker-viewport overflow-hidden py-2.5">
       <div
-        className="kk-ticker-track flex w-max font-head font-semibold uppercase tracking-[0.06em] text-[12px] md:text-[13.5px]"
+        // Text shows exactly as written in admin — no forced capitals (owner,
+        // 2026-09-17: "EMI" capital, the rest normal). Tracking dropped too:
+        // wide letter-spacing suits all-caps and looks gappy in mixed case.
+        className="kk-ticker-track flex w-max font-head font-semibold tracking-[0.01em] text-[12.5px] md:text-[14px]"
         style={{ animationDuration: `${seconds}s` }}
       >
         {list(0)}
