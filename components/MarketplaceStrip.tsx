@@ -1,7 +1,8 @@
 /**
- * "We are also available on Amazon and Flipkart" — a trust note, deliberately
- * WITHOUT links (owner, 2026-09-15): it says where else the products are
- * listed, it is not a way to send buyers off the site.
+ * "Also available on [Amazon] [Flipkart]" — a trust note, deliberately WITHOUT
+ * links (owner, 2026-09-15): it says where else the products are listed, it is
+ * not a way to send buyers off the site. The label carries no product name on
+ * purpose — the two logos finish the sentence.
  *
  * This used to be a full 419px section further down the page. It now rides in
  * the right-hand half of the offer bar under the header (see OfferBar), so it
@@ -27,7 +28,7 @@ export function MarketplaceInline() {
   return (
     <div className="flex items-center justify-center gap-3 md:gap-4">
       <span className="whitespace-nowrap font-head text-[11px] font-semibold uppercase tracking-[0.07em] text-white/85 md:text-[12px]">
-        We are also available on
+        Also available on
       </span>
       <ul className="flex items-center gap-2 md:gap-2.5">
         {MARKETPLACES.map((m) => (
