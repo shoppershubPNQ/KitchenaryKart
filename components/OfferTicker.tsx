@@ -1,6 +1,7 @@
 /**
- * Scrolling red offer strip under the home hero (text edited in the admin:
- * Content → Offer ticker).
+ * The scrolling offers themselves (text edited in the admin: Content → Offer
+ * ticker). Rendered inside OfferBar, which owns the red bar and puts the
+ * marketplace note beside it.
  *
  * Pure CSS, no client JavaScript: the row of offers is rendered twice and the
  * track slides left by exactly one copy (-50%), so the loop is seamless and
@@ -19,7 +20,7 @@ const PX_PER_CHAR = 9;
 /** One copy of the row must outrun wide screens (~2000px). */
 const MIN_ROW_CHARS = 220;
 
-export function OfferTicker({ ticker }: { ticker: OfferTickerData }) {
+export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
   const chars = ticker.items.reduce((n, i) => n + i.text.length + 6, 0) || 1;
   const repeat = Math.max(1, Math.ceil(MIN_ROW_CHARS / chars));
   const row = Array.from({ length: repeat }, () => ticker.items).flat();
@@ -54,19 +55,14 @@ export function OfferTicker({ ticker }: { ticker: OfferTickerData }) {
   );
 
   return (
-    <section
-      aria-label="Current offers"
-      className="kk-ticker bg-gradient-to-r from-brand-dark via-brand to-brand-dark text-white border-y border-gold/40"
-    >
-      <div className="kk-ticker-viewport overflow-hidden py-2.5">
-        <div
-          className="kk-ticker-track flex w-max font-head font-semibold uppercase tracking-[0.06em] text-[12px] md:text-[13.5px]"
-          style={{ animationDuration: `${seconds}s` }}
-        >
-          {list(0)}
-          {list(1)}
-        </div>
+    <div className="kk-ticker-viewport overflow-hidden py-2.5">
+      <div
+        className="kk-ticker-track flex w-max font-head font-semibold uppercase tracking-[0.06em] text-[12px] md:text-[13.5px]"
+        style={{ animationDuration: `${seconds}s` }}
+      >
+        {list(0)}
+        {list(1)}
       </div>
-    </section>
+    </div>
   );
 }

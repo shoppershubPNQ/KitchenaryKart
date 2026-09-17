@@ -10,8 +10,7 @@ import { getActiveBanners } from '@/lib/banners';
 import { getActiveReels } from '@/lib/reels';
 import { getHomeSpotlight } from '@/lib/spotlight';
 import { SpotlightTeaser } from '@/components/SpotlightTeaser';
-import { OfferTicker } from '@/components/OfferTicker';
-import { MarketplaceStrip } from '@/components/MarketplaceStrip';
+import { OfferBar } from '@/components/OfferBar';
 import { getOfferTicker } from '@/lib/offer-ticker';
 
 export const revalidate = 300; // regenerate home at most every 5 min
@@ -35,14 +34,11 @@ export default async function HomePage() {
       <h1 className="sr-only">
         KitchenaryKart — Commercial Kitchen Equipment Supplier in India
       </h1>
-      {/* Offer ticker, then the marketplace note, BOTH above the hero and
-          directly under the header (owner's call, 2026-09-17). The ticker reads
-          as an announcement bar there, and the marketplace line lands as the
-          first thing a new visitor sees rather than a footnote near the end. */}
-      {/* Scrolling offer line — admin: Content → Offer ticker. Hidden when off. */}
-      {ticker && <OfferTicker ticker={ticker} />}
-      {/* "Also on Amazon & Flipkart" — static trust note, no links. */}
-      <MarketplaceStrip />
+      {/* One bar under the header: scrolling offers on the left, "also on
+          Amazon & Flipkart" on the right. Offers are edited in admin (Content →
+          Offer ticker); with the ticker switched off the bar still carries the
+          marketplace note. */}
+      <OfferBar ticker={ticker} />
       <HeroCarousel banners={banners} />
       <CategoryTiles tree={tree} />
 

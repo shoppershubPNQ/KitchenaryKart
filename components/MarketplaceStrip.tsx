@@ -1,12 +1,14 @@
 /**
- * "Also available on marketplaces" — Kitchenary Kart is on Amazon and
- * Flipkart too. Static and deliberately WITHOUT links (owner, 2026-09-15):
- * it is a trust signal, not a way to send buyers off the site.
+ * "We are also available on Amazon and Flipkart" — a trust note, deliberately
+ * WITHOUT links (owner, 2026-09-15): it says where else the products are
+ * listed, it is not a way to send buyers off the site.
  *
- * Look: ~80% white, ~12% brand red (top bar, pill, highlight, hover accents),
- * ~8% ink black (headline). A soft dot grid and a faint red glow sit behind a
- * raised card; the marketplace tiles lift with a red accent on hover (styles:
- * .kk-mkt-* in globals.css; hover motion is off for reduced-motion users).
+ * This used to be a full 419px section further down the page. It now rides in
+ * the right-hand half of the offer bar under the header (see OfferBar), so it
+ * is seen immediately without pushing the hero banner below the fold.
+ *
+ * The logos sit on white plates because Amazon's wordmark is black and would
+ * disappear against the red bar.
  *
  * Logos (owner approved the downloads, 2026-09-15): public/marketplaces/
  * amazon.svg (Wikimedia Commons "Amazon logo.svg") and flipkart-logo.png —
@@ -21,65 +23,31 @@ const MARKETPLACES = [
   { name: 'Flipkart', logo: '/marketplaces/flipkart-logo.png', width: 500, height: 132 },
 ];
 
-const DIRECT_PERKS = ['GST invoice on direct orders', 'Bulk & HORECA pricing direct'];
-
-function Tick() {
+export function MarketplaceInline() {
   return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-export function MarketplaceStrip() {
-  return (
-    <section aria-labelledby="kk-mkt-title" className="relative overflow-hidden bg-white py-14 md:py-20">
-      {/* Decoration only */}
-      <div aria-hidden="true" className="kk-mkt-dots absolute inset-0" />
-      <div aria-hidden="true" className="absolute -top-28 -right-20 h-80 w-80 rounded-full bg-brand/[0.07] blur-3xl" />
-      <div aria-hidden="true" className="absolute -bottom-32 -left-24 h-72 w-72 rounded-full bg-brand/[0.05] blur-3xl" />
-
-      <div className="relative max-w-site mx-auto px-[6mm] md:px-[1.5cm]">
-        <div className="kk-mkt-card relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-ink/[0.08] bg-white px-6 py-9 md:px-12 md:py-12 grid gap-9 md:grid-cols-[1.15fr_1fr] md:gap-14 items-center">
-          <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-dark via-brand to-brand-hover" />
-
-          <div>
-            <h2 id="kk-mkt-title" className="font-head text-[clamp(1.55rem,2.7vw,2.35rem)] font-extrabold leading-[1.15] text-ink">
-              We are available on <span className="kk-mkt-mark">these platforms</span>
-            </h2>
-            <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2.5">
-              {DIRECT_PERKS.map((p) => (
-                <li key={p} className="flex items-center gap-2 text-[13.5px] font-medium text-ink/80">
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-brand text-white">
-                    <Tick />
-                  </span>
-                  {p}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <ul className="grid grid-cols-2 gap-4 md:gap-5">
-            {MARKETPLACES.map((m) => (
-              <li
-                key={m.name}
-                className="kk-mkt-tile relative flex items-center justify-center rounded-xl border border-ink/[0.08] bg-white px-4 py-10 md:px-6 md:py-14"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- tiny static logo, no optimisation needed */}
-                <img
-                  src={m.logo}
-                  alt={`${m.name} logo`}
-                  width={m.width}
-                  height={m.height}
-                  loading="lazy"
-                  decoding="async"
-                  className="relative h-9 w-auto max-w-full object-contain md:h-12"
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
+    <div className="flex items-center justify-center gap-3 md:gap-4">
+      <span className="whitespace-nowrap font-head text-[11px] font-semibold uppercase tracking-[0.07em] text-white/85 md:text-[12px]">
+        We are also available on
+      </span>
+      <ul className="flex items-center gap-2 md:gap-2.5">
+        {MARKETPLACES.map((m) => (
+          <li
+            key={m.name}
+            className="kk-mkt-plate flex items-center justify-center rounded-[6px] bg-white px-2.5 py-1.5 md:px-3"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- tiny static logo, no optimisation needed */}
+            <img
+              src={m.logo}
+              alt={`${m.name} logo`}
+              width={m.width}
+              height={m.height}
+              loading="lazy"
+              decoding="async"
+              className="h-[14px] w-auto object-contain md:h-[16px]"
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
