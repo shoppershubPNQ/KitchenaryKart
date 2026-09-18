@@ -15,6 +15,12 @@
  * leke aao"). So this bar deliberately does not use the site container: the
  * offers scroll edge to edge and only take the container's side padding.
  *
+ * The right padding was ~57px, then 0, and is now a HAIRLINE 8px (owner,
+ * 2026-09-18). 57px of red after the Flipkart plate read as the same gap they
+ * had just asked to remove; flush at 0 went too far the other way — the white
+ * plate ran into the screen edge and looked cut off. 8px of red is enough for
+ * the plate's rounded right corner to close visibly without reopening a gap.
+ *
  * Below md the two stack: the offers on top, the red block as a full-width row
  * under them — at 375px they cannot share a row without the offers being cut to
  * a few characters.
@@ -38,7 +44,7 @@ export function OfferBar({ ticker }: { ticker: OfferTickerData | null }) {
           </div>
         )}
         <div
-          className={`flex shrink-0 items-center justify-center bg-gradient-to-r from-brand-dark via-brand to-brand-dark px-[6mm] py-3 md:justify-end md:py-2.5 md:pl-8 md:pr-[1.5cm] ${
+          className={`flex shrink-0 items-center justify-center bg-gradient-to-r from-brand-dark via-brand to-brand-dark px-[6mm] py-3 md:justify-end md:py-2.5 md:pl-8 md:pr-2 ${
             ticker ? '' : 'md:flex-1'
           }`}
         >

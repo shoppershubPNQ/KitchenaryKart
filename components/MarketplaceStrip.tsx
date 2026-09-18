@@ -28,14 +28,21 @@ const MARKETPLACES = [
 export function MarketplaceInline() {
   return (
     <div className="flex items-center justify-center gap-3 md:gap-4">
-      {/* Same treatment as the category row: 12px bold uppercase, wide tracking. */}
-      <span className="whitespace-nowrap font-head text-[11px] font-bold uppercase tracking-[0.05em] text-white/90 md:text-[12px]">
-        Also available on
+      {/* Bold uppercase with wide tracking, a size up from the category row.
+          Wording went "We are available on these platforms" → "Also available
+          on" → back to "We are also available on" (owner, 2026-09-18).
+          Desktop size went 12px → 14px → 16px the same day; mobile stays 13px,
+          where 16px would push the logos into the offers. */}
+      <span className="whitespace-nowrap font-head text-[13px] font-bold uppercase tracking-[0.05em] text-white/90 md:text-[16px]">
+        We are also available on
       </span>
       <ul className="flex items-center gap-2 md:gap-3">
         {MARKETPLACES.map((m) => (
           <li
             key={m.name}
+            // Rounded on all four corners, including the last plate: it sits
+            // 8px from the screen edge so the white visibly CLOSES against the
+            // red instead of running off the edge (owner, 2026-09-18).
             className="kk-mkt-plate flex items-center justify-center rounded-md bg-white px-3.5 py-2 md:px-4"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny static logo, no optimisation needed */}
