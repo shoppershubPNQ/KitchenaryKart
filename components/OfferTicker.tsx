@@ -16,8 +16,9 @@ import type { OfferTickerData } from '@/lib/offer-ticker';
 
 const PX_PER_SEC = { slow: 40, normal: 60, fast: 90 } as const;
 /** Rough rendered width of one character at this size, for timing. Mixed
- *  case is narrower than the all-caps this was first tuned for (was 9). */
-const PX_PER_CHAR = 7.5;
+ *  case is narrower than the all-caps this was first tuned for (was 9);
+ *  nudged back up when the bar grew to 16px text. */
+const PX_PER_CHAR = 8;
 /** One copy of the row must outrun wide screens (~2000px), or a gap shows in
  *  the loop. Raised from 220 when the text stopped being forced to capitals:
  *  220 narrower characters no longer reliably clear a 1920px screen. */
@@ -58,14 +59,14 @@ export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
   );
 
   return (
-    <div className="kk-ticker-viewport overflow-hidden py-3">
+    <div className="kk-ticker-viewport overflow-hidden py-4">
       <div
         // Text shows exactly as written in admin — no forced capitals (owner,
         // 2026-09-17: "EMI" capital, the rest normal). Tracking dropped too:
         // wide letter-spacing suits all-caps and looks gappy in mixed case.
         // Bold at 15px so it carries the same weight as the 12px uppercase
         // bold category row above (measured live) — owner asked for that size.
-        className="kk-ticker-track flex w-max font-head font-bold tracking-[0.01em] text-[13px] md:text-[15px]"
+        className="kk-ticker-track flex w-max font-head font-bold tracking-[0.01em] text-[14px] md:text-[16px]"
         style={{ animationDuration: `${seconds}s` }}
       >
         {list(0)}

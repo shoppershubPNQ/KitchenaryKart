@@ -36,7 +36,7 @@ export function MarketplaceInline() {
         {MARKETPLACES.map((m) => (
           <li
             key={m.name}
-            className="kk-mkt-plate flex items-center justify-center rounded-md bg-white px-3 py-1.5 md:px-3.5"
+            className="kk-mkt-plate flex items-center justify-center rounded-md bg-white px-3.5 py-2 md:px-4"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- tiny static logo, no optimisation needed */}
             <img
@@ -46,8 +46,9 @@ export function MarketplaceInline() {
               height={m.height}
               loading="lazy"
               decoding="async"
-              // Was 14/16px — too small to read at a glance (owner, 2026-09-17).
-              className="h-[18px] w-auto object-contain md:h-[22px]"
+              // Was 14/16px, then 18/22px — grown again with the taller bar
+              // (owner, 2026-09-18: "increase the height, make it bigger").
+              className="h-[20px] w-auto object-contain md:h-[26px]"
             />
           </li>
         ))}

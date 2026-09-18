@@ -29,7 +29,7 @@ export function OfferBar({ ticker }: { ticker: OfferTickerData | null }) {
       aria-label="Current offers and marketplaces"
       className="kk-ticker border-y border-brand/15 bg-white text-brand"
     >
-      <div className="flex flex-col md:min-h-[56px] md:flex-row md:items-stretch">
+      <div className="flex flex-col md:min-h-[72px] md:flex-row md:items-stretch">
         {ticker && (
           <div className="flex min-w-0 flex-1 items-center px-[6mm] md:pl-[1.5cm] md:pr-6">
             <div className="min-w-0 flex-1">
@@ -38,7 +38,7 @@ export function OfferBar({ ticker }: { ticker: OfferTickerData | null }) {
           </div>
         )}
         <div
-          className={`flex shrink-0 items-center justify-center bg-gradient-to-r from-brand-dark via-brand to-brand-dark px-[6mm] py-2.5 md:justify-end md:py-2 md:pl-7 md:pr-[1.5cm] ${
+          className={`flex shrink-0 items-center justify-center bg-gradient-to-r from-brand-dark via-brand to-brand-dark px-[6mm] py-3 md:justify-end md:py-2.5 md:pl-8 md:pr-[1.5cm] ${
             ticker ? '' : 'md:flex-1'
           }`}
         >
