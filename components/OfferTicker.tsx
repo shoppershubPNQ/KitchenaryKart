@@ -15,10 +15,11 @@ import Link from 'next/link';
 import type { OfferTickerData } from '@/lib/offer-ticker';
 
 const PX_PER_SEC = { slow: 40, normal: 60, fast: 90 } as const;
-/** Rough rendered width of one character at this size, for timing. Mixed
- *  case is narrower than the all-caps this was first tuned for (was 9);
- *  nudged back up when the bar grew to 16px text. */
-const PX_PER_CHAR = 8;
+/** Rough rendered width of one character at this size, for timing AND for the
+ *  repeat count. It must track the real font size: the offers went 14/16px →
+ *  20/24px (owner, 2026-09-18), and leaving this at 8 would under-measure the
+ *  row, so the track would scroll noticeably faster than the chosen px/sec. */
+const PX_PER_CHAR = 11;
 /** One copy of the row must outrun wide screens (~2000px), or a gap shows in
  *  the loop. Raised from 220 when the text stopped being forced to capitals:
  *  220 narrower characters no longer reliably clear a 1920px screen. */
@@ -66,7 +67,7 @@ export function OfferTickerTrack({ ticker }: { ticker: OfferTickerData }) {
         // wide letter-spacing suits all-caps and looks gappy in mixed case.
         // Bold at 15px so it carries the same weight as the 12px uppercase
         // bold category row above (measured live) — owner asked for that size.
-        className="kk-ticker-track flex w-max font-head font-bold tracking-[0.01em] text-[14px] md:text-[16px]"
+        className="kk-ticker-track flex w-max font-head font-bold tracking-[0.01em] text-[20px] md:text-[24px]"
         style={{ animationDuration: `${seconds}s` }}
       >
         {list(0)}
