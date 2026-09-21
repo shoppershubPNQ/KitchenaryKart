@@ -38,7 +38,9 @@ const LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.-]{1,30}):\s+(.+)$/;
 // For the same reason a bullet label may also hold "×", "–" and ","
 // ("400 × 280 × 193 mm Size:", "220V, 50–60Hz:" — toaster / warmer copy,
 // 2026-09-21). Scanned 1,386 descriptions: only those 5 labels change.
-const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.,×–-]{1,40}):\s+(.+)$/;
+// Cap 60 (was 41) for "Stainless Steel Body with Gold-Tone Details:" on the
+// premium steamers; rescanned 1,401: only those 5 change.
+const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.,×–-]{1,59}):\s+(.+)$/;
 
 type Block =
   | { kind: 'lead'; text: string }
