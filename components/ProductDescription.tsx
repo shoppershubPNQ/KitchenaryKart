@@ -30,6 +30,12 @@ const BULLET = /^\s*(?:[•*]|-(?=\s))\s+/;
 // commas allowed inside it, so ordinary prose ("Designed for cafés, hotels:")
 // never gets a bold run-in.
 const LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.-]{1,30}):\s+(.+)$/;
+// Inside a BULLET the label may run to 41 characters ("Refrigerated Storage
+// below the Display:", Bain Marie copy 2026-09-21). Kept separate on purpose:
+// at 41 a plain paragraph starts matching too — "This is a serious production
+// machine: at roughly 150 kg…" (KKKBE0003-B40) would turn bold. A bullet
+// that opens "Words: …" is a label by construction; a paragraph is not.
+const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.-]{1,40}):\s+(.+)$/;
 
 type Block =
   | { kind: 'lead'; text: string }
@@ -84,8 +90,8 @@ function parse(raw: string): Block[] {
 }
 
 /** "Care & Use: For dry grinding only…" → bold "Care & Use:" then the rest. */
-function withLabel(text: string) {
-  const m = text.match(LABEL);
+function withLabel(text: string, pattern: RegExp = LABEL) {
+  const m = text.match(pattern);
   if (!m) return text;
   return (
     <>
@@ -122,7 +128,7 @@ export function ProductDescription({ text }: { text: string }) {
                   // line lines up with the text above it, not under the dot.
                   <li key={j} className={`relative pl-6 ${justify}`}>
                     <span aria-hidden="true" className="absolute left-1 top-[0.72em] h-1.5 w-1.5 rounded-full bg-brand" />
-                    {withLabel(item)}
+                    {withLabel(item, BULLET_LABEL)}
                   </li>
                 ))}
               </ul>
