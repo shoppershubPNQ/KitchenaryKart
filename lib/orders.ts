@@ -37,7 +37,54 @@ export interface PublicOrder {
   trackingUrl: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
+  /** Courier scans for the current AWB, newest first. Empty until the
+   *  shipment has been booked through the admin and scanned. */
+  trackingEvents: PublicTrackingEvent[];
   items: PublicOrderItem[];
+}
+
+export interface PublicTrackingEvent {
+  status: string;
+  location: string | null;
+  detail: string | null;
+  at: string;
+}
+
+/** "Chandigarh_Raiprkln_C (Chandigarh)" → "Chandigarh". Delhivery's hub
+ *  codes mean nothing to a customer; the city in brackets does. */
+function cleanLocation(raw: string | null): string | null {
+  if (!raw) return null;
+  const inBrackets = raw.match(/\(([^)]+)\)\s*$/);
+  const s = (inBrackets ? inBrackets[1] : raw).replace(/_/g, ' ').trim();
+  return s || null;
+}
+
+/**
+ * Scans come from the admin's shipment tables, read with a plain query: the
+ * storefront's Prisma schema deliberately does not model them (the admin owns
+ * that schema). Only real courier scans (they carry the raw payload) — never
+ * our own internal notes such as "booked by admin".
+ */
+async function loadTrackingEvents(orderId: number, awb: string | null): Promise<PublicTrackingEvent[]> {
+  if (!awb) return [];
+  try {
+    const rows = await prisma.$queryRaw<Array<{ status: string; location: string | null; status_detail: string | null; occurred_at: Date }>>`
+      SELECT e.status, e.location, e.status_detail, e.occurred_at
+      FROM shipment_events e
+      JOIN shipments s ON s.id = e.shipment_id
+      WHERE s.order_id = ${orderId} AND s.awb = ${awb} AND e.raw IS NOT NULL
+      ORDER BY e.occurred_at DESC
+      LIMIT 25`;
+    return rows.map((r) => ({
+      status: r.status,
+      location: cleanLocation(r.location),
+      detail: r.status_detail,
+      at: r.occurred_at.toISOString(),
+    }));
+  } catch (err) {
+    console.error('[orders] tracking events', err);
+    return [];
+  }
 }
 
 /** Compose `KK/2026-27/0001` from raw serial + FY columns. */
@@ -142,6 +189,7 @@ export async function loadPublicOrder(
     trackingUrl: order.trackingUrl,
     shippedAt: order.shippedAt?.toISOString() ?? null,
     deliveredAt: order.deliveredAt?.toISOString() ?? null,
+    trackingEvents: await loadTrackingEvents(order.id, order.trackingNumber),
     items: order.items.map((it) => ({
       productName: it.productName ?? '',
       productSku: it.productSku ?? '',

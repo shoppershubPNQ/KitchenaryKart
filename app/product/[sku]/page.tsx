@@ -16,6 +16,7 @@ import { buildProductJsonLd, buildBreadcrumbJsonLd, buildFaqJsonLd } from '@/lib
 import { PdpViewTracker } from '@/components/PdpViewTracker';
 import { ScrollToTopOnMount } from '@/components/ScrollToTopOnMount';
 import { PdpTrustBadges } from '@/components/PdpTrustBadges';
+import { PincodeCheck } from '@/components/PincodeCheck';
 import { ProductFaqSection } from '@/components/ProductFaq';
 import { resolveProductFaqs } from '@/lib/product-faqs';
 import { pdpSeoTitle } from '@/lib/seo-title';
@@ -480,6 +481,10 @@ export default async function ProductPage({ params }: Params) {
               }}
             />
           </div>
+
+          {/* Delhivery serviceability + our free-delivery rule for the shopper's
+              pincode — answers "do you deliver to me?" before they ask on WhatsApp. */}
+          <PincodeCheck price={displayPrice} />
 
           {/* Plain text links right under the buy box — the strongest place
               for a spare page (Google page 1) to pass ranking to its machine. */}

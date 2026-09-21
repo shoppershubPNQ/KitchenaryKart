@@ -58,6 +58,10 @@ export const trackLookupByIp = makeLimiter('track-lookup', 20, '10 m');
 // handful of sold-out items; this stops the endpoint being used to spray mail.
 export const notifyMeByIp = makeLimiter('notify-me', 10, '1 h');
 
+// Product-page pincode check. A shopper tries a few pincodes; this blocks a
+// script walking all ~19,000 through our Delhivery account.
+export const pincodeByIp = makeLimiter('pincode', 20, '10 m');
+
 export function getClientIp(req: Request): string {
   const fwd = req.headers.get('x-forwarded-for');
   if (fwd) return fwd.split(',')[0].trim();

@@ -98,6 +98,30 @@ export function OrderDetailView({
               Shipped on {dateShortFromIso(order.shippedAt)}
             </div>
           )}
+
+          {/* Courier scans, newest first — filled hourly from Delhivery. */}
+          {order.trackingEvents.length > 0 && (
+            <ol className="mt-4 space-y-3 border-l-2 border-line pl-4">
+              {order.trackingEvents.map((e, i) => (
+                <li key={`${e.at}-${i}`} className="relative">
+                  <span
+                    aria-hidden="true"
+                    className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full ${i === 0 ? 'bg-brand' : 'bg-line'}`}
+                  />
+                  <div className={`text-sm ${i === 0 ? 'font-semibold text-ink' : 'text-ink/80'}`}>
+                    {e.status}
+                    {e.location && <span className="font-normal text-muted"> · {e.location}</span>}
+                  </div>
+                  {e.detail && <div className="text-xs text-muted">{e.detail}</div>}
+                  <div className="text-[11px] text-muted">
+                    {new Date(e.at).toLocaleString('en-IN', {
+                      timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+                    })}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       )}
 
