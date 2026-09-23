@@ -40,7 +40,12 @@ const LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.-]{1,30}):\s+(.+)$/;
 // 2026-09-21). Scanned 1,386 descriptions: only those 5 labels change.
 // Cap 60 (was 41) for "Stainless Steel Body with Gold-Tone Details:" on the
 // premium steamers; rescanned 1,401: only those 5 change.
-const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.,×–-]{1,59}):\s+(.+)$/;
+// "+" joins two figures the machine really does carry side by side —
+// "8L + 8L Listed Configuration:" on the twin-tank gas fryers and
+// "2500 W + 2500 W Heating:" on the four-compartment pasta boiler. Scanned
+// 1,428 descriptions / 998 bullets: exactly those 3 labels change, and no
+// plain paragraph newly matches.
+const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.,×–+-]{1,59}):\s+(.+)$/;
 
 type Block =
   | { kind: 'lead'; text: string }
