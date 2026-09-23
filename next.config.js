@@ -111,6 +111,25 @@ const nextConfig = {
       permanent: true,
     }));
 
+    // A listing we withdrew because it duplicated another one, pointed at the
+    // listing that survived. app/product/[sku] deliberately 404s one of our own
+    // SKUs rather than redirecting it to a search page — a search page has no
+    // price on it, which is what left Merchant Center reporting "Missing
+    // product price". Sending it to the REAL replacement has neither problem:
+    // the visitor lands on the product they wanted and the link equity moves
+    // with them. Only add a pair here where the destination genuinely replaces
+    // the source; otherwise a 404 is the honest answer.
+    const retiredSkus = [
+      // KKHE0288-2P2 was the red 2-layer curved "Big" a second time, at a
+      // different price; KKHE0285-RWS3LCMB is the one that stayed.
+      ['KKHE0288-2P2', 'KKHE0285-RWS3LCMB'],
+    ];
+    const retiredSkuRedirects = retiredSkus.map(([from, to]) => ({
+      source: `/product/${from}`,
+      destination: `/product/${to}`,
+      permanent: true,
+    }));
+
     // Legacy WooCommerce/WordPress → Next.js migration redirects (301). The old
     // site used /product-category/, /product-tag/, /shop/page/N/, etc. After the
     // migration every URL changed, so Google's indexed old URLs now 404 —
@@ -165,7 +184,9 @@ const nextConfig = {
       { source: '/all-products', destination: '/products', permanent: true },
     ];
 
-    return [...policyRedirects, ...legacyRedirects, ...legacyPageRedirects];
+    // Retired SKUs go FIRST: a specific product-to-product 301 must win over
+    // any broader /product/* pattern below it.
+    return [...retiredSkuRedirects, ...policyRedirects, ...legacyRedirects, ...legacyPageRedirects];
   },
 };
 
