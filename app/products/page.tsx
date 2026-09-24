@@ -14,14 +14,14 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: 'All Products — Commercial Kitchen Equipment',
   description:
-    'Browse the full KitchenaryKart catalogue of commercial kitchen equipment by category — every product and size in one place.',
+    'Browse the full Kitchenary Kart catalogue of commercial kitchen equipment by category — every product and size in one place.',
   alternates: { canonical: '/products' },
   openGraph: {
     type: 'website',
     url: '/products',
-    title: 'All Products — KitchenaryKart',
+    title: 'All Products — Kitchenary Kart',
     description: 'Browse the full commercial kitchen equipment catalogue by category.',
-    siteName: 'KitchenaryKart',
+    siteName: 'Kitchenary Kart',
     locale: 'en_IN',
     images: DEFAULT_OG_IMAGES,
   },
@@ -50,7 +50,7 @@ export default async function AllProductsPage() {
         All Products
       </h1>
       <p className="text-[15px] text-muted mb-8 max-w-[70ch]">
-        The complete KitchenaryKart catalogue of commercial kitchen equipment, by category.
+        The complete Kitchenary Kart catalogue of commercial kitchen equipment, by category.
         Tap any item to view details, pricing and sizes.
       </p>
 

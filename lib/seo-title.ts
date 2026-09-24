@@ -9,7 +9,7 @@
  * the name already has it. The clean product name stays the on-page H1.
  *
  * No brand suffix. It used to be appended when the whole title fitted (only
- * ~12% of pages), so some product titles ended "— KitchenaryKart" and most
+ * ~12% of pages), so some product titles ended "— Kitchenary Kart" and most
  * did not; the owner asked for it off (2026-09-11). The brand is still in the
  * OG siteName and the domain, and Google shows the site name separately.
  *

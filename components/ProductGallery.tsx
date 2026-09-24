@@ -87,7 +87,7 @@ export function ProductGallery({ name, images, imageUrl, sku, price, mrp, catego
 
   async function share() {
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    const data = { title: name, text: `Check out ${name} on KitchenaryKart`, url };
+    const data = { title: name, text: `Check out ${name} on Kitchenary Kart`, url };
     try {
       if (typeof navigator !== 'undefined' && (navigator as any).share) {
         await (navigator as any).share(data);

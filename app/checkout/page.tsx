@@ -391,7 +391,7 @@ export default function CheckoutPage() {
         amount: data.amount,
         currency: data.currency || 'INR',
         order_id: data.razorpayOrderId,
-        name: 'KitchenaryKart',
+        name: 'Kitchenary Kart',
         description: `Order ${data.orderNumber}`,
         image: '/logo.png',
         prefill: {
@@ -525,7 +525,7 @@ export default function CheckoutPage() {
         <aside className="bg-brand text-white p-6 flex flex-col gap-4 relative overflow-hidden">
           <div className="flex items-center gap-3">
             <div className="bg-white rounded-md p-2 inline-block">
-              <img src="/logo.png" alt="KitchenaryKart" className="h-8 w-auto" />
+              <img src="/logo.png" alt="Kitchenary Kart" className="h-8 w-auto" />
             </div>
           </div>
 
@@ -608,7 +608,7 @@ export default function CheckoutPage() {
           </svg>
 
           <div className="mt-auto pt-6 text-[11px] text-white/75 z-10">
-            Secured by <strong className="text-white">KitchenaryKart</strong>
+            Secured by <strong className="text-white">Kitchenary Kart</strong>
           </div>
         </aside>
 
@@ -901,7 +901,7 @@ export default function CheckoutPage() {
             </button>
 
             <p className="text-center text-[11px] text-muted">
-              ✓ Secure payment via Razorpay · KitchenaryKart Trust
+              ✓ Secure payment via Razorpay · Kitchenary Kart Trust
             </p>
           </div>
         </div>

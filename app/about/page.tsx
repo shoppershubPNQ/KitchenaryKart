@@ -21,13 +21,13 @@ const inter = Inter({
   display: 'swap',
 });
 
-const TITLE = 'Commercial Kitchen Equipment Supplier in India | KitchenaryKart';
+const TITLE = 'Commercial Kitchen Equipment Supplier in India | Kitchenary Kart';
 const DESCRIPTION =
-  'KitchenaryKart is a B2B commercial kitchen equipment supplier for restaurants, hotels, cloud kitchens, cafes, bakeries & caterers — hot & cold equipment, refrigeration, buffet, bar, bakery tools, housekeeping & spare parts at wholesale pricing, delivered across India.';
+  'Kitchenary Kart is a B2B commercial kitchen equipment supplier for restaurants, hotels, cloud kitchens, cafes, bakeries & caterers — hot & cold equipment, refrigeration, buffet, bar, bakery tools, housekeeping & spare parts at wholesale pricing, delivered across India.';
 
 export const metadata: Metadata = {
-  // `absolute` bypasses the layout's "%s — KitchenaryKart" template so the
-  // brand name isn't doubled (the title already ends in "| KitchenaryKart").
+  // `absolute` bypasses the layout's "%s — Kitchenary Kart" template so the
+  // brand name isn't doubled (the title already ends in "| Kitchenary Kart").
   title: { absolute: TITLE },
   description: DESCRIPTION,
   keywords: [
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description:
       'B2B / wholesale HORECA supplier for restaurants, hotels, cloud kitchens, cafes & bakeries — 2,000+ products, GST-compliant invoicing, export-ready.',
-    siteName: 'KitchenaryKart',
+    siteName: 'Kitchenary Kart',
     locale: 'en_IN',
     images: ['/logo.png'],
   },

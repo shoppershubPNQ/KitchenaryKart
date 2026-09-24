@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description = (lastSpace > 100 ? cut.slice(0, lastSpace) : cut).trim() + '…';
   }
   const canonical = `/policy/${params.slug}`;
-  const title = `${p.title} — KitchenaryKart`;
+  const title = `${p.title} — Kitchenary Kart`;
   // Self-canonical + matching og:url (these pages previously inherited the
   // homepage og:url, which Ahrefs flagged as "OG URL not matching canonical").
   return {
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       url: canonical,
       title,
       description,
-      siteName: 'KitchenaryKart',
+      siteName: 'Kitchenary Kart',
       locale: 'en_IN',
       images: DEFAULT_OG_IMAGES,
     },

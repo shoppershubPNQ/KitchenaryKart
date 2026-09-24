@@ -45,15 +45,15 @@ export function generateMetadata({ params, searchParams }: Params): Metadata {
     openGraph: {
       type: 'website',
       url: canonical,
-      title: `${c.title} — KitchenaryKart`,
+      title: `${c.title} — Kitchenary Kart`,
       description: c.metaDescription,
-      siteName: 'KitchenaryKart',
+      siteName: 'Kitchenary Kart',
       locale: 'en_IN',
       images: DEFAULT_OG_IMAGES,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${c.title} — KitchenaryKart`,
+      title: `${c.title} — Kitchenary Kart`,
       description: c.metaDescription,
     },
   };

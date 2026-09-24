@@ -23,7 +23,7 @@ export function generateMetadata({ params }: Params): Metadata {
   if (!post) return { title: 'Not found' };
   const canonical = `/blog/${post.slug}`;
   // Article titles are keyword-rich and often already ~55-64 chars; the
-  // " — KitchenaryKart" brand suffix pushed the <title> over 60 (audit
+  // " — Kitchenary Kart" brand suffix pushed the <title> over 60 (audit
   // "title too long"). Drop the suffix on blog titles (brand stays in the
   // domain + OG siteName) via `absolute`. Descriptions clamped to <=160.
   const metaDescription = clampDescription(post.description);
@@ -36,7 +36,7 @@ export function generateMetadata({ params }: Params): Metadata {
       url: canonical,
       title: post.title,
       description: metaDescription,
-      siteName: 'KitchenaryKart',
+      siteName: 'Kitchenary Kart',
       locale: 'en_IN',
       images: DEFAULT_OG_IMAGES,
       publishedTime: post.date,

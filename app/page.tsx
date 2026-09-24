@@ -32,7 +32,7 @@ export default async function HomePage() {
       {/* Semantic H1 for SEO + accessibility — the hero is image-only, so the
           home page had no <h1>. Visually hidden; crawled + read by screen readers. */}
       <h1 className="sr-only">
-        KitchenaryKart — Commercial Kitchen Equipment Supplier in India
+        Kitchenary Kart — Commercial Kitchen Equipment Supplier in India
       </h1>
       {/* One bar under the header: scrolling offers on the left, "also on
           Amazon & Flipkart" on the right. Offers are edited in admin (Content →

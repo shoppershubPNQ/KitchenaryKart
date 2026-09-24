@@ -112,7 +112,7 @@ function ChatPopup({ waLink, onClose }: PopupProps) {
   return (
     <div
       role="dialog"
-      aria-label="WhatsApp chat with KitchenaryKart"
+      aria-label="WhatsApp chat with Kitchenary Kart"
       className="fixed bottom-[76px] right-4 md:bottom-[88px] md:right-5 w-[calc(100vw-32px)] max-w-[340px] z-[160] rounded-xl bg-white shadow-2xl border border-line overflow-hidden animate-[kk-wa-in_180ms_ease-out]"
     >
       <style jsx>{`
@@ -128,7 +128,7 @@ function ChatPopup({ waLink, onClose }: PopupProps) {
           K
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm">KitchenaryKart Support</div>
+          <div className="font-semibold text-sm">Kitchenary Kart Support</div>
           <div className="text-[11px] text-white/80 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#25D366]" />
             Typically replies within an hour
@@ -161,7 +161,7 @@ function ChatPopup({ waLink, onClose }: PopupProps) {
           <div className="text-[13px] text-ink leading-snug whitespace-pre-line">
             {'👋 Welcome to Kitchenary Kart!\nBuild Your Dream Kitchen With Us.\nWe are ready to assist you 🚀'}
           </div>
-          <div className="text-[10px] text-muted mt-1">KitchenaryKart Team</div>
+          <div className="text-[10px] text-muted mt-1">Kitchenary Kart Team</div>
         </div>
 
         {/* Quick actions */}

@@ -97,9 +97,9 @@ export function SlideNav({ tree }: Props) {
             href="/"
             onClick={() => setOpen(false)}
             className="inline-flex items-center"
-            aria-label="KitchenaryKart home"
+            aria-label="Kitchenary Kart home"
           >
-            <img src="/logo.png" alt="KitchenaryKart" className="h-10 w-auto" />
+            <img src="/logo.png" alt="Kitchenary Kart" className="h-10 w-auto" />
           </Link>
           <button
             type="button"

@@ -40,15 +40,15 @@ export function supplierMetadata(slug: string): Metadata {
     openGraph: {
       type: 'website',
       url: canonical,
-      title: `${p.title} — KitchenaryKart`,
+      title: `${p.title} — Kitchenary Kart`,
       description: p.metaDescription,
-      siteName: 'KitchenaryKart',
+      siteName: 'Kitchenary Kart',
       locale: 'en_IN',
       images: DEFAULT_OG_IMAGES,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${p.title} — KitchenaryKart`,
+      title: `${p.title} — Kitchenary Kart`,
       description: p.metaDescription,
     },
   };

@@ -4,7 +4,7 @@ import { WishlistGrid } from './WishlistGrid';
 export const metadata: Metadata = {
   title: 'Your wishlist',
   description:
-    'Products you have saved on KitchenaryKart. Move them to your cart or share the list with your team.',
+    'Products you have saved on Kitchenary Kart. Move them to your cart or share the list with your team.',
   alternates: { canonical: '/wishlist' },
   // Per-device personalised list — no SEO value. Keep crawlable, out of index.
   robots: { index: false, follow: true },

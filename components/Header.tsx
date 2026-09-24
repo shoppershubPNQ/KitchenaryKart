@@ -39,7 +39,7 @@ export function Header({ categoryTree, categoryCounts }: Props) {
               desktop-only: on mobile the row is already tight (logo · search
               icon · hamburger) and the extra text would squeeze it. */}
           <Link href="/" className="inline-flex items-center gap-2.5 shrink-0">
-            <Image src="/logo-original.png" alt="KitchenaryKart" width={52} height={52} priority className="h-[52px] w-auto" />
+            <Image src="/logo-original.png" alt="Kitchenary Kart" width={52} height={52} priority className="h-[52px] w-auto" />
             {/* `brand-dark` (#7A1212), not `brand` (#A01818) — the logo's own
                 wordmark is a gradient whose dominant tone is ~#751717, so the
                 lighter brand red reads as mismatched next to it. */}

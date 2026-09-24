@@ -9,10 +9,10 @@ export const metadata = {
   openGraph: {
     type: 'website',
     url: '/contact',
-    title: 'Contact — KitchenaryKart',
+    title: 'Contact — Kitchenary Kart',
     description:
       'Get a quote for commercial kitchen equipment. Bulk pricing and spec sheets within 4 business hours.',
-    siteName: 'KitchenaryKart',
+    siteName: 'Kitchenary Kart',
     locale: 'en_IN',
     images: DEFAULT_OG_IMAGES,
   },

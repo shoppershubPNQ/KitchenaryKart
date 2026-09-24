@@ -82,7 +82,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
       <section className={styles.hero}>
         <div className={styles.wrap}>
           <div className={`${styles.reveal} ${styles.inview}`}>
-            <div className={styles.eyebrow}>About KitchenaryKart</div>
+            <div className={styles.eyebrow}>About Kitchenary Kart</div>
             <h1>
               India&apos;s Trusted Commercial Kitchen Equipment &amp;{' '}
               <span>HORECA</span> Supplier
@@ -143,7 +143,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
             <div className={styles.eyebrow}>Our Focus</div>
             <h2 className={styles.builtHeading}>Built for Professional Kitchens</h2>
             <p>
-              Unlike general e-commerce stores, KitchenaryKart focuses
+              Unlike general e-commerce stores, Kitchenary Kart focuses
               exclusively on the hospitality industry. We understand what
               restaurants, hotels, cloud kitchens, institutional kitchens,
               bakeries and catering businesses actually need on the line.
@@ -168,7 +168,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
               muted
               playsInline
               preload="metadata"
-              aria-label="KitchenaryKart commercial kitchen equipment in a professional kitchen"
+              aria-label="Kitchenary Kart commercial kitchen equipment in a professional kitchen"
             />
           </div>
         </div>
@@ -540,7 +540,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
               height={800}
               loading="lazy"
               decoding="async"
-              alt="KitchenaryKart supplies commercial kitchen equipment to restaurants, hotels and cloud kitchens across India"
+              alt="Kitchenary Kart supplies commercial kitchen equipment to restaurants, hotels and cloud kitchens across India"
               className={styles.serveImg}
             />
           </div>
@@ -589,7 +589,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
             <p>
               Whether you&apos;re a single-outlet café or a multi-city cloud
               kitchen chain — if you&apos;re in the business of food,
-              KitchenaryKart is built for you. Register as a B2B partner for
+              Kitchenary Kart is built for you. Register as a B2B partner for
               wholesale pricing, GST-compliant invoicing, dedicated account
               support and priority sourcing across every category. Everything
               your kitchen needs is here, in one place.
@@ -606,7 +606,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
             <Link
               href="/contact"
               className={`${styles.abtn} ${styles.abtnPrimary}`}
-              title="Register as a KitchenaryKart B2B / wholesale partner"
+              title="Register as a Kitchenary Kart B2B / wholesale partner"
             >
               Register as a B2B Partner →
             </Link>
@@ -671,7 +671,7 @@ export function AboutContent({ faqs }: { faqs: Faq[] }) {
           <Link
             href="/contact"
             className={`${styles.abtn} ${styles.abtnPrimary}`}
-            title="Contact the KitchenaryKart sales team"
+            title="Contact the Kitchenary Kart sales team"
           >
             Talk to Our Team →
           </Link>

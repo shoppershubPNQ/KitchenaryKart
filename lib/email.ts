@@ -27,7 +27,7 @@ function getClient(): Resend | null {
 
 function getFromHeader(): string {
   const email = process.env.RESEND_FROM_EMAIL || 'noreply@kitchenarykart.com';
-  const name = process.env.RESEND_FROM_NAME || 'KitchenaryKart';
+  const name = process.env.RESEND_FROM_NAME || 'Kitchenary Kart';
   return `${name} <${email}>`;
 }
 
@@ -60,19 +60,19 @@ interface SendOtpEmailArgs {
 export function buildOtpEmail(code: string, customerName: string | null | undefined, purpose: 'login' | 'register') {
   const firstName = customerName ? customerName.split(' ')[0] : null;
   const greeting = purpose === 'register'
-    ? (firstName ? `Welcome to KitchenaryKart, ${firstName}!` : 'Welcome to KitchenaryKart!')
+    ? (firstName ? `Welcome to Kitchenary Kart, ${firstName}!` : 'Welcome to Kitchenary Kart!')
     : (firstName ? `Hi ${firstName},` : 'Hi,');
 
   const intro = purpose === 'register'
     ? "Use the code below to verify your email and finish creating your account. It expires in 5 minutes."
-    : "Use the code below to sign in to your KitchenaryKart account. It expires in 5 minutes.";
+    : "Use the code below to sign in to your Kitchenary Kart account. It expires in 5 minutes.";
 
   const subject = purpose === 'register'
     ? `Verify your email — code ${code}`
-    : `Your KitchenaryKart login code is ${code}`;
+    : `Your Kitchenary Kart login code is ${code}`;
 
   const ignoreNote = purpose === 'register'
-    ? "If you didn't sign up for KitchenaryKart, you can safely ignore this email."
+    ? "If you didn't sign up for Kitchenary Kart, you can safely ignore this email."
     : "If you didn't request this code, you can safely ignore this email — someone may have entered your phone number by mistake.";
 
   // The code is the whole point of this email, so it gets the largest type in

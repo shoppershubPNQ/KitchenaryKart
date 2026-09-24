@@ -44,13 +44,13 @@ export async function generateMetadata({ params, searchParams }: Params): Promis
   // they stay crawlable without duplicating the base URL.
   const canonical = page > 1 ? `/business/${cat.slug}?page=${page}` : `/business/${cat.slug}`;
   const suffix = page > 1 ? ` — Page ${page}` : '';
-  // The root layout applies `%s — KitchenaryKart`, so the brand must NOT be
-  // repeated here or every tab reads "… | KitchenaryKart — KitchenaryKart".
+  // The root layout applies `%s — Kitchenary Kart`, so the brand must NOT be
+  // repeated here or every tab reads "… | Kitchenary Kart — Kitchenary Kart".
   const title = (cat.metaTitle || cat.name) + suffix;
   const description =
     cat.metaDescription ||
     cat.description ||
-    `${cat.name} for commercial kitchens. Browse ${cat.products.length} products at KitchenaryKart.`;
+    `${cat.name} for commercial kitchens. Browse ${cat.products.length} products at Kitchenary Kart.`;
 
   return {
     title,

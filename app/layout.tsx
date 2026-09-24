@@ -52,7 +52,7 @@ const roboto = Roboto({
   display: 'swap',
 });
 
-const SITE_NAME = 'KitchenaryKart';
+const SITE_NAME = 'Kitchenary Kart';
 const SITE_URL = 'https://kitchenarykart.com';
 const SITE_DESCRIPTION =
   'Curated catalog of commercial kitchen, bar, buffet and housekeeping equipment — cookware, fryers, bain marie, blenders, and more. Pan-India delivery and global export.';

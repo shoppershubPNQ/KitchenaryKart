@@ -329,7 +329,7 @@ function renderReelCard(reel: PublicReel, playVideo: boolean) {
         ) : reel.thumbnailUrl ? (
           <Image
             src={reel.thumbnailUrl}
-            alt={reel.caption || 'KitchenaryKart — watch & shop commercial kitchen equipment'}
+            alt={reel.caption || 'Kitchenary Kart — watch & shop commercial kitchen equipment'}
             fill
             sizes="(max-width: 768px) 45vw, 240px"
             loading="lazy"

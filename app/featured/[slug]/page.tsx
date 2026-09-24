@@ -16,14 +16,14 @@ export const revalidate = 300;
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const data = await getSpotlightBySlug(params.slug);
-  if (!data) return { title: 'Featured — KitchenaryKart' };
+  if (!data) return { title: 'Featured — Kitchenary Kart' };
   const name = data.content.headline || data.product?.name || 'Featured product';
   const desc =
     data.content.description?.slice(0, 160) ||
-    `${name} — a KitchenaryKart best-seller. Commercial-grade, GST invoice, pan-India delivery.`;
+    `${name} — a Kitchenary Kart best-seller. Commercial-grade, GST invoice, pan-India delivery.`;
   return {
     // Absolute and brand-free, like product pages: the full headline plus the
-    // layout's "— KitchenaryKart" ran to ~89 chars and Google cut it
+    // layout's "— Kitchenary Kart" ran to ~89 chars and Google cut it
     // mid-phrase. landingTitle keeps whole " | " segments within 60.
     title: { absolute: landingTitle(name) },
     description: desc,
@@ -309,7 +309,7 @@ export default async function FeaturedPage({ params }: Params) {
         )}
 
         {c.whyBuy.length > 0 && (
-          <Section title="Why Buy from KitchenaryKart">
+          <Section title="Why Buy from Kitchenary Kart">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {c.whyBuy.map((w, i) => (
                 <div key={i} className="group rounded-2xl border border-line bg-white p-5 transition hover:shadow-md hover:-translate-y-0.5">
@@ -325,13 +325,13 @@ export default async function FeaturedPage({ params }: Params) {
         )}
 
         {c.comparison.rows.length > 0 && (
-          <Section title={`${c.comparison.kkLabel || 'KitchenaryKart'} vs ${c.comparison.othersLabel || 'Others'}`}>
+          <Section title={`${c.comparison.kkLabel || 'Kitchenary Kart'} vs ${c.comparison.othersLabel || 'Others'}`}>
             <div className="overflow-x-auto rounded-2xl border border-line bg-white">
               <table className="w-full text-sm min-w-[480px]">
                 <thead>
                   <tr>
                     <th className="px-4 py-3.5 text-left font-head font-bold text-ink bg-bg-soft">Feature</th>
-                    <th className="px-4 py-3.5 text-left font-head font-bold text-white bg-brand">{c.comparison.kkLabel || 'KitchenaryKart'}</th>
+                    <th className="px-4 py-3.5 text-left font-head font-bold text-white bg-brand">{c.comparison.kkLabel || 'Kitchenary Kart'}</th>
                     <th className="px-4 py-3.5 text-left font-head font-bold text-muted bg-bg-soft">{c.comparison.othersLabel || 'Others'}</th>
                   </tr>
                 </thead>

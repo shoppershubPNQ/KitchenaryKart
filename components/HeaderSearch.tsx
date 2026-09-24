@@ -199,7 +199,7 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
           <input
             type="search"
             name="q"
-            placeholder="Search KitchenaryKart"
+            placeholder="Search Kitchenary Kart"
             value={q}
             onChange={(e) => {
               setQ(e.target.value);

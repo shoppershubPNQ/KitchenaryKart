@@ -12,6 +12,6 @@ export const DEFAULT_OG_IMAGES = [
     url: '/logo.png',
     width: 2000,
     height: 2000,
-    alt: 'KitchenaryKart — Commercial Kitchen Equipment',
+    alt: 'Kitchenary Kart — Commercial Kitchen Equipment',
   },
 ];

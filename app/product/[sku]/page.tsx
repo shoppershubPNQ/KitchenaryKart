@@ -34,7 +34,7 @@ export const revalidate = 300;
 
 // The <title> rules (keyword, length, which part gets shortened) live in
 // lib/seo-title.ts. It is an absolute title so the layout's
-// "%s — KitchenaryKart" template doesn't double the brand.
+// "%s — Kitchenary Kart" template doesn't double the brand.
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const requestedSku = decodeURIComponent(params.sku);
@@ -110,7 +110,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       url: canonicalPath,
       title: seoTitle,
       description,
-      siteName: 'KitchenaryKart',
+      siteName: 'Kitchenary Kart',
       locale: 'en_IN',
       images: [{ url: ogImage, alt: displayName }],
     },
