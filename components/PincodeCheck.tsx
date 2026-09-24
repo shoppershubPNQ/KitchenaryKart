@@ -25,6 +25,8 @@ type Answer = {
 };
 
 const KEY = 'kk:pincode';
+/** Set for the visit once the admin says the courier is not connected. */
+const OFF_KEY = 'kk:pincode:off';
 const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
 export function PincodeCheck({ price }: { price: number }) {
@@ -32,6 +34,19 @@ export function PincodeCheck({ price }: { price: number }) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /**
+   * The courier account is not connected yet (the admin answers 503). Offering
+   * a delivery check that can only fail is worse than not offering one, so the
+   * whole box removes itself for the rest of the visit. It comes back on the
+   * next page load once the token is saved — nothing to redeploy.
+   */
+  const [unavailable, setUnavailable] = useState(() => {
+    try {
+      return sessionStorage.getItem(OFF_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
 
   async function check(p: string, remember = true) {
     if (!/^[1-9]\d{5}$/.test(p)) {
@@ -46,6 +61,15 @@ export function PincodeCheck({ price }: { price: number }) {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         setAnswer(null);
+        // 503 is the admin saying the courier is not connected — not a
+        // problem with this pincode, and not something a shopper can act on.
+        if (res.status === 503) {
+          setUnavailable(true);
+          // Remember for the visit, so the box is not offered again on the
+          // next product page only to disappear a second time.
+          try { sessionStorage.setItem(OFF_KEY, '1'); } catch { /* storage blocked */ }
+          return;
+        }
         setErr(res.status === 429 ? 'Too many checks — please try again in a few minutes' : body.error || 'Could not check right now');
         return;
       }
@@ -71,6 +95,9 @@ export function PincodeCheck({ price }: { price: number }) {
   }, []);
 
   const free = answer?.serviceable && price >= answer.freeDeliveryAbove;
+
+  // Nothing at all rather than a box that can only say "not available".
+  if (unavailable) return null;
 
   return (
     <div className="mb-5 rounded-lg border border-line p-3.5">
