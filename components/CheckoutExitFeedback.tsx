@@ -12,12 +12,13 @@ import { currentSessionId } from '@/lib/track';
  * while they are still on the page — `beforeunload` cannot show anything of
  * our own, so the two real exits are caught instead:
  *
+ *   payment  the payment window closed without paying. The clearest give-up
+ *            of all, and on a phone the ONLY one that fires — most orders
+ *            come from phones, and neither of the others can see this.
  *   desktop  the pointer leaving through the top of the window, which is the
  *            move towards the tab bar, the back button or the address bar.
- *   mobile   there is no pointer to leave, so the back gesture is caught by
- *            pushing one history entry on mount and answering `popstate`.
- *            The entry is removed again the moment the popup is done with,
- *            so a second back press leaves as the shopper expects.
+ *   touch    the back gesture, caught by one spare history entry pushed on
+ *            mount. Never given back by us — see the note on that below.
  *
  * It appears once per checkout visit (sessionStorage, so a new tab may ask
  * again but a reload will not), never once payment has succeeded, and never
@@ -31,37 +32,34 @@ interface Props {
   done: boolean;
   cartValue: number;
   itemCount: number;
+  /**
+   * Bumped by the checkout page when the payment window is closed without
+   * paying. That is the clearest give-up there is, and the one the mouse and
+   * back-gesture triggers miss: the shopper has been inside Razorpay's own
+   * overlay, so no pointer of ours crossed anything. Any increase asks.
+   */
+  askNow?: number;
 }
 
-export default function CheckoutExitFeedback({ done, cartValue, itemCount }: Props) {
+export default function CheckoutExitFeedback({ done, cartValue, itemCount, askNow = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [sent, setSent] = useState(false);
   const armed = useRef(false);
   const pushed = useRef(false);
-  /**
-   * Set before every history.back() WE make, so the popstate it causes is not
-   * mistaken for the shopper pressing back. Without it the popup opens the
-   * instant checkout loads: React runs the effect twice in development, and
-   * the first cleanup's back() arrives after the second run has re-attached
-   * the listener. The same race is possible on any remount in production.
-   */
-  const selfPop = useRef(false);
   const doneRef = useRef(done);
   doneRef.current = done;
 
-  /** Undo our spare history entry without tripping our own listener. */
-  const popSelf = useCallback(() => {
-    if (!pushed.current) return;
-    pushed.current = false;
-    selfPop.current = true;
-    try {
-      history.back();
-    } catch {
-      selfPop.current = false;
-    }
-  }, []);
+  /*
+   * We never call history.back() ourselves. The cleanup used to give the
+   * spare entry back, but React runs a cleanup on every dependency change,
+   * not only on unmount — and `done` flipping true (payment succeeded) is
+   * exactly such a change. On a phone that navigated the buyer off their own
+   * order confirmation the instant they paid. Leaving the entry in place
+   * costs one extra back press on the way out of checkout; the alternative
+   * threw people off their receipt.
+   */
 
   /** Never ask twice, and never ask after this point. */
   const disarm = useCallback(() => {
@@ -101,10 +99,6 @@ export default function CheckoutExitFeedback({ done, cartValue, itemCount }: Pro
     // navigates a shopper off checkout who never asked to leave.
     const touch = !window.matchMedia?.('(pointer: fine)').matches;
     const onPop = () => {
-      if (selfPop.current) {
-        selfPop.current = false;
-        return;
-      }
       // The gesture has already consumed our entry; there is nothing to undo.
       pushed.current = false;
       show();
@@ -123,17 +117,21 @@ export default function CheckoutExitFeedback({ done, cartValue, itemCount }: Pro
     return () => {
       document.removeEventListener('mouseout', onOut);
       window.removeEventListener('popstate', onPop);
-      // Give the entry back so the shopper's next back press behaves.
-      popSelf();
     };
-  }, [done, itemCount, show, popSelf]);
+  }, [done, itemCount, show]);
 
   /**
-   * Closing must never move the shopper. On touch the back gesture has
-   * already spent our spare entry, and on a pointer device we never made one,
-   * so there is nothing to undo here — only the cleanup, which runs when they
-   * genuinely leave checkout, gives an unused entry back.
+   * The payment window was closed without paying. Asked on a short delay so
+   * the popup does not land on top of Razorpay's own closing animation, and
+   * so the "Payment cancelled" line is on screen first — the shopper should
+   * see what happened before being asked about it.
    */
+  useEffect(() => {
+    if (askNow <= 0 || done || itemCount <= 0) return;
+    const t = setTimeout(show, 900);
+    return () => clearTimeout(t);
+  }, [askNow, done, itemCount, show]);
+
   function close() {
     setOpen(false);
   }

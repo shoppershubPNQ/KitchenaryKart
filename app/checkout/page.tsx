@@ -96,6 +96,11 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ id?: number; orderNumber?: string } | null>(null);
+  // Bumped when the payment window is closed without paying, so the exit
+  // popup can ask right then. On a phone this is the ONLY trigger that fires:
+  // there is no pointer to leave the window, and closing a tab or switching
+  // apps is not a back gesture.
+  const [askFeedback, setAskFeedback] = useState(0);
 
   // Coupon state. `applied` holds the server-validated result; the
   // binding discount is recomputed at checkout regardless, so this is
@@ -452,6 +457,11 @@ export default function CheckoutPage() {
             track('payment_dismissed', { order: data.orderNumber });
             setSubmitting(false);
             setError('Payment cancelled. You can try again.');
+            // Closing the payment window without paying is the clearest
+            // give-up there is, and the moment the mouse and back-gesture
+            // triggers cannot see — the shopper was inside Razorpay's overlay
+            // the whole time. Ask here.
+            setAskFeedback((n) => n + 1);
             // We intentionally LEAVE the order as pending/unpaid instead of
             // cancelling it. That way it surfaces in the admin "Abandoned
             // carts" queue so the team can WhatsApp the buyer and recover the
@@ -510,7 +520,7 @@ export default function CheckoutPage() {
     <div className="bg-bg-soft min-h-[80vh] py-6 px-[6mm] md:px-[1.5cm]">
       {/* Asks why, once, if they leave without paying. Renders nothing until
           then, and never after `done`. */}
-      <CheckoutExitFeedback done={done !== null} cartValue={total} itemCount={count} />
+      <CheckoutExitFeedback done={done !== null} cartValue={total} itemCount={count} askNow={askFeedback} />
       <div className="max-w-[1080px] mx-auto bg-white rounded-xl border border-line shadow-sm overflow-hidden grid md:grid-cols-[360px_1fr] grid-cols-1">
         <aside className="bg-brand text-white p-6 flex flex-col gap-4 relative overflow-hidden">
           <div className="flex items-center gap-3">
