@@ -64,20 +64,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       : axes && typeof axes === 'object'
         ? [...new Set(Object.values(axes).map((x) => String(x).trim()).filter(Boolean))].join(' / ')
         : '';
-  // A title written by hand in admin wins — but ONLY on the parent url. The
-  // override lives on the parent row, so honouring it on a sibling url would
-  // give every size the same title, which is the exact problem seo-title.ts
-  // was built to fix (493 identical titles -> 0).
+  // A title written by hand wins, and each size can now have its own.
   //
-  // The test is "is this the parent's own SKU", NOT "did we match a variant":
-  // in this catalogue a product's FIRST variant usually carries the parent's
-  // own SKU, so `selectedVariant` is set even on the parent url and a
+  // The variant's title comes first, because it was written for THIS url. The
+  // parent's applies only on the parent's own url: it is one title, and
+  // serving it on every sibling would give all the sizes the same one — the
+  // exact problem seo-title.ts was built to fix (493 identical titles -> 0).
+  // Before the variant columns existed that left 629 live variant urls unable
+  // to carry a written title at all.
+  //
+  // The parent test is "is this the parent's own SKU", NOT "did we match a
+  // variant": in this catalogue a product's FIRST variant usually carries the
+  // parent's own SKU, so `selectedVariant` is set even on the parent url and a
   // variant-based test would lock those products out of the override entirely.
   const isParentUrl = requestedSku === p.sku;
   const seoTitle =
-    isParentUrl && p.metaTitle?.trim()
-      ? p.metaTitle.trim()
-      : pdpSeoTitle(p.name, variantLabel);
+    selectedVariant?.metaTitle?.trim() ||
+    (isParentUrl && p.metaTitle?.trim() ? p.metaTitle.trim() : pdpSeoTitle(p.name, variantLabel));
   // Prefer the product's real description for the meta tag — unique per
   // product (better for SEO than a repeated template), cleaned and
   // clamped to ~160 chars at a word boundary. Fall back to a concise,
@@ -87,9 +90,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // the fallback template — a long product name could push the fallback over
   // 160 too) to keep every PDP under the meta-description length limit.
   // A size with its own description (its features differ) uses that.
-  // Same rule as the title: a hand-written snippet applies to the parent url
-  // only, so a size keeps its own description. Whatever wins is still clamped.
-  const metaDescOverride = isParentUrl ? p.metaDescription?.trim() || null : null;
+  // Same order as the title: the size's own written snippet, then the parent's
+  // (its own url only), then body text. Whatever wins is still clamped — which
+  // is what stopped the variant pages serving a sentence cut in half.
+  const metaDescOverride =
+    selectedVariant?.metaDescription?.trim() || (isParentUrl ? p.metaDescription?.trim() || null : null);
   const ownDescription = metaDescOverride || selectedVariant?.description || p.description;
   const description = clampDescription(
     ownDescription && ownDescription.trim() ? ownDescription : fallbackDesc,

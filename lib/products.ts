@@ -123,6 +123,12 @@ export interface PublicVariant {
   /** Per-variant description. Sizes have different features, so each can
    *  carry its own text. Null → show the parent's description. */
   description: string | null;
+  /** Per-variant SEO title / meta description, read only by the PDP's
+   *  generateMetadata. Null → fall back to the parent's override, then to the
+   *  generated title. Every size is its own search result, so every size needs
+   *  to be able to carry its own. */
+  metaTitle: string | null;
+  metaDescription: string | null;
   stock: number;
   /** Per-variant primary image. Null → inherit parent.imageUrl. */
   imageUrl: string | null;
@@ -832,6 +838,8 @@ async function _getProductBySku(sku: string): Promise<PublicProductWithVariants 
     power: (v as any).power ?? null,
     dimensions: (v as any).dimensions ?? null,
     description: ((v as any).description as string | null)?.trim() || null,
+    metaTitle: ((v as any).metaTitle as string | null)?.trim() || null,
+    metaDescription: ((v as any).metaDescription as string | null)?.trim() || null,
     imageUrl: v.imageUrl ?? null,
     images: Array.isArray(v.images) ? (v.images as string[]) : [],
   })) ?? [];

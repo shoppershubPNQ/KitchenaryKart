@@ -185,6 +185,12 @@ model ProductVariant {
   /// sync with the admin schema.
   description String?
 
+  /// Per-variant SEO title and meta description; null = fall back to the
+  /// parent's override, then to the generated title. See the admin schema for
+  /// why these exist; the two must stay in sync.
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description")
+
   /// Per-variant primary image. Storefront reads only.
   imageUrl String? @map("image_url")
   /// Per-variant gallery — JSON array. When non-empty, the PDP
