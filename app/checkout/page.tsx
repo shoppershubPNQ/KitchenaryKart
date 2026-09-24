@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { clearCart, useCart } from '@/lib/cart';
+import CheckoutExitFeedback from '@/components/CheckoutExitFeedback';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import { imgSrc, inr, letter } from '@/lib/format';
 import { trackPurchase } from '@/lib/analytics';
@@ -507,6 +508,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="bg-bg-soft min-h-[80vh] py-6 px-[6mm] md:px-[1.5cm]">
+      {/* Asks why, once, if they leave without paying. Renders nothing until
+          then, and never after `done`. */}
+      <CheckoutExitFeedback done={done !== null} cartValue={total} itemCount={count} />
       <div className="max-w-[1080px] mx-auto bg-white rounded-xl border border-line shadow-sm overflow-hidden grid md:grid-cols-[360px_1fr] grid-cols-1">
         <aside className="bg-brand text-white p-6 flex flex-col gap-4 relative overflow-hidden">
           <div className="flex items-center gap-3">

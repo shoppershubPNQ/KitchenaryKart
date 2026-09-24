@@ -137,6 +137,25 @@ function sessionInfo(): Record<string, unknown> {
   };
 }
 
+/**
+ * The current analytics session id, or null — WITHOUT starting one.
+ *
+ * For anything that wants to file its own record against this visit (the
+ * checkout exit feedback does) rather than emit an event. Deliberately does
+ * not call session(): reading must never mint a session for a visitor who
+ * has opted out or has not been tracked at all.
+ */
+export function currentSessionId(): string | null {
+  if (disabled()) return null;
+  try {
+    const cur = JSON.parse(storage()?.getItem(SES_KEY) || 'null');
+    const fresh = cur && typeof cur.id === 'string' && Date.now() - Number(cur.last) <= SESSION_IDLE_MS;
+    return fresh ? (cur.id as string) : (memSes?.id ?? null);
+  } catch {
+    return memSes?.id ?? null;
+  }
+}
+
 export function track(t: string, f: TrackFields = {}): void {
   if (disabled()) return;
   try {

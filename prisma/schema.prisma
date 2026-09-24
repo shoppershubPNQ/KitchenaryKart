@@ -72,74 +72,74 @@ enum DiscountType {
 }
 
 model AdminUser {
-  id            Int       @id @default(autoincrement())
-  name          String
-  email         String    @unique
-  passwordHash  String    @map("password_hash")
-  role          AdminRole @default(staff)
-  phone         String?
-  isActive      Boolean   @default(true) @map("is_active")
-  lastLogin     DateTime? @map("last_login")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         AdminRole @default(staff)
+  phone        String?
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  productsCreated    Product[]            @relation("CreatedBy")
-  movementsCreated   InventoryMovement[]
+  productsCreated  Product[]           @relation("CreatedBy")
+  movementsCreated InventoryMovement[]
 
   @@map("admin_users")
 }
 
 model Product {
-  id              Int           @id @default(autoincrement())
-  sku             String        @unique
-  name            String
-  description     String?
-  category        String?
-  subcategory     String?
-  leafCategory    String?       @map("leaf_category")
+  id           Int     @id @default(autoincrement())
+  sku          String  @unique
+  name         String
+  description  String?
+  category     String?
+  subcategory  String?
+  leafCategory String? @map("leaf_category")
 
-  price           Decimal       @db.Decimal(10, 2)
-  mrp             Decimal?      @db.Decimal(10, 2)
-  taxPercent      Decimal       @default(18) @db.Decimal(5, 2) @map("tax_percent")
-  discountPercent Decimal       @default(0) @db.Decimal(5, 2) @map("discount_percent")
+  price           Decimal  @db.Decimal(10, 2)
+  mrp             Decimal? @db.Decimal(10, 2)
+  taxPercent      Decimal  @default(18) @map("tax_percent") @db.Decimal(5, 2)
+  discountPercent Decimal  @default(0) @map("discount_percent") @db.Decimal(5, 2)
 
-  dimensions      String?
-  power           String?
-  capacity        String?
-  weight          String?
-  material        String?
-  color           String?
+  dimensions String?
+  power      String?
+  capacity   String?
+  weight     String?
+  material   String?
+  color      String?
 
-  stock           Int           @default(0)
-  reorderPoint    Int           @default(5) @map("reorder_point")
-  hsnCode         String?       @map("hsn_code")
+  stock        Int     @default(0)
+  reorderPoint Int     @default(5) @map("reorder_point")
+  hsnCode      String? @map("hsn_code")
 
-  status          ProductStatus @default(active)
+  status ProductStatus @default(active)
 
   // Merchandising flags — admin-controlled so the home page doesn't rely on
   // heuristics. When both are false the frontend falls back to its existing
   // price-based picks.
-  isBestseller    Boolean       @default(false) @map("is_bestseller")
-  isNewArrival    Boolean       @default(false) @map("is_new_arrival")
+  isBestseller Boolean @default(false) @map("is_bestseller")
+  isNewArrival Boolean @default(false) @map("is_new_arrival")
 
-  imageUrl        String?       @map("image_url")
-  images          Json?
-  faqs            Json?
+  imageUrl String? @map("image_url")
+  images   Json?
+  faqs     Json?
 
-  metaTitle       String?       @map("meta_title")
-  metaDescription String?       @map("meta_description")
-  metaKeywords    String?       @map("meta_keywords")
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description")
+  metaKeywords    String? @map("meta_keywords")
 
-  createdById     Int?          @map("created_by")
-  createdBy       AdminUser?    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById Int?       @map("created_by")
+  createdBy   AdminUser? @relation("CreatedBy", fields: [createdById], references: [id])
 
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  variants        ProductVariant[]
-  orderItems      OrderItem[]
-  movements       InventoryMovement[]
-  reviews         Review[]
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+  movements  InventoryMovement[]
+  reviews    Review[]
 
   @@index([category])
   @@index([status])
@@ -151,28 +151,28 @@ model Product {
 }
 
 model ProductVariant {
-  id            Int      @id @default(autoincrement())
-  productId     Int      @map("product_id")
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        Int     @id @default(autoincrement())
+  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  variantType   String?  @map("variant_type")
-  variantValue  String?  @map("variant_value")
-  skuSuffix     String?  @map("sku_suffix")
-  priceModifier Decimal  @default(0) @db.Decimal(10, 2) @map("price_modifier")
-  stock         Int      @default(0)
+  variantType   String? @map("variant_type")
+  variantValue  String? @map("variant_value")
+  skuSuffix     String? @map("sku_suffix")
+  priceModifier Decimal @default(0) @map("price_modifier") @db.Decimal(10, 2)
+  stock         Int     @default(0)
 
   /// Absolute per-variant price (GST-inclusive selling price). When set, the
   /// storefront uses this directly instead of parent.price + priceModifier.
   /// Nullable + additive — legacy variants fall back to the modifier until
   /// backfilled.
-  price         Decimal? @db.Decimal(10, 2)
+  price  Decimal? @db.Decimal(10, 2)
   /// Absolute per-variant MRP (sticker price) driving the strike-through +
   /// SAVE %. Null = no MRP for this variant.
-  mrp           Decimal? @db.Decimal(10, 2)
+  mrp    Decimal? @db.Decimal(10, 2)
   /// Per-variant weight, free text like the parent ("360g", "1.2 kg").
   /// Null = fall back to the parent product weight. Drives the shipping
   /// quote, so a big size is not charged as if it were the small one.
-  weight        String?
+  weight String?
 
   /// Per-variant specs — same null-inherits-parent rule as `weight`. See admin
   /// schema for full doc; the two must stay in sync.
@@ -186,65 +186,65 @@ model ProductVariant {
   description String?
 
   /// Per-variant primary image. Storefront reads only.
-  imageUrl      String?  @map("image_url")
+  imageUrl String? @map("image_url")
   /// Per-variant gallery — JSON array. When non-empty, the PDP
   /// shows this gallery on variant select instead of parent.images.
-  images        Json?
+  images   Json?
 
-  createdAt     DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("product_variants")
 }
 
 model Category {
-  id           Int       @id @default(autoincrement())
-  name         String    @unique
+  id           Int        @id @default(autoincrement())
+  name         String     @unique
   slug         String?
-  parentId     Int?      @map("parent_id")
-  parent       Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parentId     Int?       @map("parent_id")
+  parent       Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children     Category[] @relation("CategoryHierarchy")
   description  String?
-  imageUrl     String?   @map("image_url")
-  productCount Int       @default(0) @map("product_count")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  imageUrl     String?    @map("image_url")
+  productCount Int        @default(0) @map("product_count")
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
 
   @@map("categories")
 }
 
 model Customer {
-  id              Int          @id @default(autoincrement())
-  name            String
-  email           String       @unique
-  phone           String?
+  id    Int     @id @default(autoincrement())
+  name  String
+  email String  @unique
+  phone String?
 
-  companyName     String?      @map("company_name")
-  customerType    CustomerType @default(retail) @map("customer_type")
+  companyName  String?      @map("company_name")
+  customerType CustomerType @default(retail) @map("customer_type")
 
-  billingAddress  String?      @map("billing_address")
-  shippingAddress String?      @map("shipping_address")
+  billingAddress  String? @map("billing_address")
+  shippingAddress String? @map("shipping_address")
   city            String?
   state           String?
-  postalCode      String?      @map("postal_code")
+  postalCode      String? @map("postal_code")
   country         String?
 
-  gstNumber       String?      @map("gst_number")
+  gstNumber String? @map("gst_number")
 
-  creditLimit     Decimal      @default(0) @db.Decimal(12, 2) @map("credit_limit")
-  creditUsed      Decimal      @default(0) @db.Decimal(12, 2) @map("credit_used")
+  creditLimit Decimal @default(0) @map("credit_limit") @db.Decimal(12, 2)
+  creditUsed  Decimal @default(0) @map("credit_used") @db.Decimal(12, 2)
 
-  isActive        Boolean      @default(true) @map("is_active")
+  isActive Boolean @default(true) @map("is_active")
 
   // How the customer record got created — "admin" for back-office entries,
   // "web" for phone-OTP signups from the storefront. Existing rows default
   // to "admin" so legacy data stays classified.
-  signupSource    String       @default("admin") @map("signup_source")
+  signupSource String @default("admin") @map("signup_source")
 
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  orders          Order[]
-  reviews         Review[]
+  orders  Order[]
+  reviews Review[]
 
   @@index([customerType])
   @@index([signupSource])
@@ -253,36 +253,36 @@ model Customer {
 }
 
 model Order {
-  id               Int           @id @default(autoincrement())
-  orderNumber      String        @unique @map("order_number")
+  id          Int    @id @default(autoincrement())
+  orderNumber String @unique @map("order_number")
 
-  customerId       Int?          @map("customer_id")
-  customer         Customer?     @relation(fields: [customerId], references: [id])
+  customerId Int?      @map("customer_id")
+  customer   Customer? @relation(fields: [customerId], references: [id])
 
-  customerName     String?       @map("customer_name")
-  customerEmail    String?       @map("customer_email")
-  customerPhone    String?       @map("customer_phone")
+  customerName  String? @map("customer_name")
+  customerEmail String? @map("customer_email")
+  customerPhone String? @map("customer_phone")
   /// Buyer's GSTIN for B2B orders that want a GST input-credit invoice.
   /// Captured at checkout when the customer ticks "business". The invoice
   /// prefers this over the linked customer's stored GSTIN. Managed by admin;
   /// the storefront only reads it (for the customer-facing invoice download).
-  customerGstin    String?       @map("customer_gstin")
+  customerGstin String? @map("customer_gstin")
 
-  shippingAddress  String?       @map("shipping_address")
-  shippingMethod   String?       @map("shipping_method")
-  shippingCost     Decimal       @default(0) @db.Decimal(10, 2) @map("shipping_cost")
+  shippingAddress String? @map("shipping_address")
+  shippingMethod  String? @map("shipping_method")
+  shippingCost    Decimal @default(0) @map("shipping_cost") @db.Decimal(10, 2)
 
-  subtotal         Decimal?      @db.Decimal(12, 2)
-  taxAmount        Decimal?      @db.Decimal(12, 2) @map("tax_amount")
-  discountAmount   Decimal       @default(0) @db.Decimal(12, 2) @map("discount_amount")
-  totalAmount      Decimal?      @db.Decimal(12, 2) @map("total_amount")
+  subtotal       Decimal? @db.Decimal(12, 2)
+  taxAmount      Decimal? @map("tax_amount") @db.Decimal(12, 2)
+  discountAmount Decimal  @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount    Decimal? @map("total_amount") @db.Decimal(12, 2)
 
-  orderStatus      OrderStatus   @default(pending) @map("order_status")
-  paymentStatus    PaymentStatus @default(pending) @map("payment_status")
+  orderStatus   OrderStatus   @default(pending) @map("order_status")
+  paymentStatus PaymentStatus @default(pending) @map("payment_status")
 
-  paymentMethod    String?       @map("payment_method")
-  paymentReference String?       @map("payment_reference")
-  razorpayOrderId  String?       @map("razorpay_order_id")
+  paymentMethod    String? @map("payment_method")
+  paymentReference String? @map("payment_reference")
+  razorpayOrderId  String? @map("razorpay_order_id")
 
   /// Hosted Razorpay payment link for an order raised by the shop on a
   /// customer's behalf. See admin schema for full doc — the two must stay in sync.
@@ -292,27 +292,27 @@ model Order {
   /// GST invoice serial (e.g. 1) + financial year ("2026-27"), allocated
   /// by admin/lib/invoice-serial.ts when an invoice PDF is first
   /// downloaded. Storefront only reads these.
-  invoiceSerial         Int?     @map("invoice_serial")
-  invoiceFinancialYear  String?  @map("invoice_financial_year") @db.VarChar(7)
+  invoiceSerial        Int?    @map("invoice_serial")
+  invoiceFinancialYear String? @map("invoice_financial_year") @db.VarChar(7)
 
   /// Shipment tracking — written by admin once the parcel ships,
   /// surfaced to the customer on /account/orders/[number] and /track.
-  carrierName     String?   @map("carrier_name")
-  trackingNumber  String?   @map("tracking_number")
-  trackingUrl     String?   @map("tracking_url")
-  shippedAt       DateTime? @map("shipped_at")
-  deliveredAt     DateTime? @map("delivered_at")
-  contactedAt     DateTime? @map("contacted_at")
-  couponCode      String?   @map("coupon_code")
+  carrierName    String?   @map("carrier_name")
+  trackingNumber String?   @map("tracking_number")
+  trackingUrl    String?   @map("tracking_url")
+  shippedAt      DateTime? @map("shipped_at")
+  deliveredAt    DateTime? @map("delivered_at")
+  contactedAt    DateTime? @map("contacted_at")
+  couponCode     String?   @map("coupon_code")
 
-  notes            String?
-  internalNotes    String?       @map("internal_notes")
+  notes         String?
+  internalNotes String? @map("internal_notes")
 
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  items            OrderItem[]
-  payments         Payment[]
+  items    OrderItem[]
+  payments Payment[]
 
   @@index([orderStatus])
   @@index([paymentStatus])
@@ -322,24 +322,24 @@ model Order {
 }
 
 model OrderItem {
-  id              Int      @id @default(autoincrement())
-  orderId         Int      @map("order_id")
-  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      Int   @id @default(autoincrement())
+  orderId Int   @map("order_id")
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId       Int?     @map("product_id")
-  product         Product? @relation(fields: [productId], references: [id])
+  productId Int?     @map("product_id")
+  product   Product? @relation(fields: [productId], references: [id])
 
-  productName     String?  @map("product_name")
-  productSku      String?  @map("product_sku")
+  productName String? @map("product_name")
+  productSku  String? @map("product_sku")
 
-  unitPrice       Decimal  @db.Decimal(10, 2) @map("unit_price")
+  unitPrice       Decimal @map("unit_price") @db.Decimal(10, 2)
   quantity        Int
-  taxPercent      Decimal  @default(18) @db.Decimal(5, 2) @map("tax_percent")
-  discountPercent Decimal  @default(0) @db.Decimal(5, 2) @map("discount_percent")
+  taxPercent      Decimal @default(18) @map("tax_percent") @db.Decimal(5, 2)
+  discountPercent Decimal @default(0) @map("discount_percent") @db.Decimal(5, 2)
 
-  lineTotal       Decimal  @db.Decimal(12, 2) @map("line_total")
+  lineTotal Decimal @map("line_total") @db.Decimal(12, 2)
 
-  createdAt       DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([orderId])
   @@index([productId])
@@ -347,59 +347,59 @@ model OrderItem {
 }
 
 model Payment {
-  id                 Int           @id @default(autoincrement())
-  orderId            Int           @map("order_id")
-  order              Order         @relation(fields: [orderId], references: [id])
+  id      Int   @id @default(autoincrement())
+  orderId Int   @map("order_id")
+  order   Order @relation(fields: [orderId], references: [id])
 
-  amount             Decimal       @db.Decimal(12, 2)
-  paymentMethod      String?       @map("payment_method")
-  paymentReference   String?       @map("payment_reference")
+  amount           Decimal @db.Decimal(12, 2)
+  paymentMethod    String? @map("payment_method")
+  paymentReference String? @map("payment_reference")
 
-  status             PaymentStatus @default(pending)
+  status PaymentStatus @default(pending)
 
-  razorpayPaymentId  String?       @map("razorpay_payment_id")
-  razorpaySignature  String?       @map("razorpay_signature")
+  razorpayPaymentId String? @map("razorpay_payment_id")
+  razorpaySignature String? @map("razorpay_signature")
 
-  createdAt          DateTime      @default(now()) @map("created_at")
-  updatedAt          DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("payments")
 }
 
 model InventoryMovement {
-  id            Int           @id @default(autoincrement())
-  productId     Int           @map("product_id")
-  product       Product       @relation(fields: [productId], references: [id])
+  id        Int     @id @default(autoincrement())
+  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
 
-  movementType  MovementType  @map("movement_type")
-  quantity      Int
-  referenceId   String?       @map("reference_id")
+  movementType MovementType @map("movement_type")
+  quantity     Int
+  referenceId  String?      @map("reference_id")
 
-  notes         String?
-  createdById   Int?          @map("created_by")
-  createdBy     AdminUser?    @relation(fields: [createdById], references: [id])
+  notes       String?
+  createdById Int?       @map("created_by")
+  createdBy   AdminUser? @relation(fields: [createdById], references: [id])
 
-  createdAt     DateTime      @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([productId])
   @@map("inventory_movements")
 }
 
 model Inquiry {
-  id             Int           @id @default(autoincrement())
-  customerName   String?       @map("customer_name")
-  customerEmail  String?       @map("customer_email")
-  customerPhone  String?       @map("customer_phone")
-  companyName    String?       @map("company_name")
+  id            Int     @id @default(autoincrement())
+  customerName  String? @map("customer_name")
+  customerEmail String? @map("customer_email")
+  customerPhone String? @map("customer_phone")
+  companyName   String? @map("company_name")
 
-  items          Json?
-  message        String?
+  items   Json?
+  message String?
 
-  status         InquiryStatus @default(new)
-  quotedAmount   Decimal?      @db.Decimal(12, 2) @map("quoted_amount")
+  status       InquiryStatus @default(new)
+  quotedAmount Decimal?      @map("quoted_amount") @db.Decimal(12, 2)
 
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([status])
   @@index([createdAt])
@@ -487,25 +487,25 @@ model BusinessCategory {
 /// Hero-carousel slides managed from the admin panel. See admin schema for
 /// full documentation — the two models must stay in sync.
 model Banner {
-  id         Int      @id @default(autoincrement())
-  placement  String   @default("hero")
-  position   Int      @default(0)
-  isActive   Boolean  @default(true) @map("is_active")
+  id        Int     @id @default(autoincrement())
+  placement String  @default("hero")
+  position  Int     @default(0)
+  isActive  Boolean @default(true) @map("is_active")
 
-  imageUrl   String   @map("image_url")
-  alt        String?
+  imageUrl String  @map("image_url")
+  alt      String?
 
-  eyebrow    String?
-  title      String?
-  subtitle   String?
+  eyebrow  String?
+  title    String?
+  subtitle String?
 
-  ctaText    String?  @map("cta_text")
-  ctaHref    String?  @map("cta_href")
-  productSku String?  @map("product_sku")
+  ctaText    String? @map("cta_text")
+  ctaHref    String? @map("cta_href")
+  productSku String? @map("product_sku")
   category   String?
 
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([position])
   @@index([isActive])
@@ -528,18 +528,18 @@ model Policy {
 }
 
 model Reel {
-  id            Int      @id @default(autoincrement())
-  videoUrl      String   @map("video_url")
-  thumbnailUrl  String?  @map("thumbnail_url")
-  caption       String?
-  instagramUrl  String?  @map("instagram_url")
-  productSku    String?  @map("product_sku")
-  viewCount     Int      @default(0) @map("view_count")
-  position      Int      @default(0)
-  isActive      Boolean  @default(true) @map("is_active")
+  id           Int     @id @default(autoincrement())
+  videoUrl     String  @map("video_url")
+  thumbnailUrl String? @map("thumbnail_url")
+  caption      String?
+  instagramUrl String? @map("instagram_url")
+  productSku   String? @map("product_sku")
+  viewCount    Int     @default(0) @map("view_count")
+  position     Int     @default(0)
+  isActive     Boolean @default(true) @map("is_active")
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([position])
   @@index([isActive])
@@ -578,22 +578,22 @@ model Spotlight {
 /// Customer product reviews. Storefront reads + writes; admin moderates.
 /// See admin/prisma/schema.prisma for the full design comment.
 model Review {
-  id            Int       @id @default(autoincrement())
-  productSku    String    @map("product_sku")
-  productId     Int?      @map("product_id")
-  product       Product?  @relation(fields: [productId], references: [id])
+  id         Int      @id @default(autoincrement())
+  productSku String   @map("product_sku")
+  productId  Int?     @map("product_id")
+  product    Product? @relation(fields: [productId], references: [id])
 
-  customerId    Int?      @map("customer_id")
-  customer      Customer? @relation(fields: [customerId], references: [id])
-  customerName  String    @map("customer_name")
+  customerId   Int?      @map("customer_id")
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  customerName String    @map("customer_name")
 
-  rating        Int
-  title         String?
-  body          String
-  isApproved    Boolean   @default(true) @map("is_approved")
+  rating     Int
+  title      String?
+  body       String
+  isApproved Boolean @default(true) @map("is_approved")
 
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([productSku, customerId], name: "review_sku_customer_unique")
   @@index([productSku, isApproved])
@@ -607,9 +607,9 @@ model Coupon {
   code              String       @unique
   description       String?
   discountType      DiscountType @default(percent) @map("discount_type")
-  discountValue     Decimal      @db.Decimal(10, 2) @map("discount_value")
-  minOrderValue     Decimal?     @db.Decimal(12, 2) @map("min_order_value")
-  maxDiscountAmount Decimal?     @db.Decimal(12, 2) @map("max_discount_amount")
+  discountValue     Decimal      @map("discount_value") @db.Decimal(10, 2)
+  minOrderValue     Decimal?     @map("min_order_value") @db.Decimal(12, 2)
+  maxDiscountAmount Decimal?     @map("max_discount_amount") @db.Decimal(12, 2)
   usageLimit        Int?         @map("usage_limit")
   usageCount        Int          @default(0) @map("usage_count")
   perCustomerLimit  Int?         @map("per_customer_limit")
@@ -617,10 +617,10 @@ model Coupon {
   expiresAt         DateTime?    @map("expires_at")
   isActive          Boolean      @default(true) @map("is_active")
 
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  redemptions       CouponRedemption[]
+  redemptions CouponRedemption[]
 
   @@index([code])
   @@index([isActive])
@@ -634,7 +634,7 @@ model CouponRedemption {
   orderId        Int?     @map("order_id")
   customerPhone  String?  @map("customer_phone")
   customerEmail  String?  @map("customer_email")
-  discountAmount Decimal  @db.Decimal(12, 2) @map("discount_amount")
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(12, 2)
   createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([couponId])
@@ -657,4 +657,40 @@ model StockNotification {
   @@unique([productSku, email], name: "stock_notify_sku_email_unique")
   @@index([notifiedAt])
   @@map("stock_notifications")
+}
+
+/// Why a shopper left checkout without paying — their own answer, given on
+/// the way out. The abandoned-checkout alert already says THAT a cart was
+/// lost; this is the only place that records WHY.
+///
+/// Written by the storefront from an untrusted browser, so every field is
+/// validated and capped at /api/checkout-feedback and `reason` must be one of
+/// the known keys. No name, email or phone is stored: the answer is about the
+/// checkout, not the person.
+model CheckoutFeedback {
+  id BigInt @id @default(autoincrement())
+
+  /// A stable key, never the label — the wording changes without breaking the
+  /// report. See lib/checkout-feedback.ts for the list.
+  reason String  @db.VarChar(40)
+  /// Free text, only for the "other" reason.
+  note   String? @db.VarChar(500)
+
+  /// The analytics session, so an answer can be read beside what that visit
+  /// actually did. Null when the visitor blocks tracking.
+  sessionId String?  @map("session_id") @db.VarChar(40)
+  /// What was in the cart when they gave up — the size of the lost sale.
+  cartValue Decimal? @map("cart_value") @db.Decimal(10, 2)
+  itemCount Int?     @map("item_count")
+
+  /// Kept to separate real shoppers from staff testing the checkout, which is
+  /// what inflated the lost-cart numbers before.
+  userAgent String? @map("user_agent") @db.VarChar(300)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([reason])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("checkout_feedback")
 }
