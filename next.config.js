@@ -123,6 +123,11 @@ const nextConfig = {
       // KKHE0288-2P2 was the red 2-layer curved "Big" a second time, at a
       // different price; KKHE0285-RWS3LCMB is the one that stayed.
       ['KKHE0288-2P2', 'KKHE0285-RWS3LCMB'],
+      // The 16" SS-border anti skid tray was listed twice — same tray, same
+      // size, 49 paise apart. KKBT0021/22 stayed (2026-09-25); neither copy had
+      // ever been ordered and the partner had already dropped both.
+      ['KKBT0017-HSS16BL', 'KKBT0021-HSS16BL'],
+      ['KKBT0018-HSS16BR', 'KKBT0022-HSS16BR'],
     ];
     const retiredSkuRedirects = retiredSkus.map(([from, to]) => ({
       source: `/product/${from}`,
