@@ -128,6 +128,10 @@ const nextConfig = {
       // ever been ordered and the partner had already dropped both.
       ['KKBT0017-HSS16BL', 'KKBT0021-HSS16BL'],
       ['KKBT0018-HSS16BR', 'KKBT0022-HSS16BR'],
+      // Renamed, not retired: the Rose Gold double-head lamp warmer was the
+      // only one of its range spelt FLED; its Silver and Gold siblings are
+      // FLWDSS / FLWDG (2026-09-28). No order had ever used the old SKU.
+      ['KKBT0105-FLEDRG', 'KKBT0105-FLWDRG'],
     ];
     const retiredSkuRedirects = retiredSkus.map(([from, to]) => ({
       source: `/product/${from}`,
