@@ -45,7 +45,10 @@ const LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.-]{1,30}):\s+(.+)$/;
 // "2500 W + 2500 W Heating:" on the four-compartment pasta boiler. Scanned
 // 1,428 descriptions / 998 bullets: exactly those 3 labels change, and no
 // plain paragraph newly matches.
-const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.,×–+-]{1,59}):\s+(.+)$/;
+// "%" is part of a claim the product makes about itself — "100% Copper Motor:"
+// on the sugarcane machines. Scanned 1,463 descriptions / 1,604 bullets: no
+// existing bullet changes at all, so this only affects new copy.
+const BULLET_LABEL = /^([A-Z0-9][A-Za-z0-9 &/'’.,×–+%-]{1,59}):\s+(.+)$/;
 
 type Block =
   | { kind: 'lead'; text: string }
