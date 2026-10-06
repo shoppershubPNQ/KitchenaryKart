@@ -215,14 +215,14 @@ function toPublic(p: any): PublicProduct {
  */
 function withVariantDisplay(
   pub: PublicProduct,
-  variants?: Array<{ skuSuffix: string | null; priceModifier: unknown; imageUrl: string | null }>,
+  variants?: Array<{ skuSuffix: string | null; price?: unknown; priceModifier: unknown; imageUrl: string | null }>,
 ): PublicProduct {
   if (!variants?.length) return pub;
-  // Parent price 0 → show the cheapest variant's effective price (base + mod),
-  // matching what the /shop grid + PDP show, instead of "₹0".
+  // Parent price 0 → show the cheapest variant's effective price (its own price,
+  // else base + mod), matching what the /shop grid + PDP show, instead of "₹0".
   if (pub.price === 0) {
     const eff = variants
-      .map((v) => pub.price + Number((v.priceModifier as any) ?? 0))
+      .map((v) => (v.price != null ? Number(v.price) : pub.price + Number((v.priceModifier as any) ?? 0)))
       .filter((n) => n > 0);
     if (eff.length) pub.price = Math.min(...eff);
   }
@@ -547,6 +547,8 @@ export interface SearchIndexItem {
   subcategory: string | null;
   metaKeywords: string | null;
   stock: number;
+  /** The product's own SKU (equals `sku` except on size rows). */
+  parent: string;
 }
 
 async function _getSearchIndex(): Promise<SearchIndexItem[]> {
@@ -566,6 +568,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
         select: {
           variantValue: true,
           skuSuffix: true,
+          price: true,
           priceModifier: true,
           stock: true,
           imageUrl: true,
@@ -585,6 +588,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
       subcategory: row.subcategory,
       metaKeywords: row.metaKeywords ?? null,
       stock: typeof row.stock === 'number' ? row.stock : 0,
+      parent: row.sku,
     };
     const variants = row.variants;
     if (!variants || variants.length === 0) {
@@ -600,7 +604,9 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
         ...base,
         sku: v.skuSuffix,
         name: qualifier ? `${base.name} — ${qualifier}` : base.name,
-        price: base.price + Number(v.priceModifier ?? 0),
+        // A size's own price is what checkout charges; parent + modifier is only
+        // the legacy fallback (27 sizes showed a wrong price here before).
+        price: v.price != null ? Number(v.price) : base.price + Number(v.priceModifier ?? 0),
         stock: v.stock,
         imageUrl: v.imageUrl ?? base.imageUrl,
       });
@@ -614,7 +620,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
  * (busted by `revalidateTag('products')`) so keystroke-frequency autocomplete
  * hits the ranker in memory instead of round-tripping to Neon each time.
  */
-export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v1'], {
+export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v3'], {
   revalidate: 300,
   tags: ['products'],
 });
@@ -764,6 +770,7 @@ export async function getHomePageData(): Promise<{
       where: { product: { sku: { in: cardSkus } } },
       select: {
         skuSuffix: true,
+        price: true,
         priceModifier: true,
         imageUrl: true,
         product: { select: { sku: true } },
@@ -771,13 +778,13 @@ export async function getHomePageData(): Promise<{
     });
     const byParent = new Map<
       string,
-      Array<{ skuSuffix: string | null; priceModifier: unknown; imageUrl: string | null }>
+      Array<{ skuSuffix: string | null; price: unknown; priceModifier: unknown; imageUrl: string | null }>
     >();
     for (const v of vrows) {
       const ps = v.product?.sku;
       if (!ps) continue;
       const arr = byParent.get(ps) ?? [];
-      arr.push({ skuSuffix: v.skuSuffix, priceModifier: v.priceModifier, imageUrl: v.imageUrl });
+      arr.push({ skuSuffix: v.skuSuffix, price: v.price, priceModifier: v.priceModifier, imageUrl: v.imageUrl });
       byParent.set(ps, arr);
     }
     for (const arr of [bestsellers, newArrivals, watchShop]) {
