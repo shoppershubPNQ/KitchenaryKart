@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
 import { imgSrc, inr } from '@/lib/format';
+import { VoiceSearchButton } from './VoiceSearchButton';
+import { ImageSearchButton } from './ImageSearchButton';
 
 interface SearchHit {
   sku: string;
@@ -99,6 +101,15 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
     [q, router],
   );
 
+  // Voice search: show what was heard in the box and open the results for it.
+  const onVoice = useCallback(
+    (text: string) => {
+      setQ(text);
+      submit(text);
+    },
+    [submit],
+  );
+
   const navigateToHit = useCallback(
     (hit: SearchHit) => {
       setOpen(false);
@@ -143,7 +154,7 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
                     {hit.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={imgSrc(hit.imageUrl)}
+                        src={imgSrc(hit.imageUrl, 96)}
                         alt={hit.name}
                         width={48}
                         height={48}
@@ -195,7 +206,7 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <div ref={wrapRef} className="relative">
-        <form action="/shop" method="get" onSubmit={onSubmit}>
+        <form action="/shop" method="get" onSubmit={onSubmit} className="relative">
           <input
             type="search"
             name="q"
@@ -209,18 +220,33 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
             /* text-base (16px) is required: iOS Safari auto-zooms the whole page
                when a focused input's font-size is < 16px, which threw the header
                off-screen. 16px stops the zoom. */
-            className="w-full h-10 px-4 border border-line rounded-full text-base"
+            className="w-full h-10 pl-4 pr-[4.75rem] border border-line rounded-full text-base"
           />
+          {/* Mic first: it appears only after hydration (and not at all in
+              Firefox), so it must grow the row leftward — the camera never moves. */}
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+            <VoiceSearchButton
+              onResult={onVoice}
+              iconSize={18}
+              className="w-8 h-8 rounded-full grid place-items-center text-muted hover:text-brand hover:bg-bg-soft"
+            />
+            <ImageSearchButton
+              iconSize={18}
+              className="w-8 h-8 rounded-full grid place-items-center text-muted hover:text-brand hover:bg-bg-soft"
+            />
+          </div>
         </form>
         {Dropdown}
       </div>
     );
   }
 
+  // The 49% cap only from xl: below that the header's middle column is narrow
+  // and, with the mic + camera inside the box, capping it left ~90px to type in.
   return (
     <div
       ref={wrapRef}
-      className="hidden md:block relative w-full max-w-[49%]"
+      className="hidden md:block relative w-full xl:max-w-[49%]"
     >
       <form action="/shop" method="get" onSubmit={onSubmit} className="relative">
         <input
@@ -233,8 +259,15 @@ export function HeaderSearch({ mobile = false }: { mobile?: boolean }) {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          className="w-full h-12 pl-5 pr-14 border border-line rounded-md text-[15px] bg-white text-ink outline-none focus:border-brand focus:ring-1 focus:ring-brand transition"
+          className="w-full h-12 pl-5 pr-[6.75rem] lg:pr-32 border border-line rounded-md text-[15px] bg-white text-ink outline-none focus:border-brand focus:ring-1 focus:ring-brand transition"
         />
+        <div className="absolute right-11 lg:right-12 top-1/2 -translate-y-1/2 flex items-center">
+          <VoiceSearchButton
+            onResult={onVoice}
+            className="w-8 lg:w-9 h-9 rounded grid place-items-center text-muted hover:text-brand hover:bg-bg-soft"
+          />
+          <ImageSearchButton className="w-8 lg:w-9 h-9 rounded grid place-items-center text-muted hover:text-brand hover:bg-bg-soft" />
+        </div>
         <button
           type="submit"
           aria-label="Search"

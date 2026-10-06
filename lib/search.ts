@@ -16,6 +16,8 @@
  * in-memory rank per query is cheap.
  */
 
+import { buildVocab, mightNeedTranslation, translateQuery, type QueryTranslation, type Vocab } from './hindi-query';
+
 /** Fields a rankable item may expose. All optional; missing fields are skipped. */
 export interface Searchable {
   name?: string | null;
@@ -40,6 +42,13 @@ const FIELD_WEIGHTS: { key: keyof Searchable; weight: number }[] = [
 export const MIN_SCORE = 0.33;
 
 /**
+ * Longest query we rank. Each extra word costs an edit-distance pass over the
+ * catalogue, and a long spoken sentence or a pasted description would otherwise
+ * freeze /shop on every keystroke. No product query needs more.
+ */
+export const MAX_QUERY_CHARS = 120;
+
+/**
  * Lowercase, strip diacritics, collapse punctuation/whitespace to single
  * spaces. "Cafe  Creme!" -> "cafe creme".
  */
@@ -58,14 +67,14 @@ export function normalize(s: string): string {
  * adjacent transpositions). Good enough for query-length strings and treats a
  * single swapped-letter typo as distance 1.
  */
-function osaDistance(a: string, b: string): number {
+function osaDistance(a: string, b: string, max = 4): number {
   const m = a.length;
   const n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
-  // Cheap early-out: if the length gap already exceeds any plausible tolerance
-  // there's no point building the matrix.
-  if (Math.abs(m - n) > 4) return Math.abs(m - n);
+  // Cheap early-out: if the length gap already exceeds the tolerance the
+  // caller will accept, the distance can only be larger — skip the matrix.
+  if (Math.abs(m - n) > max) return Math.abs(m - n);
 
   const d: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
   for (let i = 0; i <= m; i++) d[i][0] = i;
@@ -111,7 +120,7 @@ function tokenWordScore(token: string, word: string): number {
   if (token.length >= 3 && word.includes(token)) return 0.65;
   // Fuzzy fallback — forgives typos but always scores below substring.
   const allowed = allowedDistance(token.length);
-  const dist = osaDistance(word, token);
+  const dist = osaDistance(word, token, allowed);
   if (dist <= allowed) {
     const sim = 1 - dist / Math.max(word.length, token.length);
     return 0.45 + 0.3 * sim; // ~0.45 - 0.75
@@ -136,10 +145,10 @@ function tokenWordScore(token: string, word: string): number {
  * The whole-word tier also means an exact keyword outranks a query that merely
  * appears inside a longer word — "pan" ranks "Frying Pan" above "Panini Press".
  */
-function fieldScore(fieldText: string, qn: string, qTokens: string[]): number {
-  const f = normalize(fieldText);
+function fieldScore(fieldText: string, q: PreparedQuery): number {
+  const { f, words } = normalizedField(fieldText);
   if (!f) return 0;
-  const words = f.split(' ');
+  const { qn, qTokens, memo } = q;
 
   let whole = 0;
   if (f === qn) whole = 1.0; // the whole field is exactly the query
@@ -148,10 +157,16 @@ function fieldScore(fieldText: string, qn: string, qTokens: string[]): number {
   else if (qn.length >= 3 && f.includes(qn)) whole = 0.8; // substring somewhere
 
   let sum = 0;
-  for (const t of qTokens) {
+  for (let i = 0; i < qTokens.length; i++) {
+    const t = qTokens[i];
+    const seen = memo[i];
     let best = 0;
     for (const w of words) {
-      const s = tokenWordScore(t, w);
+      let s = seen.get(w);
+      if (s === undefined) {
+        s = tokenWordScore(t, w);
+        seen.set(w, s);
+      }
       if (s > best) best = s;
       if (best === 1.0) break;
     }
@@ -162,21 +177,108 @@ function fieldScore(fieldText: string, qn: string, qTokens: string[]): number {
   return Math.max(whole, tokenAvg);
 }
 
-/** Relevance score for an item against the (raw) query. 0 = no match. */
-export function scoreItem(item: Searchable, rawQuery: string): number {
-  const qn = normalize(rawQuery);
-  if (!qn) return 0;
-  const qTokens = qn.split(' ');
+/**
+ * A query prepared once and reused for every item it is scored against: the
+ * normalised text, its tokens, and per token a memo of tokenWordScore. The
+ * catalogue repeats a few thousand words across ~2k rows × 5 fields, so each
+ * (token, word) pair is scored once per query instead of once per occurrence —
+ * the same scores, without re-running the edit distance thousands of times.
+ */
+interface PreparedQuery {
+  qn: string;
+  qTokens: string[];
+  memo: Map<string, number>[];
+}
 
+function prepareQuery(rawQuery: string): PreparedQuery | null {
+  const qn = normalize(rawQuery);
+  if (!qn) return null;
+  const qTokens = qn.split(' ');
+  return { qn, qTokens, memo: qTokens.map(() => new Map<string, number>()) };
+}
+
+/**
+ * normalize() + split of a field's text, cached across queries (field text
+ * repeats on every keystroke). Cleared when it grows past any real catalogue's
+ * size so a long-running server can't accumulate it without bound.
+ */
+const fieldCache = new Map<string, { f: string; words: string[] }>();
+function normalizedField(text: string): { f: string; words: string[] } {
+  let hit = fieldCache.get(text);
+  if (!hit) {
+    if (fieldCache.size >= 50000) fieldCache.clear();
+    const f = normalize(text);
+    hit = { f, words: f.split(' ') };
+    fieldCache.set(text, hit);
+  }
+  return hit;
+}
+
+function scorePrepared(item: Searchable, q: PreparedQuery): number {
   let best = 0;
   for (const { key, weight } of FIELD_WEIGHTS) {
     const val = item[key];
     if (typeof val !== 'string' || !val) continue;
-    const s = fieldScore(val, qn, qTokens) * weight;
+    const s = fieldScore(val, q) * weight;
     if (s > best) best = s;
     if (best >= 1.0) break;
   }
   return best;
+}
+
+/** Relevance score for an item against the (raw) query. 0 = no match. */
+export function scoreItem(item: Searchable, rawQuery: string): number {
+  const q = prepareQuery(rawQuery);
+  return q ? scorePrepared(item, q) : 0;
+}
+
+/**
+ * Vocabularies built lately, newest first. Two, so a collection page
+ * (/shop?collection=…, a smaller list) doesn't evict the full catalogue's that
+ * every /api/search request uses.
+ */
+const vocabCache: { items: readonly Searchable[]; signature: string; vocab: Vocab }[] = [];
+const VOCAB_CACHE_SIZE = 2;
+
+/**
+ * Fingerprint of the words a vocabulary is built from (every name +
+ * subcategory). The catalogue arrives as a fresh array on every request
+ * (unstable_cache JSON-parses it), so array identity alone never matched.
+ * Summed per-row hashes don't depend on row order, so the shop list and the
+ * search index — same rows, different order — share one vocabulary. ~1 ms for
+ * the whole catalogue against ~20 ms to rebuild it.
+ */
+function vocabSignature(items: readonly Searchable[]): string {
+  let sum = 0;
+  for (const it of items) {
+    const s = `${it.name ?? ''}\u0001${it.subcategory ?? ''}`;
+    let h = 0x811c9dc5; // FNV-1a
+    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+    sum = (sum + (h >>> 0)) % 0x100000000;
+  }
+  return `${items.length}:${sum}`;
+}
+
+/**
+ * The English query to rank `items` with. Hindi (Devanagari) and Hinglish
+ * queries — typed, or heard by voice search — are turned into the catalogue's
+ * English words (see lib/hindi-query); English queries come back unchanged.
+ * Pass the whole catalogue, not a filtered slice: the vocabulary decides which
+ * English word a Hindi one becomes, and it must not change with the filters.
+ */
+export function englishQuery(items: readonly Searchable[], rawQuery: string): QueryTranslation {
+  if (!mightNeedTranslation(rawQuery)) return { query: rawQuery, translated: false };
+  let i = vocabCache.findIndex((c) => c.items === items);
+  if (i < 0) {
+    const signature = vocabSignature(items);
+    i = vocabCache.findIndex((c) => c.signature === signature);
+    if (i >= 0) vocabCache[i].items = items;
+    else i = vocabCache.push({ items, signature, vocab: buildVocab(items as Searchable[]) }) - 1;
+  }
+  const [hit] = vocabCache.splice(i, 1);
+  vocabCache.unshift(hit);
+  vocabCache.length = Math.min(vocabCache.length, VOCAB_CACHE_SIZE);
+  return translateQuery(rawQuery, hit.vocab);
 }
 
 /**
@@ -184,9 +286,20 @@ export function scoreItem(item: Searchable, rawQuery: string): number {
  * in-stock first, then name A->Z, so the order is stable and sensible.
  */
 export function rankItems<T extends Searchable>(items: T[], rawQuery: string): T[] {
+  return rankEnglish(items, englishQuery(items, rawQuery).query);
+}
+
+/**
+ * rankItems for a query that is already English (from englishQuery) — for a
+ * caller that translates once against the whole catalogue and then ranks a
+ * filtered slice of it (ShopView).
+ */
+export function rankEnglish<T extends Searchable>(items: T[], query: string): T[] {
+  const q = prepareQuery(query);
+  if (!q) return [];
   const scored: { item: T; score: number }[] = [];
   for (const item of items) {
-    const score = scoreItem(item, rawQuery);
+    const score = scorePrepared(item, q);
     if (score >= MIN_SCORE) scored.push({ item, score });
   }
   scored.sort((a, b) => {

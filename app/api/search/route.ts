@@ -19,7 +19,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSearchIndex } from '@/lib/products';
-import { rankItems } from '@/lib/search';
+import { MAX_QUERY_CHARS, rankItems } from '@/lib/search';
 
 export const revalidate = 60;
 
@@ -34,7 +34,9 @@ type SearchHit = {
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const q = (url.searchParams.get('q') || '').trim();
+    // Capped (see MAX_QUERY_CHARS): a long spoken sentence would cost an
+    // edit-distance pass per extra word on every keystroke-rate request.
+    const q = (url.searchParams.get('q') || '').trim().slice(0, MAX_QUERY_CHARS);
     const limit = Math.min(
       12,
       Math.max(1, parseInt(url.searchParams.get('limit') || '6', 10)),

@@ -17,6 +17,8 @@ import { useEffect, useState } from 'react';
 import { CATEGORY_ORDER, catLabel } from '@/lib/categories';
 import { openAuth, useAuth } from '@/lib/useAuth';
 import type { CategoryTreeNode } from '@/lib/products';
+import { ImageSearchButton } from './ImageSearchButton';
+import { VoiceSearchButton } from './VoiceSearchButton';
 
 interface Props {
   tree: Record<string, CategoryTreeNode[]>;
@@ -120,19 +122,32 @@ export function SlideNav({ tree }: Props) {
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
               placeholder="Search products"
-              className="w-full h-10 pl-4 pr-10 border border-line rounded-full text-[14px] bg-bg-soft text-ink outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className="w-full h-10 pl-4 pr-[6.75rem] border border-line rounded-full text-[14px] bg-bg-soft text-ink outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
-            <button
-              type="button"
-              aria-label="Search"
-              onClick={submitSearch}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full grid place-items-center text-muted hover:text-brand"
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-            </button>
+            {/* Mic first: it appears only after hydration, so it grows the row leftward. */}
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
+              <VoiceSearchButton
+                onResult={(text) => {
+                  setQ(text);
+                  setOpen(false);
+                  router.push(`/shop?q=${encodeURIComponent(text)}`);
+                }}
+                iconSize={18}
+                className="w-8 h-8 rounded-full grid place-items-center text-muted hover:text-brand"
+              />
+              <ImageSearchButton iconSize={18} onNavigate={() => setOpen(false)} className="w-8 h-8 rounded-full grid place-items-center text-muted hover:text-brand" />
+              <button
+                type="button"
+                aria-label="Search"
+                onClick={submitSearch}
+                className="w-8 h-8 rounded-full grid place-items-center text-muted hover:text-brand"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

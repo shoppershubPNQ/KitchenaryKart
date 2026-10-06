@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ProductCard } from './ProductCard';
+import { VoiceSearchButton } from './VoiceSearchButton';
+import { ImageSearchButton } from './ImageSearchButton';
 import { CATEGORY_SHORT, catLabel } from '@/lib/categories';
-import { rankItems } from '@/lib/search';
+import { MAX_QUERY_CHARS, englishQuery, rankEnglish } from '@/lib/search';
 import type { PublicProduct } from '@/lib/products';
 
 const PAGE_SIZE = 24;
@@ -82,8 +84,14 @@ export function ShopView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
+  // Hindi / Hinglish searches (typed or spoken) are matched in English. Translated ONCE, against the
+  // whole catalogue — never the filtered list — so a category or price filter can't change which
+  // English words are used, and the grid and the "Showing results for" label always agree.
+  const searched = useMemo(() => englishQuery(products, q.trim().slice(0, MAX_QUERY_CHARS)), [products, q]);
+  const searchedAs = searched.translated ? searched.query : null;
+
   const filtered = useMemo(() => {
-    const needle = q.trim();
+    const needle = searched.query;
     const min = minPrice.trim() ? Number(minPrice) : null;
     const max = maxPrice.trim() ? Number(maxPrice) : null;
     let list = products.slice();
@@ -99,8 +107,8 @@ export function ShopView({
       // Exact/prefix/substring matches rank first — so a correctly spelled
       // query shows the most accurate result on top — while misspellings
       // ("kettel") still surface similar products ("kettle"). Non-matches are
-      // dropped. `rankItems` returns a fresh array, so the sort below is safe.
-      list = rankItems(list, needle);
+      // dropped. `rankEnglish` returns a fresh array, so the sort below is safe.
+      list = rankEnglish(list, needle);
     }
     switch (sort) {
       case 'price-asc':
@@ -112,7 +120,7 @@ export function ShopView({
       case 'name':
         list.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      // 'featured' + an active search keeps rankItems' relevance order.
+      // 'featured' + an active search keeps rankEnglish's relevance order.
     }
     // Out-of-stock ALWAYS sinks to the end — but stays visible (customers can
     // still open it / use "Notify me"). Runs after the sort above and relies on
@@ -122,7 +130,7 @@ export function ShopView({
     // (e.g. the first Polyrattan tile) and stall browsing.
     list.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
     return list;
-  }, [products, cat, sub, q, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
+  }, [products, cat, sub, searched, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
 
   const shown = filtered.slice(0, page * PAGE_SIZE);
   const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
@@ -347,25 +355,66 @@ export function ShopView({
 
           <div className="pb-5 border-b border-line mb-6">
             <div className="flex items-center gap-3 flex-wrap">
-              <input
-                type="search"
-                placeholder="Search by name or SKU…"
-                value={q}
-                onChange={(e) => {
-                  setQ(e.target.value);
-                  setPage(1);
-                }}
-                className="px-4 py-2.5 border border-line rounded-md text-sm flex-1 min-w-0 md:min-w-[260px] md:flex-none focus:border-brand focus:ring-1 focus:ring-brand outline-none"
-              />
-              {/* Mobile-only Filters button — opens the popup that holds every
-                  filter (category, price, refine, sort). The badge shows how
-                  many are active at a glance. */}
+              <div className="relative flex-1 min-w-0 md:min-w-[260px] md:flex-none">
+                <input
+                  type="search"
+                  placeholder="Search by name or SKU…"
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full pl-4 pr-[4.75rem] py-2.5 border border-line rounded-md text-sm focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+                />
+                {/* Mic first: it appears only after hydration, so it grows the row leftward. */}
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                  <VoiceSearchButton
+                    onResult={(text) => {
+                      setQ(text);
+                      setPage(1);
+                    }}
+                    iconSize={18}
+                    className="w-8 h-8 rounded grid place-items-center text-muted hover:text-brand hover:bg-bg-soft"
+                  />
+                  <ImageSearchButton
+                    iconSize={18}
+                    className="w-8 h-8 rounded grid place-items-center text-muted hover:text-brand hover:bg-bg-soft"
+                  />
+                </div>
+              </div>
+              {/* Count + sort grouped on the right (count bold) — desktop only.
+                  On mobile these live in the count row below + the popup. */}
+              <div className="hidden md:flex items-center gap-4 shrink-0 ml-auto">
+                <div className="text-sm font-bold text-ink whitespace-nowrap">
+                  {filtered.length.toLocaleString('en-IN')} products
+                </div>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="px-3.5 py-2 border border-line rounded-md text-sm bg-white"
+                >
+                  <option value="featured">Featured</option>
+                  <option value="price-asc">Price: low to high</option>
+                  <option value="price-desc">Price: high to low</option>
+                  <option value="name">Name A–Z</option>
+                </select>
+              </div>
+            </div>
+            {/* Mobile-only product count row + Filters button. The Filters button
+                used to sit beside the search box, but with the mic + camera inside
+                the box that left ~110px to type in on a 360px phone. It opens the
+                popup that holds every filter (category, price, refine, sort); the
+                badge shows how many are active at a glance. */}
+            <div className="md:hidden mt-3 flex items-center justify-between gap-3">
+              <span className="text-sm font-bold text-ink">
+                {filtered.length.toLocaleString('en-IN')} products
+              </span>
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(true)}
                 aria-haspopup="dialog"
                 aria-expanded={mobileFilterOpen}
-                className="md:hidden shrink-0 inline-flex items-center gap-2 px-4 py-2.5 border border-line rounded-md bg-white text-sm font-medium text-ink hover:border-brand"
+                className="shrink-0 inline-flex items-center gap-2 px-4 py-2 border border-line rounded-md bg-white text-sm font-medium text-ink hover:border-brand"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -385,28 +434,12 @@ export function ShopView({
                   </span>
                 )}
               </button>
-              {/* Count + sort grouped on the right (count bold) — desktop only.
-                  On mobile these live in the count row below + the popup. */}
-              <div className="hidden md:flex items-center gap-4 shrink-0 ml-auto">
-                <div className="text-sm font-bold text-ink whitespace-nowrap">
-                  {filtered.length.toLocaleString('en-IN')} products
-                </div>
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="px-3.5 py-2 border border-line rounded-md text-sm bg-white"
-                >
-                  <option value="featured">Featured</option>
-                  <option value="price-asc">Price: low to high</option>
-                  <option value="price-desc">Price: high to low</option>
-                  <option value="name">Name A–Z</option>
-                </select>
-              </div>
             </div>
-            {/* Mobile-only product count row. */}
-            <div className="md:hidden mt-3 text-sm font-bold text-ink">
-              {filtered.length.toLocaleString('en-IN')} products
-            </div>
+            {searchedAs && (
+              <p className="mt-2 text-sm text-ink-soft" lang="en">
+                Showing results for <span className="font-semibold text-ink">“{searchedAs}”</span>
+              </p>
+            )}
           </div>
 
           {/* Mobile filter popup — bottom sheet holding all filters. */}
