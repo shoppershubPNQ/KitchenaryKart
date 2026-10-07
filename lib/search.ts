@@ -325,6 +325,28 @@ function aliasIndex(entry: CatalogueEntry): Map<string, string[][]> {
 }
 
 /**
+ * Is this ALT phrase the catalogue's own words — a phrase in some listing name
+ * ("ice cream" on the softy machine: Ice Cream Pan/Scoop exist), or Hindi that
+ * translates to one ("आइस क्रीम")? Such a phrase stays in the query and ranks
+ * normally, so the customer sees the softy machines (matched through the
+ * ALT-words field) AND the scoops, not only one of them.
+ */
+function aliasIsCatalogueWords(entry: CatalogueEntry, words: string[]): boolean {
+  const phrase = words.join(' ');
+  if (/^[a-z0-9 ]+$/.test(phrase)) return phraseInCatalogue(entry, phrase);
+  const key = `hi:${phrase}`;
+  let found = entry.inCatalogue.get(key);
+  if (found === undefined) {
+    entry.vocab ??= buildVocab(entry.items as Searchable[]);
+    const t = translateQuery(phrase, entry.vocab);
+    const english = t.translated ? anyScriptWords(t.query).join(' ') : '';
+    found = english !== '' && phraseInCatalogue(entry, english);
+    entry.inCatalogue.set(key, found);
+  }
+  return found;
+}
+
+/**
  * Split the customer's ALT words (and the generic words right after them) out
  * of the query. rankEnglish matches them against each product's ALT words
  * itself, so the translator must not see them — it would drop दारू and leave
@@ -342,8 +364,8 @@ function splitAliasWords(raw: string, entry: CatalogueEntry): { rest: string; al
   const aliases: string[][] = [];
   let aliasWords = 0;
   for (let i = 0; i < words.length; i++) {
-    const own = (p: string[]) => /^[a-z0-9 ]+$/.test(p.join(' ')) && phraseInCatalogue(entry, p.join(' '));
-    let match = (index.get(words[i]) ?? []).find((p) => p.every((w, k) => words[i + k] === w) && !own(p));
+    const own = (p: string[]) => aliasIsCatalogueWords(entry, p);
+    const match = (index.get(words[i]) ?? []).find((p) => p.every((w, k) => words[i + k] === w) && !own(p));
     if (!match && i === last && words[i].length >= 3) {
       // half-typed last word: every ALT word it starts
       const typed = [...index.values()].flat().filter((p) => p.length === 1 && p[0].startsWith(words[i]) && !own(p));
