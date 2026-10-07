@@ -46,6 +46,8 @@ export interface PublicProduct {
   isBestseller: boolean;
   isNewArrival: boolean;
   metaKeywords: string | null;
+  /** ALT words — other names customers search it by (comma-separated, any script), set in admin. */
+  searchAliases: string | null;
   /** Hand-written Google result title, set in admin. Null = the PDP generates
    *  one from the name (web/lib/seo-title.ts). Only honoured on the PARENT
    *  url — a variant keeps its size-specific title. */
@@ -198,6 +200,7 @@ function toPublic(p: any): PublicProduct {
     isBestseller: Boolean(p.isBestseller),
     isNewArrival: Boolean(p.isNewArrival),
     metaKeywords: p.metaKeywords ?? null,
+    searchAliases: p.searchAliases ?? null,
     metaTitle: p.metaTitle ?? null,
     metaDescription: p.metaDescription ?? null,
     faqs: parseFaqs(p.faqs),
@@ -343,6 +346,7 @@ const commonSelect = {
   isBestseller: true,
   isNewArrival: true,
   metaKeywords: true,
+  searchAliases: true,
   metaTitle: true,
   metaDescription: true,
   faqs: true,
@@ -527,7 +531,7 @@ async function _getAllShopProducts(): Promise<PublicProduct[]> {
  */
 export const getAllShopProducts = unstable_cache(
   _getAllShopProducts,
-  ['kk:all-shop-products'],
+  ['kk:all-shop-products-v2'],
   { revalidate: 600, tags: ['products'] },
 );
 
@@ -546,6 +550,8 @@ export interface SearchIndexItem {
   category: string | null;
   subcategory: string | null;
   metaKeywords: string | null;
+  /** ALT words customers search it by — see lib/search.ts. */
+  searchAliases: string | null;
   stock: number;
   /** The product's own SKU (equals `sku` except on size rows). */
   parent: string;
@@ -563,6 +569,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
       category: true,
       subcategory: true,
       metaKeywords: true,
+      searchAliases: true,
       stock: true,
       variants: {
         select: {
@@ -587,6 +594,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
       category: row.category,
       subcategory: row.subcategory,
       metaKeywords: row.metaKeywords ?? null,
+      searchAliases: row.searchAliases ?? null,
       stock: typeof row.stock === 'number' ? row.stock : 0,
       parent: row.sku,
     };
@@ -620,7 +628,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
  * (busted by `revalidateTag('products')`) so keystroke-frequency autocomplete
  * hits the ranker in memory instead of round-tripping to Neon each time.
  */
-export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v3'], {
+export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v4'], {
   revalidate: 300,
   tags: ['products'],
 });

@@ -26,6 +26,8 @@ export interface Searchable {
   subcategory?: string | null;
   category?: string | null;
   metaKeywords?: string | null;
+  /** ALT words set in admin: other names customers search it by, comma-separated, any script. */
+  searchAliases?: string | null;
   /** Only used as a tie-breaker (in-stock first), never for matching. */
   stock?: number | null;
 }
@@ -34,6 +36,9 @@ export interface Searchable {
 const FIELD_WEIGHTS: { key: keyof Searchable; weight: number }[] = [
   { key: 'name', weight: 1.0 },
   { key: 'sku', weight: 0.95 },
+  // English ALT words also match typo-tolerantly through the normal scorer;
+  // any-script ones (दारू) are matched against the customer's own words below.
+  { key: 'searchAliases', weight: 0.9 },
   { key: 'subcategory', weight: 0.6 },
   { key: 'category', weight: 0.5 },
   { key: 'metaKeywords', weight: 0.45 },
@@ -246,6 +251,8 @@ interface CatalogueEntry {
   /** Every listing's name + subcategory, for the synonym "already a catalogue phrase" check. */
   text?: string;
   inCatalogue: Map<string, boolean>;
+  /** Every listing's ALT words by first word, longest first. */
+  aliases?: Map<string, string[][]>;
 }
 const vocabCache: CatalogueEntry[] = [];
 const VOCAB_CACHE_SIZE = 2;
@@ -261,7 +268,7 @@ const VOCAB_CACHE_SIZE = 2;
 function vocabSignature(items: readonly Searchable[]): string {
   let sum = 0;
   for (const it of items) {
-    const s = `${it.name ?? ''}\u0001${it.subcategory ?? ''}`;
+    const s = `${it.name ?? ''}\u0001${it.subcategory ?? ''}\u0001${it.searchAliases ?? ''}`;
     let h = 0x811c9dc5; // FNV-1a
     for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
     sum = (sum + (h >>> 0)) % 0x100000000;
@@ -298,32 +305,100 @@ function phraseInCatalogue(entry: CatalogueEntry, phrase: string): boolean {
   return found;
 }
 
+/** Generic words right after an ALT word that add nothing ("दारू की मशीन", "daru wala"). */
+const ALIAS_TAIL = new Set(['machine', 'mashin', 'मशीन', 'wala', 'wali', 'wale', 'वाला', 'वाली', 'वाले', 'ki', 'ka', 'ke', 'की', 'का', 'के']);
+
+function aliasIndex(entry: CatalogueEntry): Map<string, string[][]> {
+  if (!entry.aliases) {
+    const index = new Map<string, string[][]>();
+    for (const it of entry.items) {
+      for (const phrase of aliasPhrases(it)) {
+        const list = index.get(phrase[0]) ?? [];
+        if (!list.some((p) => p.join(' ') === phrase.join(' '))) list.push(phrase);
+        index.set(phrase[0], list);
+      }
+    }
+    index.forEach((list) => list.sort((a, b) => b.length - a.length));
+    entry.aliases = index;
+  }
+  return entry.aliases;
+}
+
 /**
- * The English query to rank `items` with. Two steps, both leaving a plain
+ * Split the customer's ALT words (and the generic words right after them) out
+ * of the query. rankEnglish matches them against each product's ALT words
+ * itself, so the translator must not see them — it would drop दारू and leave
+ * only "machine". An ALT word that is also a phrase in some listing's name
+ * stays in the query: that is a product's own name and ranks normally (so a
+ * careless ALT word like "glass" can't take over). The last word may still be
+ * being typed ("दार" → दारू).
+ */
+function splitAliasWords(raw: string, entry: CatalogueEntry): { rest: string; aliases: string[][]; aliasWords: number } | null {
+  const index = aliasIndex(entry);
+  if (!index.size) return null;
+  const words = anyScriptWords(raw);
+  const last = words.length - 1;
+  const rest: string[] = [];
+  const aliases: string[][] = [];
+  let aliasWords = 0;
+  for (let i = 0; i < words.length; i++) {
+    const own = (p: string[]) => /^[a-z0-9 ]+$/.test(p.join(' ')) && phraseInCatalogue(entry, p.join(' '));
+    let match = (index.get(words[i]) ?? []).find((p) => p.every((w, k) => words[i + k] === w) && !own(p));
+    if (!match && i === last && words[i].length >= 3) {
+      // half-typed last word: every ALT word it starts
+      const typed = [...index.values()].flat().filter((p) => p.length === 1 && p[0].startsWith(words[i]) && !own(p));
+      if (typed.length) { aliases.push(...typed); aliasWords++; continue; }
+    }
+    if (!match) { rest.push(words[i]); continue; }
+    aliases.push(match);
+    aliasWords += match.length;
+    i += match.length - 1;
+    while (i + 1 < words.length && ALIAS_TAIL.has(words[i + 1])) i++;
+  }
+  return aliases.length ? { rest: rest.join(' '), aliases, aliasWords } : null;
+}
+
+/** englishQuery's answer: the English words to rank with, plus any ALT words the customer used. */
+export interface EnglishQuery extends QueryTranslation {
+  /** ALT words found in the customer's query (each as words); products carrying one rank first. */
+  aliases: string[][];
+  /** How many of the customer's words those ALT words took up. */
+  aliasWords: number;
+}
+
+/**
+ * The English query to rank `items` with. Three steps, all leaving a plain
  * English query untouched:
+ *   0. ALT words set on products in admin ("दारू" on the beer towers) come out
+ *      of the query — rankEnglish matches them against the customer's own words;
  *   1. names customers use for a product ("mosquito killer", "मच्छर की मशीन")
  *      become the words our listings use ("pest controller") — lib/search-synonyms;
  *   2. Hindi (Devanagari) and Hinglish words — typed, or heard by voice search —
  *      become the catalogue's English words (lib/hindi-query).
  * Pass the whole catalogue, not a filtered slice: the vocabulary decides which
  * English word a Hindi one becomes, and it must not change with the filters.
+ * The query can come back empty when it held only ALT words; rank it anyway.
  */
-export function englishQuery(items: readonly Searchable[], rawQuery: string): QueryTranslation {
+export function englishQuery(items: readonly Searchable[], rawQuery: string): EnglishQuery {
   let query = rawQuery;
   let renamed = false;
-  if (mightHaveSynonym(rawQuery)) {
+  const split = splitAliasWords(rawQuery, catalogueEntry(items));
+  if (split) query = split.rest;
+  const aliases = split?.aliases ?? [];
+  const aliasWords = split?.aliasWords ?? 0;
+  if (mightHaveSynonym(query)) {
     const entry = catalogueEntry(items);
-    const rewritten = applySynonyms(rawQuery, (phrase) => phraseInCatalogue(entry, phrase));
+    const rewritten = applySynonyms(query, (phrase) => phraseInCatalogue(entry, phrase));
     if (rewritten !== null) {
       query = rewritten;
       renamed = true;
     }
   }
-  if (!mightNeedTranslation(query)) return { query, translated: renamed };
+  if (!mightNeedTranslation(query)) return { query, translated: renamed, aliases, aliasWords };
   const entry = catalogueEntry(items);
   entry.vocab ??= buildVocab(items as Searchable[]);
   const t = translateQuery(query, entry.vocab);
-  return { query: t.query, translated: t.translated || renamed };
+  return { query: t.query, translated: t.translated || renamed, aliases, aliasWords };
 }
 
 /**
@@ -331,20 +406,52 @@ export function englishQuery(items: readonly Searchable[], rawQuery: string): Qu
  * in-stock first, then name A->Z, so the order is stable and sensible.
  */
 export function rankItems<T extends Searchable>(items: T[], rawQuery: string): T[] {
-  return rankEnglish(items, englishQuery(items, rawQuery).query);
+  return rankEnglish(items, englishQuery(items, rawQuery));
 }
 
+/** A query or ALT word as lowercase words in any script (NFC, no nukta / zero-width marks). */
+function anyScriptWords(s: string): string[] {
+  return s.normalize('NFC').toLowerCase().replace(/[़​-‍⁠﻿]/g, '').split(/[^\p{L}\p{M}\p{N}]+/u).filter(Boolean);
+}
+
+/** An item's ALT words, each as words. Cached per item object — the lists are reused across queries. */
+const aliasCache = new WeakMap<object, string[][]>();
+function aliasPhrases(item: Searchable): string[][] {
+  if (!item.searchAliases) return [];
+  let phrases = aliasCache.get(item as object);
+  if (!phrases) {
+    phrases = item.searchAliases.split(/[,;\n]+/).map(anyScriptWords).filter((w) => w.length > 0);
+    aliasCache.set(item as object, phrases);
+  }
+  return phrases;
+}
+
+/** Does the item carry one of these ALT words? (This is how दारू finds the beer tower — the English ranker never sees Devanagari.) */
+function hasAlias(item: Searchable, wanted: string[][]): boolean {
+  const own = aliasPhrases(item);
+  return own.length > 0 && wanted.some((w) => own.some((p) => p.length === w.length && p.every((x, k) => x === w[k])));
+}
+
+/** Score for a product found by one of its ALT words: just under an exact name match. */
+const ALIAS_SCORE = 0.95;
+
 /**
- * rankItems for a query that is already English (from englishQuery) — for a
- * caller that translates once against the whole catalogue and then ranks a
- * filtered slice of it (ShopView).
+ * rankItems for a query already through englishQuery — for a caller that
+ * translates once against the whole catalogue and then ranks a filtered slice
+ * of it (ShopView). A plain string ranks as English with no ALT words.
  */
-export function rankEnglish<T extends Searchable>(items: T[], query: string): T[] {
+export function rankEnglish<T extends Searchable>(items: T[], english: string | EnglishQuery): T[] {
+  const { query, aliases, aliasWords } = typeof english === 'string' ? { query: english, aliases: [], aliasWords: 0 } : english;
   const q = prepareQuery(query);
-  if (!q) return [];
+  if (!q && !aliases.length) return [];
+  // When the customer used ALT words, a product that matches only the rest of
+  // the query matched only part of what they said: "daru glass" → glasses
+  // tagged daru first, then the other daru products, then other glass items.
+  const restShare = aliases.length && q ? q.qTokens.length / (q.qTokens.length + aliasWords) : 1;
   const scored: { item: T; score: number }[] = [];
   for (const item of items) {
-    const score = scorePrepared(item, q);
+    const base = q ? scorePrepared(item, q) : 0;
+    const score = aliases.length && hasAlias(item, aliases) ? ALIAS_SCORE + 0.05 * base : base * restShare;
     if (score >= MIN_SCORE) scored.push({ item, score });
   }
   scored.sort((a, b) => {

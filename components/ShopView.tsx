@@ -102,13 +102,16 @@ export function ShopView({
     if (inStockOnly) list = list.filter((p) => p.stock > 0);
     if (bestOnly) list = list.filter((p) => p.isBestseller);
     if (newOnly) list = list.filter((p) => p.isNewArrival);
-    if (needle) {
+    // (needle can be empty when the search held only ALT words — "दारू")
+    if (needle || searched.aliases.length) {
       // Smart, typo-tolerant ranking (shared with the header autocomplete).
       // Exact/prefix/substring matches rank first — so a correctly spelled
       // query shows the most accurate result on top — while misspellings
       // ("kettel") still surface similar products ("kettle"). Non-matches are
       // dropped. `rankEnglish` returns a fresh array, so the sort below is safe.
-      list = rankEnglish(list, needle);
+      // `searched` also carries the ALT words the customer used (दारू), so the
+      // products tagged with them come first.
+      list = rankEnglish(list, searched);
     }
     switch (sort) {
       case 'price-asc':
@@ -130,7 +133,7 @@ export function ShopView({
     // (e.g. the first Polyrattan tile) and stall browsing.
     list.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
     return list;
-  }, [products, cat, sub, searched, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
+  }, [products, cat, sub, searched, q, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
 
   const shown = filtered.slice(0, page * PAGE_SIZE);
   const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);

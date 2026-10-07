@@ -129,6 +129,8 @@ model Product {
   metaTitle       String? @map("meta_title")
   metaDescription String? @map("meta_description")
   metaKeywords    String? @map("meta_keywords")
+  /// ALT words customers search this product by (comma-separated, any script) — see lib/search.ts.
+  searchAliases   String? @map("search_aliases")
 
   createdById Int?       @map("created_by")
   createdBy   AdminUser? @relation("CreatedBy", fields: [createdById], references: [id])
