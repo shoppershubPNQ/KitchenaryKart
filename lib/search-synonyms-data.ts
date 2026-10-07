@@ -307,6 +307,7 @@ export const SYNONYM_DATA: Synonym[] = [
   { to: 'ss whisk heavy', say: ['hand whisk', 'wire whisk', 'egg beater', 'manual egg beater', 'anda fentne', 'anda phentne', 'ande fentne', 'अंडा फेंटने', 'अंडे फेंटने', 'एग बीटर', 'whisk steel', 'manual whisk', 'hand egg beater'] },
   { to: 'starter basket', say: ['fries serving basket', 'chips serving basket'] },
   { to: 'stopper', say: ['wine saver', 'bottle sealer', 'bottle plug', 'wine plug'] },
+  { to: 'strainer', say: ['चत्री', 'चन्नी', 'चलनी', 'छननी', 'चाळणी', 'chani', 'chhani'] },
   { to: 'sugarcane', say: ['sugarcane juice', 'sugarcane crusher', 'cane juicer', 'cane crusher', 'ganna juice', 'ganna ras', 'ganne ka juice', 'ganne ka ras', 'ganna crusher', 'rasvanti', 'raswanti', 'रसवंती', 'गन्ने का जूस', 'गन्ने का रस', 'गन्ना जूस', 'गन्ना रस', 'ऊस', 'ऊस रस', 'ऊसाचा रस', 'उसाचा रस'] },
   { to: 'sushi knife', say: ['japanese knife', 'sashimi knife', 'yanagiba'] },
   { to: 'sushi mat', say: ['sushi rolling mat', 'sushi roller', 'sushi roll mat', 'bamboo sushi mat', 'sushi bamboo mat', 'makisu', 'maki mat', 'bamboo rolling mat'] },
