@@ -17,6 +17,7 @@
  */
 
 import { buildVocab, mightNeedTranslation, translateQuery, type QueryTranslation, type Vocab } from './hindi-query';
+import { applySynonyms, catalogueText, mightHaveSynonym } from './search-synonyms';
 
 /** Fields a rankable item may expose. All optional; missing fields are skipped. */
 export interface Searchable {
@@ -237,7 +238,16 @@ export function scoreItem(item: Searchable, rawQuery: string): number {
  * (/shop?collection=…, a smaller list) doesn't evict the full catalogue's that
  * every /api/search request uses.
  */
-const vocabCache: { items: readonly Searchable[]; signature: string; vocab: Vocab }[] = [];
+interface CatalogueEntry {
+  items: readonly Searchable[];
+  signature: string;
+  /** Built on first need — a query with only customer names never pays for it. */
+  vocab?: Vocab;
+  /** Every listing's name + subcategory, for the synonym "already a catalogue phrase" check. */
+  text?: string;
+  inCatalogue: Map<string, boolean>;
+}
+const vocabCache: CatalogueEntry[] = [];
 const VOCAB_CACHE_SIZE = 2;
 
 /**
@@ -259,26 +269,61 @@ function vocabSignature(items: readonly Searchable[]): string {
   return `${items.length}:${sum}`;
 }
 
-/**
- * The English query to rank `items` with. Hindi (Devanagari) and Hinglish
- * queries — typed, or heard by voice search — are turned into the catalogue's
- * English words (see lib/hindi-query); English queries come back unchanged.
- * Pass the whole catalogue, not a filtered slice: the vocabulary decides which
- * English word a Hindi one becomes, and it must not change with the filters.
- */
-export function englishQuery(items: readonly Searchable[], rawQuery: string): QueryTranslation {
-  if (!mightNeedTranslation(rawQuery)) return { query: rawQuery, translated: false };
+function catalogueEntry(items: readonly Searchable[]): CatalogueEntry {
   let i = vocabCache.findIndex((c) => c.items === items);
   if (i < 0) {
     const signature = vocabSignature(items);
     i = vocabCache.findIndex((c) => c.signature === signature);
     if (i >= 0) vocabCache[i].items = items;
-    else i = vocabCache.push({ items, signature, vocab: buildVocab(items as Searchable[]) }) - 1;
+    else i = vocabCache.push({ items, signature, inCatalogue: new Map() }) - 1;
   }
   const [hit] = vocabCache.splice(i, 1);
   vocabCache.unshift(hit);
   vocabCache.length = Math.min(vocabCache.length, VOCAB_CACHE_SIZE);
-  return translateQuery(rawQuery, hit.vocab);
+  return hit;
+}
+
+/**
+ * Does any listing's name or subcategory already contain this phrase (whole
+ * words)? A one-word phrase also counts when it starts a catalogue word: it may
+ * be that word still being typed ("mandolin" → Mandoline).
+ */
+function phraseInCatalogue(entry: CatalogueEntry, phrase: string): boolean {
+  let found = entry.inCatalogue.get(phrase);
+  if (found === undefined) {
+    entry.text ??= entry.items.map((it) => catalogueText(it.name, it.subcategory)).join('\n');
+    found = entry.text.includes(phrase.includes(' ') ? ` ${phrase} ` : ` ${phrase}`);
+    entry.inCatalogue.set(phrase, found);
+  }
+  return found;
+}
+
+/**
+ * The English query to rank `items` with. Two steps, both leaving a plain
+ * English query untouched:
+ *   1. names customers use for a product ("mosquito killer", "मच्छर की मशीन")
+ *      become the words our listings use ("pest controller") — lib/search-synonyms;
+ *   2. Hindi (Devanagari) and Hinglish words — typed, or heard by voice search —
+ *      become the catalogue's English words (lib/hindi-query).
+ * Pass the whole catalogue, not a filtered slice: the vocabulary decides which
+ * English word a Hindi one becomes, and it must not change with the filters.
+ */
+export function englishQuery(items: readonly Searchable[], rawQuery: string): QueryTranslation {
+  let query = rawQuery;
+  let renamed = false;
+  if (mightHaveSynonym(rawQuery)) {
+    const entry = catalogueEntry(items);
+    const rewritten = applySynonyms(rawQuery, (phrase) => phraseInCatalogue(entry, phrase));
+    if (rewritten !== null) {
+      query = rewritten;
+      renamed = true;
+    }
+  }
+  if (!mightNeedTranslation(query)) return { query, translated: renamed };
+  const entry = catalogueEntry(items);
+  entry.vocab ??= buildVocab(items as Searchable[]);
+  const t = translateQuery(query, entry.vocab);
+  return { query: t.query, translated: t.translated || renamed };
 }
 
 /**
