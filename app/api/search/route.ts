@@ -19,7 +19,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSearchIndex } from '@/lib/products';
+import { getCollections } from '@/lib/collections';
 import { MAX_QUERY_CHARS, rankItems } from '@/lib/search';
+import { collectionIntent } from '@/lib/search-intent';
 
 export const revalidate = 60;
 
@@ -49,7 +51,13 @@ export async function GET(req: NextRequest) {
     }
 
     const index = await getSearchIndex();
-    const ranked = rankItems(index, q).slice(0, limit);
+    // "top selling" / "बेस्ट सेलर" / "new arrivals" → the curated list, as on /shop (lib/search-intent.ts).
+    const intent = collectionIntent(q);
+    const rule = intent ? (await getCollections())[intent] : null;
+    const listed = rule && rule.isActive !== false ? rule.productSkus : [];
+    const ranked = listed.length
+      ? listed.flatMap((sku) => index.find((r) => r.sku === sku) ?? index.find((r) => r.parent === sku) ?? []).slice(0, limit)
+      : rankItems(index, q).slice(0, limit);
 
     const hits: SearchHit[] = ranked.map((r) => ({
       sku: r.sku,

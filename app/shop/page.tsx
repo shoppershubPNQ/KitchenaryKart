@@ -53,6 +53,18 @@ export default async function ShopPage({
     }
   }
 
+  // The curated Best Seller / New Arrival SKUs the home page shows — for a search that asks for the list
+  // ("top selling", "बेस्ट सेलर", "new arrivals") and for the two tick boxes. Empty = the product flags.
+  const curated = (slug: 'bestsellers' | 'new-arrivals') => {
+    const rule = collections[slug];
+    return rule && rule.isActive !== false ? rule.productSkus : [];
+  };
+  const collectionSkus = { bestsellers: curated('bestsellers'), 'new-arrivals': curated('new-arrivals') };
+  const collectionNames = {
+    bestsellers: collections['bestsellers']?.name || 'Best Seller',
+    'new-arrivals': collections['new-arrivals']?.name || 'New Arrival',
+  };
+
   return (
     <Suspense
       fallback={
@@ -64,6 +76,8 @@ export default async function ShopPage({
         categoryCounts={counts}
         collectionLabel={collectionLabel}
         collectionSlug={collectionSlug ?? null}
+        collectionSkus={collectionSkus}
+        collectionNames={collectionNames}
       />
     </Suspense>
   );

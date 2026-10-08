@@ -7,6 +7,7 @@ import { VoiceSearchButton } from './VoiceSearchButton';
 import { ImageSearchButton } from './ImageSearchButton';
 import { CATEGORY_SHORT, catLabel } from '@/lib/categories';
 import { MAX_QUERY_CHARS, englishQuery, rankEnglish } from '@/lib/search';
+import { collectionIntent, type CollectionIntent } from '@/lib/search-intent';
 import type { PublicProduct } from '@/lib/products';
 
 const PAGE_SIZE = 24;
@@ -16,6 +17,9 @@ interface Props {
   categoryCounts: Record<string, number>;
   collectionLabel?: string | null;
   collectionSlug?: string | null;
+  /** Parent SKUs of the Best Seller / New Arrival lists, in the curator's order (see app/shop/page.tsx). */
+  collectionSkus?: Record<CollectionIntent, string[]>;
+  collectionNames?: Record<CollectionIntent, string>;
 }
 
 export function ShopView({
@@ -23,6 +27,8 @@ export function ShopView({
   categoryCounts,
   collectionLabel = null,
   collectionSlug = null,
+  collectionSkus,
+  collectionNames,
 }: Props) {
   const router = useRouter();
   const params = useSearchParams();
@@ -88,7 +94,29 @@ export function ShopView({
   // whole catalogue — never the filtered list — so a category or price filter can't change which
   // English words are used, and the grid and the "Showing results for" label always agree.
   const searched = useMemo(() => englishQuery(products, q.trim().slice(0, MAX_QUERY_CHARS)), [products, q]);
-  const searchedAs = searched.translated ? searched.query : null;
+  // "top selling", "बेस्ट सेलर", "new arrivals" ask for the list itself, not for products with "top" in the
+  // name — show the Best Seller / New Arrival list, as "View all" on the home page does (lib/search-intent.ts).
+  // Curated lists keep the curator's order; without one, the product flags decide.
+  const lists = useMemo(() => {
+    const of = (slug: CollectionIntent) => {
+      const skus = collectionSkus?.[slug];
+      return skus?.length ? new Map(skus.map((s, i) => [s, i])) : null;
+    };
+    return { bestsellers: of('bestsellers'), 'new-arrivals': of('new-arrivals') };
+  }, [collectionSkus]);
+  const inList = (slug: CollectionIntent, p: PublicProduct) => {
+    const m = lists[slug];
+    return m ? m.has(p.sku) : slug === 'bestsellers' ? p.isBestseller : p.isNewArrival;
+  };
+  const intent = useMemo(() => collectionIntent(q.slice(0, MAX_QUERY_CHARS)), [q]);
+  const intentHits = useMemo(
+    () => (intent ? products.filter((p) => inList(intent, p)).length : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [intent, products, lists],
+  );
+  // An empty list (nothing curated or flagged) falls back to a word search.
+  const listIntent = intentHits > 0 ? intent : null;
+  const searchedAs = searched.translated && !listIntent ? searched.query : null;
 
   const filtered = useMemo(() => {
     const needle = searched.query;
@@ -100,10 +128,15 @@ export function ShopView({
     if (min !== null && !Number.isNaN(min)) list = list.filter((p) => p.price >= min);
     if (max !== null && !Number.isNaN(max)) list = list.filter((p) => p.price <= max);
     if (inStockOnly) list = list.filter((p) => p.stock > 0);
-    if (bestOnly) list = list.filter((p) => p.isBestseller);
-    if (newOnly) list = list.filter((p) => p.isNewArrival);
-    // (needle can be empty when the search held only ALT words — "दारू")
-    if (needle || searched.aliases.length) {
+    // The tick boxes show the same lists as the home page's Best Seller / New Arrival tabs.
+    if (bestOnly) list = list.filter((p) => inList('bestsellers', p));
+    if (newOnly) list = list.filter((p) => inList('new-arrivals', p));
+    if (listIntent) {
+      list = list.filter((p) => inList(listIntent, p));
+      const order = lists[listIntent];
+      if (order) list.sort((a, b) => order.get(a.sku)! - order.get(b.sku)!);
+    } else if (needle || searched.aliases.length) {
+      // (needle can be empty when the search held only ALT words — "दारू")
       // Smart, typo-tolerant ranking (shared with the header autocomplete).
       // Exact/prefix/substring matches rank first — so a correctly spelled
       // query shows the most accurate result on top — while misspellings
@@ -133,7 +166,8 @@ export function ShopView({
     // (e.g. the first Polyrattan tile) and stall browsing.
     list.sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
     return list;
-  }, [products, cat, sub, searched, q, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, cat, sub, searched, q, sort, minPrice, maxPrice, inStockOnly, bestOnly, newOnly, lists, listIntent]);
 
   const shown = filtered.slice(0, page * PAGE_SIZE);
   const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
@@ -441,6 +475,11 @@ export function ShopView({
             {searchedAs && (
               <p className="mt-2 text-sm text-ink-soft" lang="en">
                 Showing results for <span className="font-semibold text-ink">“{searchedAs}”</span>
+              </p>
+            )}
+            {listIntent && (
+              <p className="mt-2 text-sm text-ink-soft" lang="en">
+                Showing our <span className="font-semibold text-ink">{collectionNames?.[listIntent] ?? (listIntent === 'bestsellers' ? 'Best Seller' : 'New Arrival')}</span> products
               </p>
             )}
           </div>
