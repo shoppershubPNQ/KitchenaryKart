@@ -555,6 +555,9 @@ export interface SearchIndexItem {
   stock: number;
   /** The product's own SKU (equals `sku` except on size rows). */
   parent: string;
+  /** Flags behind the Best Seller / New Arrival lists when nothing is curated (see /api/search). */
+  isBestseller: boolean;
+  isNewArrival: boolean;
 }
 
 async function _getSearchIndex(): Promise<SearchIndexItem[]> {
@@ -571,6 +574,8 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
       metaKeywords: true,
       searchAliases: true,
       stock: true,
+      isBestseller: true,
+      isNewArrival: true,
       variants: {
         select: {
           variantValue: true,
@@ -597,6 +602,8 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
       searchAliases: row.searchAliases ?? null,
       stock: typeof row.stock === 'number' ? row.stock : 0,
       parent: row.sku,
+      isBestseller: Boolean(row.isBestseller),
+      isNewArrival: Boolean(row.isNewArrival),
     };
     const variants = row.variants;
     if (!variants || variants.length === 0) {
@@ -628,7 +635,7 @@ async function _getSearchIndex(): Promise<SearchIndexItem[]> {
  * (busted by `revalidateTag('products')`) so keystroke-frequency autocomplete
  * hits the ranker in memory instead of round-tripping to Neon each time.
  */
-export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v4'], {
+export const getSearchIndex = unstable_cache(_getSearchIndex, ['kk:search-index-v5'], {
   revalidate: 300,
   tags: ['products'],
 });

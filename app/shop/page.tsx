@@ -43,7 +43,8 @@ export default async function ShopPage({
       collectionLabel = rule.name;
       const curatedSkus = new Set(rule.productSkus);
       if (curatedSkus.size > 0) {
-        scoped = products.filter((p) => curatedSkus.has(p.sku));
+        // ratingSku = the parent SKU, so every size of a curated product shows.
+        scoped = products.filter((p) => curatedSkus.has(p.ratingSku) || curatedSkus.has(p.sku));
       } else {
         // No curated SKUs yet — fall back to the per-product flag.
         const flagKey =

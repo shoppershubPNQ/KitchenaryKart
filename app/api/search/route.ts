@@ -51,13 +51,21 @@ export async function GET(req: NextRequest) {
     }
 
     const index = await getSearchIndex();
-    // "top selling" / "बेस्ट सेलर" / "new arrivals" → the curated list, as on /shop (lib/search-intent.ts).
+    // "top selling" / "बेस्ट सेलर" / "new arrivals" → that list, as on /shop (lib/search-intent.ts): the
+    // curated SKUs in the curator's order, else the product flags; one row per product, sold-out last.
     const intent = collectionIntent(q);
-    const rule = intent ? (await getCollections())[intent] : null;
-    const listed = rule && rule.isActive !== false ? rule.productSkus : [];
-    const ranked = listed.length
-      ? listed.flatMap((sku) => index.find((r) => r.sku === sku) ?? index.find((r) => r.parent === sku) ?? []).slice(0, limit)
-      : rankItems(index, q).slice(0, limit);
+    let ranked: typeof index = [];
+    if (intent) {
+      const rule = (await getCollections())[intent];
+      const curated = rule && rule.isActive !== false ? rule.productSkus : [];
+      const flag = intent === 'bestsellers' ? 'isBestseller' : 'isNewArrival';
+      const parents = curated.length ? curated : [...new Set(index.filter((r) => r[flag]).map((r) => r.parent))];
+      ranked = parents
+        .flatMap((sku) => index.find((r) => r.sku === sku) ?? index.find((r) => r.parent === sku) ?? [])
+        .sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1));
+    }
+    if (!ranked.length) ranked = rankItems(index, q);
+    ranked = ranked.slice(0, limit);
 
     const hits: SearchHit[] = ranked.map((r) => ({
       sku: r.sku,

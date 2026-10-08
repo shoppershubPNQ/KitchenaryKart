@@ -96,7 +96,8 @@ export function ShopView({
   const searched = useMemo(() => englishQuery(products, q.trim().slice(0, MAX_QUERY_CHARS)), [products, q]);
   // "top selling", "बेस्ट सेलर", "new arrivals" ask for the list itself, not for products with "top" in the
   // name — show the Best Seller / New Arrival list, as "View all" on the home page does (lib/search-intent.ts).
-  // Curated lists keep the curator's order; without one, the product flags decide.
+  // Curated lists keep the curator's order; without one, the product flags decide. A curated product
+  // brings all its sizes (size cards carry the parent SKU in ratingSku).
   const lists = useMemo(() => {
     const of = (slug: CollectionIntent) => {
       const skus = collectionSkus?.[slug];
@@ -106,7 +107,7 @@ export function ShopView({
   }, [collectionSkus]);
   const inList = (slug: CollectionIntent, p: PublicProduct) => {
     const m = lists[slug];
-    return m ? m.has(p.sku) : slug === 'bestsellers' ? p.isBestseller : p.isNewArrival;
+    return m ? m.has(p.ratingSku) || m.has(p.sku) : slug === 'bestsellers' ? p.isBestseller : p.isNewArrival;
   };
   const intent = useMemo(() => collectionIntent(q.slice(0, MAX_QUERY_CHARS)), [q]);
   const intentHits = useMemo(
@@ -134,7 +135,8 @@ export function ShopView({
     if (listIntent) {
       list = list.filter((p) => inList(listIntent, p));
       const order = lists[listIntent];
-      if (order) list.sort((a, b) => order.get(a.sku)! - order.get(b.sku)!);
+      const at = (p: PublicProduct) => order?.get(p.ratingSku) ?? order?.get(p.sku) ?? 0;
+      if (order) list.sort((a, b) => at(a) - at(b));
     } else if (needle || searched.aliases.length) {
       // (needle can be empty when the search held only ALT words — "दारू")
       // Smart, typo-tolerant ranking (shared with the header autocomplete).
