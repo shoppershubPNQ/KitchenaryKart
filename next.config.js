@@ -132,6 +132,17 @@ const nextConfig = {
       // only one of its range spelt FLED; its Silver and Gold siblings are
       // FLWDSS / FLWDG (2026-09-28). No order had ever used the old SKU.
       ['KKBT0105-FLEDRG', 'KKBT0105-FLWDRG'],
+      // Queue managers sold the way the partner sells them: one unit per listing, the Loose/Carton
+      // sizes removed (2026-10-09). Old parent SKUs and every deleted size SKU go to their listing.
+      ['KKHRE0090-BGQMBVR1', 'KKHRE0091-BGQMBVR10'],
+      ['KKHRE0092-BGQMRTR1', 'KKHRE0093-BGQMRTR10'],
+      ['KKHRE0094-BGQMRVR1', 'KKHRE0095-BGQMRVR10'],
+      ['KKHRE0096-BQMWCT1', 'KKHRE0097-BQMWCT10'],
+      ['KKHRE0110-SQMRT1', 'KKHRE0111-SQMRT10'],
+      ['KKHRE0099-GQMRT1', 'KKHRE0098-GQMRT10'],
+      ['KKHRE0101-GQMBVR1', 'KKHRE0100-GQMBVR10'],
+      ['KKHRE0103-GQMRTR1', 'KKHRE0102-GQMRTR10'],
+      ['KKHRE0105-GQMRVR1', 'KKHRE0104-GQMRVR10'],
     ];
     const retiredSkuRedirects = retiredSkus.map(([from, to]) => ({
       source: `/product/${from}`,
