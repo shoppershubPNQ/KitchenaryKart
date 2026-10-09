@@ -6,7 +6,7 @@ import { ProductCard } from './ProductCard';
 import { VoiceSearchButton } from './VoiceSearchButton';
 import { ImageSearchButton } from './ImageSearchButton';
 import { CATEGORY_SHORT, catLabel } from '@/lib/categories';
-import { MAX_QUERY_CHARS, englishQuery, rankEnglish } from '@/lib/search';
+import { MAX_QUERY_CHARS, englishQuery, rankEnglish, scoreItem } from '@/lib/search';
 import { collectionIntent, type CollectionIntent } from '@/lib/search-intent';
 import type { PublicProduct } from '@/lib/products';
 
@@ -20,6 +20,8 @@ interface Props {
   /** Parent SKUs of the Best Seller / New Arrival lists, in the curator's order (see app/shop/page.tsx). */
   collectionSkus?: Record<CollectionIntent, string[]>;
   collectionNames?: Record<CollectionIntent, string>;
+  /** Our own brands' products, shown when a search finds nothing we sell (see app/shop/page.tsx). */
+  brandPicks?: PublicProduct[];
 }
 
 export function ShopView({
@@ -29,6 +31,7 @@ export function ShopView({
   collectionSlug = null,
   collectionSkus,
   collectionNames,
+  brandPicks = [],
 }: Props) {
   const router = useRouter();
   const params = useSearchParams();
@@ -118,6 +121,16 @@ export function ShopView({
   // An empty list (nothing curated or flagged) falls back to a word search.
   const listIntent = intentHits > 0 ? intent : null;
   const searchedAs = searched.translated && !listIntent ? searched.query : null;
+
+  // How well the best results match the search. Things we sell score 0.70+ even misspelt ("kettel",
+  // "inducton"); things we don't sell only find look-alikes below that ("iphone" → cream whippers via
+  // "siphon", "saree", "kurti"). Then the page shows our own brands first (owner 2026-10-09). ALT-word
+  // and Best Seller / New Arrival searches are always real matches.
+  const bestScore = useMemo(() => {
+    if (!searched.query || searched.aliases.length || listIntent) return 1;
+    const top = rankEnglish(products, searched).slice(0, 3);
+    return top.length ? Math.max(...top.map((p) => scoreItem(p, searched.query))) : 0;
+  }, [products, searched, listIntent]);
 
   const filtered = useMemo(() => {
     const needle = searched.query;
@@ -542,13 +555,36 @@ export function ShopView({
               </div>
             </div>
           )}
-          {shown.length === 0 ? (
-            <div className="py-16 text-center text-muted">
-              <h3 className="text-ink mb-2 font-head font-bold">No products match</h3>
-              <p>Try a different category or search term.</p>
+          {/* A search for something we don't sell (no results, or only look-alikes): say so, then show
+              our own brands (VAMA, Veratti) before any look-alikes. */}
+          {q.trim() && brandPicks.length > 0 && (shown.length === 0 || bestScore < 0.695) && (
+            <div className="mb-10">
+              <div className="pt-6 pb-6 text-center text-muted">
+                <h3 className="text-ink mb-2 font-head font-bold">
+                  {shown.length === 0 ? 'No products match' : 'No exact match for'} “{q.trim()}”
+                </h3>
+                <p>Try a different search term — or explore our own brands below.</p>
+              </div>
+              <h4 className="font-head font-bold text-ink text-lg mb-4">Our own brands: VAMA &amp; Veratti</h4>
+              <div className="kk-shop-grid grid">
+                {brandPicks.map((p) => (
+                  <ProductCard key={p.sku} product={p} />
+                ))}
+              </div>
             </div>
+          )}
+          {shown.length === 0 ? (
+            !(q.trim() && brandPicks.length > 0) && (
+              <div className="py-16 text-center text-muted">
+                <h3 className="text-ink mb-2 font-head font-bold">No products match</h3>
+                <p>Try a different category or search term.</p>
+              </div>
+            )
           ) : (
             <>
+              {q.trim() && brandPicks.length > 0 && bestScore < 0.695 && (
+                <h4 className="font-head font-bold text-ink text-lg mb-4">Closest matches</h4>
+              )}
               {/* Columns live in globals.css, NOT in a <style jsx> here —
                   styled-jsx injects from JS after hydration, so the first paint
                   showed a single full-width column of giant cards before

@@ -61,6 +61,14 @@ export default async function ShopPage({
     return rule && rule.isActive !== false ? rule.productSkus : [];
   };
   const collectionSkus = { bestsellers: curated('bestsellers'), 'new-arrivals': curated('new-arrivals') };
+  // A search that finds nothing we sell shows our own brands instead of an empty page (owner 2026-10-09,
+  // "branding ke liye"): the VAMA cream charger and the Veratti immersion blenders, in-stock first.
+  const brandPicks = [
+    ...products.filter((p) => /\bvama\b/i.test(p.name) && /cream charger/i.test(p.name)),
+    ...products.filter((p) => /\bveratti\b/i.test(p.name) && /immersion blender/i.test(p.name)),
+  ]
+    .sort((a, b) => (a.stock > 0 ? 0 : 1) - (b.stock > 0 ? 0 : 1))
+    .slice(0, 8);
   const collectionNames = {
     bestsellers: collections['bestsellers']?.name || 'Best Seller',
     'new-arrivals': collections['new-arrivals']?.name || 'New Arrival',
@@ -79,6 +87,7 @@ export default async function ShopPage({
         collectionSlug={collectionSlug ?? null}
         collectionSkus={collectionSkus}
         collectionNames={collectionNames}
+        brandPicks={brandPicks}
       />
     </Suspense>
   );
