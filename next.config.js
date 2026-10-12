@@ -143,6 +143,9 @@ const nextConfig = {
       ['KKHRE0101-GQMBVR1', 'KKHRE0100-GQMBVR10'],
       ['KKHRE0103-GQMRTR1', 'KKHRE0102-GQMRTR10'],
       ['KKHRE0105-GQMRVR1', 'KKHRE0104-GQMRVR10'],
+      // Two listings sold the same small pizza-oven door spring; the owner kept KKSP0244-OS31
+      // "Small Door Spring (Set of 2)" and removed KKSP0236-OS32 (2026-10-12).
+      ['KKSP0236-OS32', 'KKSP0244-OS31'],
     ];
     const retiredSkuRedirects = retiredSkus.map(([from, to]) => ({
       source: `/product/${from}`,
