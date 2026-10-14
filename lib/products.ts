@@ -886,6 +886,44 @@ const _getProductBySkuCached = unstable_cache(
 // page body share one DB hit instead of two when both call getProductBySku.
 export const getProductBySku = reactCache(_getProductBySkuCached);
 
+// A product link that was cut short or typed in lower case: on 2026-10-14 a
+// customer was sent /product/KKHE0092-F for KKHE0092-FY61 and got a 404. Returns
+// the one ON-SALE listing or size SKU that starts with what was asked for,
+// ignoring case — or null when none or more than one does, so an ambiguous
+// prefix still 404s rather than guessing.
+async function _resolveSkuPrefix(prefix: string): Promise<string | null> {
+  if (prefix.length < 6) return null;
+  // A real SKU that is simply not on sale (draft / discontinued) stays a 404 —
+  // it must not be passed to a different product whose SKU happens to start
+  // with it (KKSP0236-OS32 vs KKSP0236-OS32-1d2t).
+  const [exactParent, exactSize] = await Promise.all([
+    prisma.product.findFirst({ where: { sku: { equals: prefix, mode: 'insensitive' } }, select: { sku: true, status: true } }),
+    prisma.productVariant.findFirst({ where: { skuSuffix: { equals: prefix, mode: 'insensitive' } }, select: { skuSuffix: true, product: { select: { status: true } } } }),
+  ]);
+  if (exactParent && exactParent.status !== 'active') return null;
+  if (!exactParent && exactSize && exactSize.product.status !== 'active') return null;
+  const [parents, sizes] = await Promise.all([
+    prisma.product.findMany({
+      where: { status: 'active', sku: { startsWith: prefix, mode: 'insensitive' } },
+      select: { sku: true },
+      take: 2,
+    }),
+    prisma.productVariant.findMany({
+      where: { skuSuffix: { startsWith: prefix, mode: 'insensitive' }, product: { status: 'active' } },
+      select: { skuSuffix: true },
+      take: 2,
+    }),
+  ]);
+  // Most listings carry their own SKU as a size SKU too, so the set dedupes them.
+  const skus = new Set<string>([...parents.map((p) => p.sku), ...sizes.flatMap((v) => (v.skuSuffix ? [v.skuSuffix] : []))]);
+  return skus.size === 1 ? [...skus][0] : null;
+}
+
+export const resolveSkuPrefix = unstable_cache(_resolveSkuPrefix, ['kk:sku-prefix-v1'], {
+  revalidate: 300,
+  tags: ['products'],
+});
+
 /**
  * Other active products in the same main category, excluding the current
  * SKU. Used by the product detail page's Similar Products section.

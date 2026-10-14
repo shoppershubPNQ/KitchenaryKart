@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, permanentRedirect } from 'next/navigation';
-import { getProductBySku, getSimilarProducts } from '@/lib/products';
+import { notFound, permanentRedirect, redirect } from 'next/navigation';
+import { getProductBySku, getSimilarProducts, resolveSkuPrefix } from '@/lib/products';
 import { ProductGallery } from '@/components/ProductGallery';
 import { AddToInquiryButton } from '@/components/AddToInquiryButton';
 import { SimilarProducts } from '@/components/SimilarProducts';
@@ -137,7 +137,14 @@ export default async function ProductPage({ params }: Params) {
     // Google a live page with no product on it, so the URL never dropped out
     // and sat in Merchant Center as "Missing product price". Descriptive
     // WooCommerce slugs (below) still get the search redirect.
-    if (/^kk[a-z]*-?[0-9]{3,}/i.test(requestedSku)) notFound();
+    // A link cut short or typed in lower case still reaches its product when
+    // exactly one on-sale SKU starts with it (temporary redirect: a later SKU
+    // could make the same prefix ambiguous).
+    if (/^kk[a-z]*-?[0-9]{3,}/i.test(requestedSku)) {
+      const full = await resolveSkuPrefix(requestedSku);
+      if (full && full !== requestedSku) redirect(`/product/${encodeURIComponent(full)}`);
+      notFound();
+    }
 
     // Old WooCommerce product URLs used descriptive slugs (e.g.
     // /product/heavy-duty-ss-rice-strainer-...), not SKUs, so they 404'd after
