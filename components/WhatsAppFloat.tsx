@@ -24,6 +24,17 @@ export function WhatsAppFloat() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  // Only one bottom-right popup at a time: the website chatbot panel
+  // (components/ChatWidget.tsx) fires `kk:chat-open` and closes on `kk:wa-open`.
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener('kk:chat-open', close);
+    return () => window.removeEventListener('kk:chat-open', close);
+  }, []);
+  useEffect(() => {
+    if (open) window.dispatchEvent(new CustomEvent('kk:wa-open'));
+  }, [open]);
+
   const waLink = (msg: string) =>
     `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
 

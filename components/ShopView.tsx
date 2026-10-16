@@ -499,10 +499,12 @@ export function ShopView({
             )}
           </div>
 
-          {/* Mobile filter popup — bottom sheet holding all filters. */}
+          {/* Mobile filter popup — bottom sheet holding all filters. z-[180]
+              puts it above the WhatsApp / chat floats (z-160 / 155) and the
+              chat panel (170), below the cart and nav drawers (200+). */}
           {mobileFilterOpen && (
             <div
-              className="md:hidden fixed inset-0 z-50 flex flex-col"
+              className="md:hidden fixed inset-0 z-[180] flex flex-col"
               role="dialog"
               aria-modal="true"
               aria-label="Filters"

@@ -38,6 +38,13 @@ const AuthModal = dynamic(
   () => import('@/components/AuthModal').then((m) => m.AuthModal),
   { ssr: false },
 );
+// Website chatbot bubble (Claude sales assistant, served by the admin app via
+// /admin-api/public/chat). Renders nothing unless the admin has switched it on;
+// the chat panel itself is a further chunk loaded on the first open.
+const ChatWidget = dynamic(
+  () => import('@/components/ChatWidget').then((m) => m.ChatWidget),
+  { ssr: false },
+);
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -153,6 +160,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <FooterTrustUpper />
         <Footer />
         <WhatsAppFloat />
+        <ChatWidget />
         <BackToTopButton />
         <DrawerMount />
         <WishlistDrawer />
