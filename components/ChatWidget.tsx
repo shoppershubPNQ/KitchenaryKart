@@ -12,8 +12,9 @@ import type { ChatPanelProps } from './ChatPanel';
  *  - layout.tsx loads it with next/dynamic + ssr:false, so it is not in the
  *    server render or the first JS bundle;
  *  - it waits for the browser to be idle before asking whether the chat is
- *    switched on (GET /admin-api/public/chat/config, cached 5 min in
- *    sessionStorage), and renders NOTHING when it is off or the call fails;
+ *    switched on and takes photos (GET /admin-api/public/chat/config, cached
+ *    5 min in sessionStorage), and renders NOTHING when it is off or the call
+ *    fails;
  *  - the panel itself (components/ChatPanel.tsx: messages, input, links) is a
  *    separate chunk fetched on the first open (prefetched on hover/focus).
  *
@@ -32,18 +33,20 @@ const CFG_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_GREETING =
   "Namaste! I'm Kitchenary Kart's virtual sales assistant (an AI). Ask me about products, prices, stock or your order - in Hindi, English or Hinglish.";
 
-type Cfg = { enabled: boolean; greeting: string };
+/** `photos`: the chat accepts customer photos (the admin's model takes image
+ *  input); missing in an older answer = true. */
+type Cfg = { enabled: boolean; greeting: string; photos: boolean };
 type Panel = ComponentType<ChatPanelProps>;
 
 function readCachedCfg(): Cfg | null {
   try {
     const raw = window.sessionStorage.getItem(CFG_KEY);
     if (!raw) return null;
-    const c = JSON.parse(raw) as { at?: unknown; enabled?: unknown; greeting?: unknown } | null;
+    const c = JSON.parse(raw) as { at?: unknown; enabled?: unknown; greeting?: unknown; photos?: unknown } | null;
     if (!c || typeof c.at !== 'number' || typeof c.enabled !== 'boolean') return null;
     const age = Date.now() - c.at;
     if (age < 0 || age > CFG_TTL_MS) return null;
-    return { enabled: c.enabled, greeting: typeof c.greeting === 'string' ? c.greeting : '' };
+    return { enabled: c.enabled, greeting: typeof c.greeting === 'string' ? c.greeting : '', photos: c.photos !== false };
   } catch {
     return null;
   }
@@ -60,9 +63,9 @@ function writeCachedCfg(c: Cfg): void {
 async function fetchCfg(signal: AbortSignal): Promise<Cfg | null> {
   const res = await fetch(CFG_URL, { headers: { Accept: 'application/json' }, credentials: 'omit', signal });
   if (!res.ok) return null;
-  const j = (await res.json()) as { enabled?: unknown; greeting?: unknown } | null;
+  const j = (await res.json()) as { enabled?: unknown; greeting?: unknown; photos?: unknown } | null;
   if (!j || typeof j.enabled !== 'boolean') return null;
-  return { enabled: j.enabled, greeting: typeof j.greeting === 'string' ? j.greeting.slice(0, 300) : '' };
+  return { enabled: j.enabled, greeting: typeof j.greeting === 'string' ? j.greeting.slice(0, 300) : '', photos: j.photos !== false };
 }
 
 /** One shared import of the panel chunk (also used to prefetch on hover). */
@@ -103,7 +106,7 @@ export function ChatWidget() {
         try {
           if (new URLSearchParams(window.location.search).has('kkChatMock')) {
             setMock(true);
-            setCfg({ enabled: true, greeting: '(mock) Namaste!' });
+            setCfg({ enabled: true, greeting: '(mock) Namaste!', photos: true });
             return;
           }
         } catch {
@@ -266,6 +269,7 @@ export function ChatWidget() {
           open={open}
           greeting={cfg.greeting.trim() || DEFAULT_GREETING}
           mock={mock}
+          photos={cfg.photos}
           focusTick={focusTick}
           onClose={closePanel}
         />

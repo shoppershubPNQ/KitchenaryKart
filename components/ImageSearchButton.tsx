@@ -44,15 +44,22 @@ const HEADINGS: Record<Match, string> = {
   weak: 'No close match — closest products',
 };
 
-/* ---- the model: loaded once per page, shared by every button instance ---- */
+/* ---- the model: loaded once per page, shared by every button instance ----
+ * (and by the chat panel's photo hints, components/chat-photo.ts) */
 
-type Embed = (canvas: HTMLCanvasElement) => Promise<number[]>;
+export type Embed = (canvas: HTMLCanvasElement) => Promise<number[]>;
 let embedPromise: Promise<Embed> | null = null;
+let embedReady = false;
 let loadAttempts = 0;
 let onModelProgress: ((pct: number) => void) | null = null;
 
+/** The model is already loaded in this page (a photo can be matched in about a second). */
+export function modelLoaded(): boolean {
+  return embedReady;
+}
+
 /** Rejects with an Error whose name is 'LoadError' when the library or model can't be downloaded. */
-function loadModel(): Promise<Embed> {
+export function loadModel(): Promise<Embed> {
   if (!embedPromise) {
     embedPromise = (async () => {
       // A failed import() stays failed for that URL for the life of the page, so
@@ -90,13 +97,13 @@ function loadModel(): Promise<Embed> {
       }
     })();
     // A failed download (offline, blocked CDN) may be retried on the next try.
-    embedPromise.catch(() => { embedPromise = null; });
+    embedPromise.then(() => { embedReady = true; }, () => { embedPromise = null; });
   }
   return embedPromise;
 }
 
 /** The model needs WebAssembly with SIMD (every current phone browser has it). */
-function canRunModel(): boolean {
+export function canRunModel(): boolean {
   try {
     return typeof WebAssembly === 'object' && WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
   } catch {
@@ -109,7 +116,7 @@ function canRunModel(): boolean {
  * decodes off-screen; img.decode() would wait while the page is hidden (as it
  * briefly is when a phone returns from the camera app), so it's only the fallback.
  */
-async function decodePhoto(file: Blob): Promise<{ src: CanvasImageSource; w: number; h: number; done: () => void }> {
+export async function decodePhoto(file: Blob): Promise<{ src: CanvasImageSource; w: number; h: number; done: () => void }> {
   try {
     const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
     return { src: bmp, w: bmp.width, h: bmp.height, done: () => bmp.close() };
@@ -126,7 +133,7 @@ async function decodePhoto(file: Blob): Promise<{ src: CanvasImageSource; w: num
 }
 
 /** Fit the photo on a white square, the way every catalogue photo was prepared. */
-async function photoToSquare(file: Blob): Promise<HTMLCanvasElement> {
+export async function photoToSquare(file: Blob): Promise<HTMLCanvasElement> {
   const photo = await decodePhoto(file);
   try {
     let src: CanvasImageSource = photo.src;

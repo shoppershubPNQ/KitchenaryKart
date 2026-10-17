@@ -8,12 +8,16 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
 import { currentSessionId } from '@/lib/track';
+import { VoiceSearchButton, type VoiceLang } from './VoiceSearchButton';
+import { CHAT_VOICE_TEXTS, photoText, photoUi, type PhotoTextKey } from './chat-media-text';
+import type { PreparedPhoto } from './chat-photo';
 
 /**
  * Website chatbot panel - loaded by components/ChatWidget.tsx on the first
@@ -23,6 +27,24 @@ import { currentSessionId } from '@/lib/track';
  * route; contract in the chatbot spec §4.6). The server always answers with
  * JSON carrying `reply` - success or error - and the panel shows that text.
  *
+ * Mic: the site's voice-search button (components/VoiceSearchButton, the
+ * browser's own speech recogniser - no audio leaves the browser through us)
+ * with chat wording and its own remembered language (kk:chat-voice-lang;
+ * until the customer picks one it follows the script they type in); the
+ * words land in the text box for the customer to check and send. Hidden
+ * where the browser has no speech recognition.
+ *
+ * Camera: one photo per message, at most 2 per chat (the server decides; the
+ * panel only mirrors it). On a phone / tablet the camera button offers "Take
+ * a photo" (input with capture="environment") or "Choose from gallery"; a
+ * computer opens the file picker. Hidden when the admin's model takes no
+ * photos (config `photos`). components/chat-photo is import()ed when a photo
+ * is picked and shrinks it (≤1024 px JPEG, <300 KB); only when the photo is
+ * SENT does it ask the site's photo search for up to 8 matching SKUs as hints
+ * (skipped on Data Saver / slow connections; a short wait, then the photo goes
+ * without them). Request fields `image` + `photoMatches` (contract:
+ * chatbot-mic-camera-notes.md "Contract").
+ *
  * Safety: bubbles are plain text. No dangerouslySetInnerHTML, no markdown
  * parser; only https links to kitchenarykart.com, the team's own WhatsApp
  * number and the couriers' tracking pages become <a>.
@@ -30,7 +52,8 @@ import { currentSessionId } from '@/lib/track';
  * Stored state: localStorage['kk_chat_v1'] = { sessionId?, chatToken?,
  * messages (last 50), updatedAt }, dropped after 12 h without activity (the
  * server's idle limit). The chat token (issued with a new chat) is what lets
- * this browser - and only this browser - continue the chat.
+ * this browser - and only this browser - continue the chat. A photo is kept
+ * there only as a small thumbnail.
  */
 
 export type Handoff = { whatsappUrl: string; phoneDisplay: string; telUrl: string; hours: string };
@@ -47,7 +70,9 @@ type ErrorCode =
   | 'busy'
   | 'upstream_busy'
   | 'refused'
-  | 'error';
+  | 'error'
+  | 'photo_limit'
+  | 'photo_invalid';
 
 type ChatOk = {
   ok: true;
@@ -86,14 +111,36 @@ type Msg = {
   newChat?: boolean;
   /** A muted line from the widget itself (e.g. "New chat started"). */
   note?: boolean;
+  /** Customer photo: a small JPEG data URL (the sent photo itself is not kept). */
+  photo?: string;
+  /** The server answered this photo's message (counts toward the 2 per chat). */
+  photoOk?: boolean;
 };
 type Stored = { sessionId?: string; chatToken?: string; messages: Msg[]; updatedAt: number };
+
+/** The photo in the composer, waiting to be sent. */
+type PendingPhoto = { state: 'preparing'; run: number } | { state: 'ready'; run: number; photo: PreparedPhoto };
+
+type PhotoModule = typeof import('./chat-photo');
+let photoModule: Promise<PhotoModule> | null = null;
+/** components/chat-photo, fetched the first time a photo is picked. */
+function loadPhotoModule(): Promise<PhotoModule> {
+  if (!photoModule) {
+    photoModule = import('./chat-photo').catch((e: unknown) => {
+      photoModule = null; // a flaky network may retry
+      throw e;
+    });
+  }
+  return photoModule;
+}
 
 export interface ChatPanelProps {
   open: boolean;
   greeting: string;
   /** Dev-only canned replies (?kkChatMock); always false in production. */
   mock: boolean;
+  /** The chat accepts photos (config `photos`); false hides the camera. */
+  photos?: boolean;
   /** Bumped when the customer opens the panel - focuses the input. */
   focusTick: number;
   onClose: (returnFocus: boolean) => void;
@@ -120,6 +167,29 @@ const SITE_HOSTS = new Set(['kitchenarykart.com', 'www.kitchenarykart.com']);
 const TRACKING_HOSTS = new Set(['www.delhivery.com', 'delhivery.com', 'shiprocket.co', 'www.shiprocket.co']);
 const URL_SPLIT = /(https?:\/\/[^\s<>()"'।॥]+)/g;
 const FOCUS_RING = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
+/** Photos per chat (the server's cap; the panel only mirrors it). */
+const MAX_CHAT_PHOTOS = 2;
+/** Longest wait at send time for the photo search hints when the model is
+ *  already loaded (embed + one request); then the photo goes without them. */
+const HINT_WAIT_MS = 6000;
+/** ...and when it is not loaded yet: long enough for a browser-cached model to
+ *  start, far too short for the first ~25 MB download (that one carries on in
+ *  the background for the next photo). */
+const HINT_WAIT_COLD_MS = 3000;
+/** Server errors after which the photo (and its words) go back into the
+ *  composer, so one tap retries: nothing was answered. */
+const RETRY_CODES = new Set<ErrorCode>(['busy', 'upstream_busy', 'rate_limited', 'error']);
+/** photoLimitSid for a refusal that came before the chat had a session. */
+const NO_SESSION = '__new';
+/** Under a photo-limit message: the team's WhatsApp (the only number ever linked). */
+const PHOTO_WA_URL = `https://wa.me/919890352455?text=${encodeURIComponent(
+  "Hi, I was chatting with the Kitchenary Kart website assistant. I'd like to send photos of an item.",
+)}`;
+/** A stored bubble thumbnail (chat-photo makes them ≤ 40,000 chars). */
+const THUMB_RE = /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/;
+const THUMB_MAX = 60_000;
+const DEVANAGARI = /[ऀ-ॿ]/;
+const ICON_BTN = `shrink-0 w-10 h-10 rounded-full grid place-items-center text-muted hover:text-brand hover:bg-bg-soft transition ${FOCUS_RING} focus-visible:outline-brand`;
 
 const newMsgId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
@@ -137,7 +207,13 @@ function cleanHandoff(h: unknown): Handoff | null {
 function cleanMsg(m: unknown): Msg | null {
   if (!m || typeof m !== 'object') return null;
   const o = m as Record<string, unknown>;
-  if ((o.role !== 'user' && o.role !== 'bot') || typeof o.text !== 'string' || !o.text) return null;
+  if ((o.role !== 'user' && o.role !== 'bot') || typeof o.text !== 'string') return null;
+  // Only a customer's own photo thumbnail, and only a plain JPEG data URL.
+  const photo =
+    o.role === 'user' && typeof o.photo === 'string' && o.photo.length <= THUMB_MAX && THUMB_RE.test(o.photo)
+      ? o.photo
+      : undefined;
+  if (!o.text && !photo) return null;
   return {
     id: typeof o.id === 'string' && o.id ? o.id.slice(0, 40) : newMsgId(),
     role: o.role,
@@ -147,7 +223,66 @@ function cleanMsg(m: unknown): Msg | null {
     leadSaved: o.leadSaved === true || undefined,
     newChat: o.newChat === true || undefined,
     note: (o.role === 'bot' && o.note === true) || undefined,
+    photo,
+    photoOk: photo && o.photoOk === true ? true : undefined,
   };
+}
+
+/** Customer photos the server accepted in the current chat (after the last "New chat started" note). */
+function photosInChat(messages: Msg[]): number {
+  let n = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.note) break;
+    if (m.role === 'user' && m.photo && m.photoOk) n++;
+  }
+  return n;
+}
+
+/** The script of the customer's latest typed message ('hi' = Devanagari), or
+ *  null when they have typed nothing yet (photo-only messages and the quick
+ *  chips' fixed English words say nothing about their language). */
+function lastUserScript(messages: Msg[]): 'hi' | 'en' | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== 'user' || !m.text || QUICK_CHIPS.includes(m.text)) continue;
+    return DEVANAGARI.test(m.text) ? 'hi' : 'en';
+  }
+  return null;
+}
+
+const wait = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
+  new Promise((resolve) => {
+    const t = setTimeout(() => resolve(fallback), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      () => {
+        clearTimeout(t);
+        resolve(fallback);
+      },
+    );
+  });
+
+function CameraIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14.5 4h-5L7.5 6.5H4.5A2 2 0 0 0 2.5 8.5v10a2 2 0 0 0 2 2h15a2 2 0 0 0 2-2v-10a2 2 0 0 0-2-2h-3z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  );
+}
+
+function GalleryIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </svg>
+  );
 }
 
 function emptyChat(): Stored {
@@ -274,7 +409,7 @@ function renderText(text: string, onSiteLink: (e: ReactMouseEvent<HTMLAnchorElem
   return out;
 }
 
-export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPanelProps) {
+export function ChatPanel({ open, greeting, mock, photos = true, focusTick, onClose }: ChatPanelProps) {
   const router = useRouter();
   const [chat, setChat] = useState<Stored>(loadStored);
   const [input, setInput] = useState('');
@@ -290,6 +425,41 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
   const firstSave = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
+
+  // Camera.
+  const [pending, setPending] = useState<PendingPhoto | null>(null);
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  /** Bumped whenever the composer's photo changes, so a slow preparation is dropped. */
+  const photoRunRef = useRef(0);
+  /** Why a photo could not be added (shown in the customer's script at render time). */
+  const [photoErrorKey, setPhotoErrorKey] = useState<PhotoTextKey | null>(null);
+  /** The chat the server refused a further photo for (photo_limit; NO_SESSION before a chat exists). */
+  const [photoLimitSid, setPhotoLimitSid] = useState<string | null>(null);
+  /** Gallery / file picker (no capture). */
+  const fileRef = useRef<HTMLInputElement>(null);
+  /** The phone's camera (capture="environment"). */
+  const captureRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  /** Touch screen: the camera button opens "Take a photo / Choose from gallery". */
+  const [touch, setTouch] = useState(false);
+  const [photoMenu, setPhotoMenu] = useState(false);
+  // Mic.
+  /** Bumped to close the voice sheet and stop listening (send, new chat, panel closed). */
+  const [voiceCancel, setVoiceCancel] = useState(0);
+  /** Bumped when spoken words land in the box. */
+  const [voiceTick, setVoiceTick] = useState(0);
+  /** Bumped by the voice sheet's "Type instead". */
+  const [typeTick, setTypeTick] = useState(0);
+
+  useEffect(() => {
+    try {
+      setTouch(window.matchMedia('(pointer: coarse)').matches);
+    } catch {
+      setTouch(false);
+    }
+  }, []);
 
   // Persist every real change (not the initial load - that would extend the
   // 12 h idle window just by opening the panel).
@@ -314,6 +484,55 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
     }
     if (fine) inputRef.current?.focus();
   }, [open, focusTick]);
+
+  // The panel was closed: stop listening, close the photo menu.
+  useEffect(() => {
+    if (open) return;
+    setVoiceCancel((n) => n + 1);
+    setPhotoMenu(false);
+  }, [open]);
+
+  // "Type instead" in the voice sheet: to the text box (it raises the phone's
+  // keyboard - that is what the customer asked for). Runs after the sheet's
+  // own "focus back to the mic" (same commit, cleanups first).
+  useEffect(() => {
+    if (typeTick) inputRef.current?.focus();
+  }, [typeTick]);
+
+  // Photo menu (touch screens): focus its first choice; a tap outside closes it.
+  useEffect(() => {
+    if (!photoMenu) return;
+    menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      if (t && (menuRef.current?.contains(t) || cameraRef.current?.contains(t))) return;
+      setPhotoMenu(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [photoMenu]);
+
+  // Spoken words were added: back to the text box so Enter sends - mouse /
+  // trackpad only (on a phone it would raise the keyboard). Runs after the
+  // voice sheet's own "focus back to the mic" (same commit, cleanups first).
+  useEffect(() => {
+    if (!voiceTick) return;
+    let fine = false;
+    try {
+      fine = window.matchMedia('(pointer: fine)').matches;
+    } catch {
+      fine = false;
+    }
+    const el = inputRef.current;
+    if (!fine || !el) return;
+    el.focus();
+    const end = el.value.length;
+    try {
+      el.setSelectionRange(end, end);
+    } catch {
+      /* ignore */
+    }
+  }, [voiceTick]);
 
   // Newest message in view.
   useEffect(() => {
@@ -398,6 +617,12 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
     sendingRef.current = false;
     setSending(false);
     setRemaining(null);
+    photoRunRef.current += 1;
+    setPending(null);
+    setPhotoErrorKey(null);
+    setPhotoLimitSid(null);
+    setPhotoMenu(false);
+    setVoiceCancel((n) => n + 1);
     setChat(emptyChat());
     try {
       window.localStorage.removeItem(STORE_KEY);
@@ -414,18 +639,60 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
   const send = useCallback(
     async (raw: string, fromInput: boolean) => {
       const message = raw.trim().slice(0, MAX_CHARS);
-      if (!message || sendingRef.current) return;
+      // The composer's photo goes with a typed message (not with a quick chip).
+      const pend = fromInput ? pendingRef.current : null;
+      if (pend?.state === 'preparing') return; // Send stays disabled until it is ready
+      const photo = pend?.state === 'ready' ? pend : null;
+      if ((!message && !photo) || sendingRef.current) return;
       sendingRef.current = true;
       setSending(true);
+      setVoiceCancel((n) => n + 1);
+      setPhotoMenu(false);
+      setPhotoErrorKey(null);
       if (fromInput) setInput('');
+      if (photo) {
+        photoRunRef.current += 1;
+        setPending(null);
+      }
       const epoch = epochRef.current;
       const sessionId = chatRef.current.sessionId;
       const chatToken = chatRef.current.chatToken;
+      const userMsgId = newMsgId();
+      const userMsg: Msg = { id: userMsgId, role: 'user', text: message, ...(photo ? { photo: photo.photo.thumb } : {}) };
       setChat((c) => ({
         ...c,
-        messages: [...c.messages, { id: newMsgId(), role: 'user' as const, text: message }].slice(-MAX_KEEP),
+        messages: [...c.messages, userMsg].slice(-MAX_KEEP),
         updatedAt: Date.now(),
       }));
+
+      // Photo search hints, started only now that the photo is sent (the
+      // customer is no longer typing, so the model's main-thread work does not
+      // get in the way): whatever is ready within the wait. Without them the
+      // assistant still sees the photo and searches itself.
+      let photoMatches: string[] = [];
+      if (photo) {
+        const stop = new AbortController();
+        try {
+          const m = await loadPhotoModule();
+          const waitMs = m.hintsModelReady() ? HINT_WAIT_MS : HINT_WAIT_COLD_MS;
+          photoMatches = (await wait(m.photoHints(photo.photo.jpeg, stop.signal), waitMs, [] as string[])).slice(0, 8);
+        } catch {
+          photoMatches = [];
+        } finally {
+          stop.abort(); // a late result is not wanted: no model run on the main thread after this
+        }
+      }
+      if (epoch !== epochRef.current) return;
+
+      /** Nothing was answered: the photo and its words back in the composer, so one tap retries. */
+      const putBack = () => {
+        if (!photo) return;
+        if (!pendingRef.current) {
+          photoRunRef.current += 1;
+          setPending({ ...photo, run: photoRunRef.current });
+        }
+        if (fromInput && message && !(inputRef.current?.value ?? '').trim()) setInput(message);
+      };
 
       let data: unknown = null;
       const ctrl = new AbortController();
@@ -449,8 +716,21 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
           };
           const sent = chatRef.current.messages.filter((m) => m.role === 'user').length;
           const mockToken = 'mockmockmockmockmockmockmockmockmockmockmoc';
+          // With a photo: "#plimit" shows the 2-photos-per-chat refusal.
+          const photoNote = photo
+            ? `(mock) Got your photo: ${photo.photo.width}×${photo.photo.height}, ${Math.round(photo.photo.bytes / 1024)} KB. ` +
+              `Photo search hints: ${photoMatches.length ? photoMatches.join(', ') : 'none'}.\n\n`
+            : '';
           if (/#err/i.test(message)) {
             data = null;
+          } else if (photo && /#plimit/i.test(message)) {
+            data = {
+              ok: false,
+              code: 'photo_limit',
+              sessionId: sid,
+              handoff,
+              reply: 'You can send up to 2 photos in one chat. Please WhatsApp more photos to +91 98903 52455, or tap "New chat".',
+            };
           } else if (/#cap/i.test(message)) {
             data = {
               ok: false,
@@ -470,6 +750,7 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
               remaining: /#one/i.test(message) ? 1 : /#left/i.test(message) ? 3 : Math.max(0, 30 - sent),
               handoff,
               reply:
+                photoNote +
                 `(mock) You said: "${message}"\n\n` +
                 '**Sample product link:** https://kitchenarykart.com/products.\n' +
                 'Tracking: https://www.delhivery.com/track/package/123।\n' +
@@ -487,6 +768,9 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
               message,
               page: window.location.pathname.slice(0, 300),
               trackingSessionId: tsid && TRACK_RE.test(tsid) ? tsid : undefined,
+              // Photo (contract: chatbot-mic-camera-notes.md "Contract"). '' message = photo only.
+              ...(photo ? { image: { mediaType: 'image/jpeg', data: photo.photo.data } } : {}),
+              ...(photo && photoMatches.length ? { photoMatches } : {}),
             }),
             credentials: 'omit',
             cache: 'no-store',
@@ -514,8 +798,15 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
       const r = parseResponse(data);
       if (!r) {
         appendBot({ text: NET_ERROR, error: true });
+        // The photo may never have reached us.
+        putBack();
         return;
       }
+      if (photo && r.ok) {
+        setChat((c) => ({ ...c, messages: c.messages.map((m) => (m.id === userMsgId ? { ...m, photoOk: true } : m)) }));
+      }
+      if (!r.ok && RETRY_CODES.has(r.code)) putBack();
+      if (!r.ok && r.code === 'photo_limit') setPhotoLimitSid(r.sessionId ?? sessionId ?? NO_SESSION);
       // The server quietly started a new chat (the old one was closed, idle,
       // or from an older assistant version): say so, because the assistant no
       // longer sees the messages above.
@@ -561,14 +852,124 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
   };
 
   const onPanelKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    // Keys from the voice sheet (portaled to <body>) still bubble through the
+    // React tree: its Escape closes only the sheet, never the chat.
+    if (!e.currentTarget.contains(e.target as Node)) return;
     if (e.key === 'Escape') {
       e.stopPropagation();
+      // The photo menu first: Escape closes only the menu, back on its button.
+      if (photoMenu) {
+        setPhotoMenu(false);
+        cameraRef.current?.focus();
+        return;
+      }
       onClose(true);
     }
   };
 
+  /** Spoken words join whatever is already typed; the customer checks them, then sends. */
+  const onVoice = useCallback((t: string) => {
+    setInput((p) => ((p.trim() ? p.trimEnd() + ' ' : '') + t).slice(0, MAX_CHARS));
+    setVoiceTick((n) => n + 1);
+  }, []);
+
+  /** The voice sheet's "Type instead" (after a microphone error). */
+  const onTypeInstead = useCallback(() => setTypeTick((n) => n + 1), []);
+
+  const chatFull = photosInChat(chat.messages) >= MAX_CHAT_PHOTOS;
+  // photo_limit can also be the server's per-network / daily photo cap - and
+  // can come before the chat has a session.
+  const serverRefused = photoLimitSid !== null && photoLimitSid === (chat.sessionId ?? NO_SESSION);
+  const photoAllowed = !chatFull && !serverRefused;
+
+  // One language for everything the panel itself says about photos and the
+  // mic: Devanagari being typed, else the customer's last typed message.
+  const lastScript = lastUserScript(chat.messages);
+  const typingHindi = DEVANAGARI.test(input);
+  const hindiUi = typingHindi || lastScript === 'hi';
+  /** The chat mic's language until the customer picks one: English only once
+   *  they have typed English (hi-IN also hears English, written in Devanagari). */
+  const voiceDefault: VoiceLang = typingHindi || lastScript !== 'en' ? 'hi-IN' : 'en-IN';
+
+  const onCamera = () => {
+    // Not `disabled` while a photo waits (the focused button would drop focus
+    // to <body>); a tap simply does nothing then.
+    if (pendingRef.current || sendingRef.current) return;
+    if (!photoAllowed) {
+      setPhotoMenu(false);
+      setPhotoErrorKey(chatFull ? 'limit' : 'limit_server');
+      return;
+    }
+    setPhotoErrorKey(null);
+    if (touch) {
+      setPhotoMenu((v) => !v);
+      return;
+    }
+    fileRef.current?.click();
+  };
+
+  /** A choice in the photo menu: focus back on the camera button first (the
+   *  menu item is about to unmount), then the system picker. */
+  const pickFrom = (source: 'camera' | 'gallery') => {
+    cameraRef.current?.focus();
+    setPhotoMenu(false);
+    (source === 'camera' ? captureRef : fileRef).current?.click();
+  };
+
+  const onMenuKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+    if (!items.length) return;
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+    let next = -1;
+    if (e.key === 'ArrowDown') next = (at + 1) % items.length;
+    else if (e.key === 'ArrowUp') next = (at - 1 + items.length) % items.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    else if (e.key === 'Tab') setPhotoMenu(false);
+    if (next >= 0) {
+      e.preventDefault();
+      items[next].focus();
+    }
+  };
+
+  const onPhotoPicked = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // picking the same photo again must fire again
+    if (!file) return;
+    const run = ++photoRunRef.current;
+    setPhotoErrorKey(null);
+    setPending({ state: 'preparing', run });
+    let key: PhotoTextKey = 'failed';
+    try {
+      const m = await loadPhotoModule();
+      const photo = await m.preparePhoto(file);
+      if (run !== photoRunRef.current) return;
+      // Only shrunk here; the photo search runs when it is sent.
+      setPending({ state: 'ready', run, photo });
+      return;
+    } catch (err) {
+      const code = (err as { code?: unknown } | null)?.code;
+      if (code === 'not_image' || code === 'decode' || code === 'too_big') key = code;
+    }
+    if (run !== photoRunRef.current) return;
+    setPending(null);
+    setPhotoErrorKey(key);
+  };
+
+  const removePhoto = () => {
+    photoRunRef.current += 1;
+    setPending(null);
+    setPhotoErrorKey(null);
+    cameraRef.current?.focus();
+  };
+
   const showRemaining = remaining !== null && remaining <= 5;
   const showCounter = input.length > COUNTER_FROM;
+  const canSend = !sending && pending?.state !== 'preparing' && (!!input.trim() || pending?.state === 'ready');
+  const photoError = photoErrorKey ? photoText(photoErrorKey, hindiUi) : null;
+  /** Read out by screen readers (a region that is always on the page). */
+  const photoStatus = photoError ?? (pending?.state === 'preparing' ? photoUi('preparing', hindiUi) : '');
+  const cameraOn = photos !== false;
 
   return (
     <div
@@ -632,7 +1033,7 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
         <div className="mr-auto w-fit max-w-[90%] bg-bg-soft text-ink border border-line rounded-2xl rounded-bl-sm px-3 py-2 text-[13.5px] whitespace-pre-wrap break-words">
           {greeting}
         </div>
-        {chat.messages.length === 0 && !sending && (
+        {chat.messages.length === 0 && !sending && !pending && (
           <div className="flex flex-wrap gap-2 pt-1">
             {QUICK_CHIPS.map((q) => (
               <button
@@ -653,7 +1054,16 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
               key={m.id}
               className="ml-auto w-fit max-w-[85%] bg-brand text-white rounded-2xl rounded-br-sm px-3 py-2 text-[13.5px] whitespace-pre-wrap break-words"
             >
-              {m.text}
+              {m.photo && (
+                // A tiny data-URL thumbnail - next/image has nothing to optimise.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={m.photo}
+                  alt={m.text ? 'Your photo' : ''}
+                  className={`block max-w-[160px] max-h-[200px] w-auto h-auto rounded-lg bg-white ${m.text ? 'mb-1.5' : 'mb-1'}`}
+                />
+              )}
+              {m.text || (m.photo ? <span className="text-[12px] text-white/90">{photoUi('bubble', hindiUi)}</span> : null)}
             </div>
           ) : m.note ? (
             <p key={m.id} className="text-center text-[11.5px] text-muted px-2 py-1">
@@ -728,32 +1138,177 @@ export function ChatPanel({ open, greeting, mock, focusTick, onClose }: ChatPane
       </div>
 
       {/* Input */}
-      <form onSubmit={onSubmit} className="border-t border-line p-2 flex items-end gap-2">
-        <label htmlFor="kk-chat-input" className="sr-only">
-          Your message
-        </label>
-        <textarea
-          id="kk-chat-input"
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onInputKey}
-          rows={1}
-          maxLength={MAX_CHARS}
-          placeholder="Type your question… (Hindi / English)"
-          enterKeyHint="send"
-          className="form-input resize-none text-base md:text-sm"
-        />
-        <button
-          type="submit"
-          aria-label="Send message"
-          disabled={sending || !input.trim()}
-          className={`shrink-0 bg-brand text-white rounded-full w-10 h-10 grid place-items-center hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition ${FOCUS_RING} focus-visible:outline-brand`}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M2 21l21-9L2 3v7l15 2-15 2z" />
-          </svg>
-        </button>
+      <form onSubmit={onSubmit} className="relative border-t border-line p-2">
+        {/* Screen readers: photo progress and errors, in a region that is always
+            on the page (a live region inserted already filled is often not read). */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {photoStatus}
+        </p>
+        {/* The photo waiting to be sent (or why it could not be added). */}
+        {(pending || photoError) && (
+          <div className="flex items-start gap-3 px-1 pt-1 pb-2">
+            {pending && (
+              <div className="relative shrink-0">
+                {pending.state === 'ready' ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={pending.photo.thumb}
+                    alt="Photo to send"
+                    width={56}
+                    height={56}
+                    className="w-14 h-14 rounded-lg border border-line object-cover bg-white"
+                  />
+                ) : (
+                  <span className="w-14 h-14 rounded-lg border border-line bg-bg-soft grid place-items-center" aria-hidden="true">
+                    <span className="w-5 h-5 rounded-full border-2 border-line border-t-brand animate-spin motion-reduce:animate-none" />
+                  </span>
+                )}
+                {/* A 40 px tap target around the small dark circle. */}
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  aria-label="Remove photo"
+                  className={`absolute -top-3 -right-3 w-10 h-10 grid place-items-center rounded-full ${FOCUS_RING} focus-visible:outline-brand`}
+                >
+                  <span className="w-7 h-7 rounded-full bg-ink text-white grid place-items-center shadow">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                      <line x1="6" y1="18" x2="18" y2="6" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            )}
+            <div className="flex-1 min-w-0 pt-0.5 text-[11.5px] leading-snug text-muted">
+              <p>
+                {photoError ? (
+                  <span className="text-red-600">{photoError}</span>
+                ) : pending?.state === 'preparing' ? (
+                  photoUi('preparing', hindiUi)
+                ) : (
+                  photoUi('privacy', hindiUi)
+                )}
+              </p>
+              {(photoErrorKey === 'limit' || photoErrorKey === 'limit_server') && (
+                <a
+                  href={PHOTO_WA_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-track="chatbot_whatsapp"
+                  className={`mt-1.5 inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-full bg-[#25D366] text-white text-[12px] font-semibold hover:brightness-95 transition ${FOCUS_RING} focus-visible:outline-[#25D366]`}
+                >
+                  {photoUi('whatsapp', hindiUi)}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+        {/* Phones / tablets: the camera button's two choices, above the composer. */}
+        {cameraOn && photoMenu && (
+          <div
+            ref={menuRef}
+            id="kk-chat-photo-menu"
+            role="menu"
+            aria-label="Add a photo"
+            onKeyDown={onMenuKey}
+            className="absolute left-2 bottom-full mb-2 z-10 min-w-[210px] rounded-xl border border-line bg-white py-1 shadow-lg"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => pickFrom('camera')}
+              className={`w-full min-h-[44px] px-4 flex items-center gap-3 text-left text-[14px] text-ink hover:bg-bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand`}
+            >
+              <CameraIcon size={18} />
+              {photoUi('take', hindiUi)}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => pickFrom('gallery')}
+              className={`w-full min-h-[44px] px-4 flex items-center gap-3 text-left text-[14px] text-ink hover:bg-bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand`}
+            >
+              <GalleryIcon size={18} />
+              {photoUi('gallery', hindiUi)}
+            </button>
+          </div>
+        )}
+        <div className="flex items-end gap-1.5">
+          {cameraOn && (
+            // Disabled only while a reply is coming: while a photo waits the
+            // button stays focusable (aria-disabled) so focus never drops to <body>.
+            <button
+              ref={cameraRef}
+              type="button"
+              onClick={onCamera}
+              disabled={sending}
+              aria-disabled={pending ? true : undefined}
+              aria-haspopup={touch ? 'menu' : undefined}
+              aria-expanded={touch ? photoMenu : undefined}
+              aria-controls={touch && photoMenu ? 'kk-chat-photo-menu' : undefined}
+              aria-label={photoAllowed ? 'Add a photo' : 'Add a photo (limit reached for this chat)'}
+              title={touch ? 'Add a photo (camera or gallery)' : 'Add a photo'}
+              className={`${ICON_BTN} disabled:opacity-50 disabled:cursor-not-allowed ${
+                pending ? 'opacity-50 cursor-not-allowed' : photoAllowed ? '' : 'opacity-50'
+              }`}
+            >
+              <CameraIcon />
+            </button>
+          )}
+          <label htmlFor="kk-chat-input" className="sr-only">
+            Your message
+          </label>
+          <textarea
+            id="kk-chat-input"
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onInputKey}
+            rows={1}
+            maxLength={MAX_CHARS}
+            // Short, so it fits on one line beside three buttons on a 320 px phone.
+            placeholder={pending ? 'Add a message…' : 'Type your question…'}
+            enterKeyHint="send"
+            className="form-input flex-1 min-w-0 resize-none text-base md:text-sm"
+          />
+          {/* Hidden where the browser has no speech recognition (e.g. Firefox). */}
+          <VoiceSearchButton
+            onResult={onVoice}
+            texts={CHAT_VOICE_TEXTS}
+            cancelSignal={voiceCancel}
+            defaultLang={voiceDefault}
+            langKey="kk:chat-voice-lang"
+            onTypeInstead={onTypeInstead}
+            iconSize={18}
+            className={ICON_BTN}
+          />
+          <button
+            type="submit"
+            aria-label="Send message"
+            disabled={!canSend}
+            className={`shrink-0 bg-brand text-white rounded-full w-10 h-10 grid place-items-center hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition ${FOCUS_RING} focus-visible:outline-brand`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M2 21l21-9L2 3v7l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
+        {cameraOn && (
+          <>
+            {/* Gallery / file picker: phones offer their own chooser, computers a file dialog. */}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" tabIndex={-1} onChange={(e) => void onPhotoPicked(e)} />
+            {/* "Take a photo" on a phone: straight to the back camera. */}
+            <input
+              ref={captureRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              tabIndex={-1}
+              onChange={(e) => void onPhotoPicked(e)}
+            />
+          </>
+        )}
       </form>
       {(showRemaining || showCounter) && (
         <div className="px-3 pb-2 -mt-1 flex items-center justify-between gap-2 text-[11px] text-muted">
