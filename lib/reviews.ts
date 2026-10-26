@@ -138,6 +138,9 @@ export async function findEligibleOrder(
         customerId,
         orderStatus: { in: ['shipped', 'delivered'] },
         paymentStatus: 'completed',
+        // A free replacement (admin lib/replacement.ts) is not a purchase. NULL-safe:
+        // a bare { not: 'replacement' } would also drop orders with no payment method.
+        OR: [{ paymentMethod: null }, { paymentMethod: { not: 'replacement' } }],
       },
     },
     orderBy: { createdAt: 'desc' },

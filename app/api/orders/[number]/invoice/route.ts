@@ -42,6 +42,13 @@ export async function GET(_req: NextRequest, { params }: { params: { number: str
     }
     // A GST tax invoice only exists once the order is actually paid
     // (PaymentStatus.completed). Refunded/pending/failed get no invoice.
+    // A free replacement (admin lib/replacement.ts) is not a sale and has no tax
+    // invoice — its delivery challan travels with the parcel.
+    if (order.paymentMethod === 'replacement') {
+      return new Response('This is a free replacement, so there is no invoice for it. The delivery challan comes with the parcel.', {
+        status: 400,
+      });
+    }
     if (order.paymentStatus !== 'completed') {
       return new Response('Your invoice will be available after the payment is confirmed.', {
         status: 400,

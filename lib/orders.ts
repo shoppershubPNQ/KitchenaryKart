@@ -24,6 +24,9 @@ export interface PublicOrder {
   createdAt: string;
   orderStatus: string;
   paymentStatus: string;
+  /** A free replacement for a broken item/part (admin lib/replacement.ts) — nothing was charged and it has no
+   *  tax invoice. Keyed on paymentMethod: this app's schema does not carry orders.replacement_of_id. */
+  isReplacement: boolean;
   subtotal: number;
   taxAmount: number;
   discountAmount: number;
@@ -112,6 +115,7 @@ export async function listOrdersForCustomer(customerId: number) {
       createdAt: true,
       orderStatus: true,
       paymentStatus: true,
+      paymentMethod: true,
       totalAmount: true,
       carrierName: true,
       trackingNumber: true,
@@ -125,6 +129,7 @@ export async function listOrdersForCustomer(customerId: number) {
     createdAt: o.createdAt.toISOString(),
     orderStatus: o.orderStatus,
     paymentStatus: o.paymentStatus,
+    isReplacement: o.paymentMethod === 'replacement',
     totalAmount: Number(o.totalAmount ?? 0),
     itemCount: o._count.items,
     carrierName: o.carrierName,
@@ -176,6 +181,7 @@ export async function loadPublicOrder(
     createdAt: order.createdAt.toISOString(),
     orderStatus: order.orderStatus,
     paymentStatus: order.paymentStatus,
+    isReplacement: order.paymentMethod === 'replacement',
     subtotal: Number(order.subtotal ?? 0),
     taxAmount: Number(order.taxAmount ?? 0),
     discountAmount: Number(order.discountAmount ?? 0),

@@ -26,7 +26,7 @@ export function OrderDetailView({
   // delivered. The PDP's #reviews anchor opens the existing review
   // CTA so we don't have to duplicate the auth/eligibility UI here.
   const canReview =
-    order.orderStatus === 'shipped' || order.orderStatus === 'delivered';
+    !order.isReplacement && (order.orderStatus === 'shipped' || order.orderStatus === 'delivered');
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -47,9 +47,15 @@ export function OrderDetailView({
         <div className="flex flex-col items-start sm:items-end gap-2">
           <div className="flex items-center gap-2">
             <StatusPill status={order.orderStatus} />
-            <StatusPill status={order.paymentStatus} />
+            {order.isReplacement ? (
+              <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-800">
+                Free replacement
+              </span>
+            ) : (
+              <StatusPill status={order.paymentStatus} />
+            )}
           </div>
-          {canDownloadInvoice && order.paymentStatus === 'completed' && (
+          {canDownloadInvoice && order.paymentStatus === 'completed' && !order.isReplacement && (
             <a
               href={`/api/orders/${encodeURIComponent(order.orderNumber)}/invoice`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-brand px-3 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-brand hover:text-white"
@@ -122,6 +128,13 @@ export function OrderDetailView({
               ))}
             </ol>
           )}
+        </div>
+      )}
+
+      {order.isReplacement && (
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 text-sm text-sky-900">
+          This is a <b>free replacement</b> for an item that reached you damaged. Nothing is charged, and a delivery
+          challan travels with the parcel instead of an invoice.
         </div>
       )}
 

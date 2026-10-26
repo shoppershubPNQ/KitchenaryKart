@@ -77,7 +77,7 @@ export default async function OrdersListPage() {
                 </div>
                 <div className="text-right">
                   <div className="font-head text-lg font-bold text-ink">
-                    {inr(o.totalAmount)}
+                    {o.isReplacement ? 'Free replacement' : inr(o.totalAmount)}
                   </div>
                   <div className="text-xs text-brand mt-1">View details →</div>
                 </div>
